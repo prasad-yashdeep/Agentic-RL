@@ -23,6 +23,7 @@ while true; do
             echo "$ts ALARM serve dead -> relaunched (thinking=$mode)" >> "$LOG"
         fi
     fi
+    bash scripts/_reaper.sh >> "$LOG" 2>&1 || true
     bash scripts/_janitor.sh || true
     if [ $((tick % 60)) -eq 0 ]; then
         bash scripts/07_sync_node05.sh >> "$LOG" 2>&1 || echo "$ts ALARM node05 sync failed" >> "$LOG"
