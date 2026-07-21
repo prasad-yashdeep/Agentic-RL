@@ -123,3 +123,13 @@ still lost all trials to phase timeouts. Two independent hang bugs found and fix
     sandbox dir works. Fix: transparent `singularity` shim substituting cached sandbox dirs on
     exec/run/shell/instance (`scripts/shims/singularity`, commit a321fd1; wired first on PATH in
     env.sh). G0 attempt 4 (job 05-12-48) runs with both fixes active.
+
+**Heavyweight oracle confirmation (job 05-27-15, 31 min):** `break-filter-js-from-html` **reward=1
+PASSES under singularity** (earlier "docker-lane-only" call disproven — selenium/chrome works with
+the sandbox shim). `adaptive-rejection-sampler` oracle still AgentTimeoutError at 1800 s with output
+truncated at the identical byte (3,837) as attempt 3 — oracle-setup apt (python3+asciinema) stalls
+after printing the package list; install commands are properly `-y`/noninteractive, so the block is
+deeper (suspect: apt network fetch inside the sandbox-substituted container on this image).
+⚠ Parked as **M1 baseline risk**: Terminus trials also run the asciinema setup, so images lacking
+python3/asciinema could hit the same stall → keep `--max-retries` in baseline config and debug with
+this repro if the failure rate is non-trivial. Not gate-relevant (G0 passed; oracle-only evidence).
