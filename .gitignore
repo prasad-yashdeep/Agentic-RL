@@ -10,3 +10,4 @@ checkpoints/
 traces/raw/
 *.jsonl.gz
 .ipynb_checkpoints/
+.venv/
