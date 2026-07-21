@@ -1,8 +1,8 @@
 # Source me. Single source of truth for runtime environment on node08.
 export NCCL_P2P_DISABLE=1
 export HF_HOME="$HOME/hf-cache"
-export APPTAINER_CACHEDIR=/tmp/apptainer-cache
-export TARL_SIF_CACHE=/tmp/sif-cache
+export APPTAINER_CACHEDIR=/var/tmp/tarl/apptainer-cache  # 39G partition; /tmp symlinks here
+export TARL_SIF_CACHE=/var/tmp/tarl/sif-cache  # 39G partition; /tmp/sif-cache symlinks here
 # PATH order matters, leftmost wins:
 #  1. shims/          — singularity shim: rewrites exec to extracted sandbox dirs
 #                       (squashfuse statx hang breaks uv/uvx in every TB2 verifier)

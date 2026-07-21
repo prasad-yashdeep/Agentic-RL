@@ -4,16 +4,16 @@
 # In-use guards: (a) artifact mtime must be idle (shim touches sandbox on use),
 # (b) no live process may reference its name (apptainer cmdlines embed paths).
 set -u
-MIN_FREE_GB="${TARL_TMP_MIN_FREE_GB:-3}"
+MIN_FREE_GB="${TARL_TMP_MIN_FREE_GB:-5}"
 IDLE_MIN="${TARL_EVICT_IDLE_MIN:-8}"
 SIF_CACHE="${TARL_SIF_CACHE:-/tmp/sif-cache}"
 
-free_gb() { df --output=avail -BG /tmp 2>/dev/null | tail -1 | tr -dc 0-9; }
+free_gb() { df --output=avail -BG "$SIF_CACHE" 2>/dev/null | tail -1 | tr -dc 0-9; }
 in_use() { pgrep -f "$(basename "$1")" >/dev/null 2>&1; }
 
 [ "$(free_gb)" -ge "$MIN_FREE_GB" ] && exit 0
 # emergency: critically low -> age no longer protects, only liveness does
-if [ "$(free_gb)" -lt 2 ]; then IDLE_MIN=0; fi
+if [ "$(free_gb)" -lt 3 ]; then IDLE_MIN=0; fi
 
 # 1. idle sandboxes (cheap to recreate from sif)
 for d in $(ls -dtr "$SIF_CACHE"/*.sandbox 2>/dev/null); do
@@ -31,6 +31,6 @@ for f in $(ls -tr "$SIF_CACHE"/*.sif 2>/dev/null); do
 done
 # 3. OCI blob cache (pure cache)
 if [ "$(free_gb)" -lt "$MIN_FREE_GB" ]; then
-    rm -rf /tmp/apptainer-cache/* 2>/dev/null
+    rm -rf /tmp/apptainer-cache/blob 2>/dev/null; rm -rf "$(readlink -f /tmp/apptainer-cache)"/* 2>/dev/null
 fi
 exit 0
