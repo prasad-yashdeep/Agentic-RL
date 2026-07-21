@@ -13,6 +13,9 @@
 | RL rollout sampling | t≈1.2 allowed | terminal-bench-rl precedent |
 | Eval benchmark | Terminal-Bench 2.1 ONLY | 2.0/2.1 scores not comparable; 2.1 = fixed tasks |
 | Judge | `grok-4.5` (xAI, OpenAI-compatible API) | user decision 2026-07-21; model id verified live on the project key; XAI_API_KEY in ~/.config/tarl/env; see configs/judge/judge.yaml |
+| Thinking mode | per-request `chat_template_kwargs: {"enable_thinking": true}` | verified 2026-07-21: reasoning lands in `message.reasoning` via gemma4 parser, answer stays in `content`; omit the kwarg for thinking-OFF arms |
+| Serve flags | `--gpu-memory-utilization 0.87`, piecewise-only cudagraphs, `VLLM_USE_FLASHINFER_SAMPLER=0` | 16GB card: FULL graphs OOM at capture; no CUDA toolkit on node08 → flashinfer JIT sampler can't compile (and cu13 leftovers made it emit driver-incompatible kernels) |
+| CUDA wheel lane | torch cu128 + vllm `+cu129` release wheel; NO bare/cu13 nvidia-* packages | driver 570.133 = CUDA 12.8; PyPI vllm links libcudart.so.13; 12.x wheels are minor-version compatible |
 
 ## Invariant environment (scripts/env.sh sources this contract)
 

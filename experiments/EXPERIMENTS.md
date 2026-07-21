@@ -49,5 +49,16 @@ Template — copy per run:
    `libcudart.so.13`. Fix: GitHub release wheel `vllm-0.25.1+cu129` (CUDA 12.x minor-version
    compatible with the 12.8 driver) on the cu128 torch stack — `scripts/_vllm_cu12_fix.sh`.
 
-**In flight at close of entry:** G0 attempt 3 with compat fakeroot (tmux `g0`), vllm +cu129 install
-then serve relaunch (tmux `fixvllm` → `serve`); watchers armed on all.
+**M0.5 DONE (04:12): vLLM serve up + thinking verified.** Three more failures on the way there:
+7. humming (FP8 repack JIT) died `CUDA_ERROR_INVALID_IMAGE`: orphaned CUDA-13 pip packages
+   (nvidia-cuda-nvrtc 13.3, nvcc 13.2, 19 more) from the original cu13 install were feeding its JIT.
+   Removed all bare/cu13 nvidia-* packages; reinstalled the 4 cu12 twins they clobbered (shared paths);
+   pinned nvcc-cu12 12.8.93.
+8. OOM at FULL cudagraph capture (14.5/15.6 GiB): `--gpu-memory-utilization 0.87` + piecewise-only graphs.
+9. flashinfer JIT sampler needs nvcc (none on node08): `VLLM_USE_FLASHINFER_SAMPLER=0` → native sampler.
+Verification: `/v1/models` healthy; chat probe with `chat_template_kwargs={"enable_thinking": true}`
+→ `message.reasoning` populated (1.6k chars), answer in `content`, finish=stop. Trivial questions may
+skip the thought channel even with thinking on (probe used a multi-step problem). Kwarg omitted → no
+reasoning field + "thinking process" text leaks into content (that's the thinking-OFF arm behavior).
+
+**In flight at close of entry:** G0 attempt 3 with compat fakeroot (tmux `g0`), watcher armed.
