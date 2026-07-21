@@ -79,7 +79,21 @@ _v = '%d.%d' % _s.version_info[:2]
 _url = 'https://bootstrap.pypa.io/get-pip.py' if _s.version_info[:2] >= (3, 10) else ('https://bootstrap.pypa.io/pip/%s/get-pip.py' % _v)
 urllib.request.urlretrieve(_url, '/tmp/get-pip.py')"""
 assert s.count(old) == 1, f"expected exactly 1 match, got {s.count(old)} (harbor version changed?)"
-open(p, "w").write(s.replace(old, new))
+s = s.replace(old, new)
+# 2b: get-pip still fails on old debian pythons missing distutils -> apt fallback
+old2 = '''      && "$_HARBOR_PY" /tmp/get-pip.py --quiet 2>/dev/null \\
+      || { echo "[harbor] FATAL: cannot bootstrap pip" >&2; exit 1; }
+  fi'''
+new2 = '''      && "$_HARBOR_PY" /tmp/get-pip.py --quiet 2>/dev/null \\
+      || { echo "[harbor] get-pip failed; trying apt python3-pip (PATCHED tarl)..." >&2; \\
+           apt-get update >/dev/null 2>&1; \\
+           apt-get install -y python3-pip python3-distutils >/dev/null 2>&1; }
+  fi
+  if ! "$_HARBOR_PY" -m pip --version >/dev/null 2>&1; then
+    echo "[harbor] FATAL: cannot bootstrap pip" >&2; exit 1
+  fi'''
+assert s.count(old2) == 1, f"2b matches: {s.count(old2)}"
+open(p, "w").write(s.replace(old2, new2))
 print(f"patched: {p}")
 EOF
 fi
