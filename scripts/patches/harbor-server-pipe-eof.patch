@@ -1,0 +1,42 @@
+--- /home/yashp/.local/share/uv/tools/harbor/lib/python3.13/site-packages/harbor/environments/singularity/server.py.orig	2026-07-21 05:02:08.321738511 -0700
++++ /home/yashp/.local/share/uv/tools/harbor/lib/python3.13/site-packages/harbor/environments/singularity/server.py	2026-07-21 05:02:08.382739989 -0700
+@@ -135,20 +135,26 @@
+ 
+     logger.debug(f"Executing command: {req.command[:100]}")
+ 
+-    process = subprocess.Popen(
+-        actual_command,
+-        shell=True,
+-        executable="/bin/bash",
+-        text=True,
+-        encoding="utf-8",
+-        errors="replace",
+-        stdout=subprocess.PIPE,
+-        stderr=subprocess.STDOUT,
+-        cwd=cwd,
+-        env=env,
+-    )
++    # PATCHED (tarl): capture stdout via a temp file and wait() for the process
++    # instead of communicate(), which blocks on pipe EOF -- a background child
++    # (daemons from apt postinst, asciinema, task servers) inheriting the pipe
++    # keeps it open forever after the foreground command exits, hanging the
++    # request until the phase-level timeout kills the trial.
++    import tempfile
+ 
+-    stdout, _ = process.communicate()
++    with tempfile.TemporaryFile(mode="w+", encoding="utf-8", errors="replace") as _outf:
++        process = subprocess.Popen(
++            actual_command,
++            shell=True,
++            executable="/bin/bash",
++            stdout=_outf,
++            stderr=subprocess.STDOUT,
++            cwd=cwd,
++            env=env,
++        )
++        process.wait()
++        _outf.seek(0)
++        stdout = _outf.read()
+     actual_output = stdout.strip() if stdout else None
+ 
+     if process.returncode == 124:

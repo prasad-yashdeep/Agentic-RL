@@ -93,3 +93,18 @@ Gemma-4 E4B is trainable with QLoRA on one A4000 and the merge path is numerical
     break-filter-js-from-html (selenium/chrome verifier) excluded from smoke → docker-fidelity lane.
 **G0 attempt 4 (job 2026-07-21__05-12-48): 3/3 reward=1, mean 1.000, zero exceptions.**
 Per-trial wall: fix-git 30s · large-scale-text-editing 84s · regex-log 41s (vs 1800–2400s timeouts before).
+
+**Gate G0 root-cause chain (~05:00):** attempt 3 (compat fakeroot, warm cache, serial, 2x timeouts)
+still lost all trials to phase timeouts. Two independent hang bugs found and fixed:
+13. **harbor exec-server pipe-EOF hang**: `server.py exec_command()` uses `process.communicate()`,
+    which waits for stdout EOF, not process exit — any background child (apt-postinst daemons,
+    asciinema installed by this oracle, task servers) inherits the pipe and holds the request open
+    until the phase timeout kills the trial. Signature matched all attempt-3 failures (agent 1800s +
+    2 verifiers 1800s, logs truncated mid-command); interactive `apt-get install tmux` in the same
+    image takes 3 s. Patch: file-based capture + `wait()` — `scripts/03_patch_harbor.sh` (idempotent,
+    re-run after any `uv tool upgrade harbor`) + reference diff `scripts/patches/`.
+14. **squashfuse statx hang**: rust binaries (uv/uvx — every TB2 verifier bootstraps uv) block in
+    `statx(AT_EMPTY_PATH)` against a squashfuse-mounted rootfs; the same container from an extracted
+    sandbox dir works. Fix: transparent `singularity` shim substituting cached sandbox dirs on
+    exec/run/shell/instance (`scripts/shims/singularity`, commit a321fd1; wired first on PATH in
+    env.sh). G0 attempt 4 (job 05-12-48) runs with both fixes active.

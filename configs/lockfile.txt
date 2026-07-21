@@ -42,8 +42,8 @@ fastapi-cloud-cli==0.22.2
 fastar==0.11.0
 fastsafetensors==0.3.3
 filelock==3.31.2
-flashinfer-cubin==0.6.12
-flashinfer-python==0.6.12
+flashinfer-cubin==0.6.13
+flashinfer-python==0.6.13
 frozenlist==1.8.0
 fsspec==2026.6.0
 googleapis-common-protos==1.75.0
@@ -55,7 +55,7 @@ httptools==0.8.0
 httpx==0.28.1
 httpx-sse==0.4.3
 huggingface-hub==1.24.0
-humming-kernels==0.1.6
+humming-kernels==0.1.10
 idna==3.18
 ijson==3.5.1
 interegular==0.3.3
@@ -87,10 +87,12 @@ numpy==2.3.5
 nvidia-cublas==13.1.0.3
 nvidia-cublas-cu12==12.8.4.1
 nvidia-cuda-cccl==13.3.3.4.1
+nvidia-cuda-cccl-cu12==12.9.27
 nvidia-cuda-crt==13.3.73
 nvidia-cuda-cupti==13.0.85
 nvidia-cuda-cupti-cu12==12.8.90
 nvidia-cuda-nvcc==13.2.86
+nvidia-cuda-nvcc-cu12==12.9.86
 nvidia-cuda-nvrtc==13.3.33
 nvidia-cuda-nvrtc-cu12==12.8.93
 nvidia-cuda-runtime==13.3.29
@@ -210,7 +212,7 @@ typing-inspection==0.4.2
 urllib3==2.7.0
 uvicorn==0.51.0
 uvloop==0.22.1
-vllm==0.24.0
+vllm @ https://github.com/vllm-project/vllm/releases/download/v0.25.1/vllm-0.25.1+cu129-cp38-abi3-manylinux_2_28_x86_64.whl
 watchfiles==1.2.0
 websockets==16.1.1
 xgrammar==0.2.3
