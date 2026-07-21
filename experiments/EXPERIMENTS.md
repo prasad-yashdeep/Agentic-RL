@@ -73,3 +73,6 @@ reasoning field + "thinking process" text leaks into content (that's the thinkin
     bf16 `merge_and_unload` rounds most of it away (measured max |Δlogprob| = 0.656 vs unmerged).
     Not a merge bug: fidelity must be asserted in fp32 (<1e-4), and bf16/FP8 fold-in noise becomes an
     explicit tolerance term in the M2.6 `align_check` (trainer-vs-vLLM logprob comparison).
+
+**⛩ GATE G1 PASSED (04:41).** fp32 merge check: max |Δlogprob| = 4.2e-5 → SMOKE_MERGE_OK, G1_SMOKE_DONE.
+Gemma-4 E4B is trainable with QLoRA on one A4000 and the merge path is numerically sound.
