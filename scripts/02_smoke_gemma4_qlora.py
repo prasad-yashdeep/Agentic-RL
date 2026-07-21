@@ -22,7 +22,10 @@ def log(msg: str) -> None:
     print(f"[g1-smoke] {msg}", flush=True)
 
 
-TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+# Regex, NOT a name list: bare names also match the vision/audio towers, whose
+# projections are Gemma4ClippableLinear wrappers PEFT cannot inject into.
+# The text decoder (model.language_model.*) uses plain nn.Linear throughout.
+TARGET_MODULES = r".*language_model.*\.(q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|down_proj)$"
 
 
 def load_model_class(model_id: str):
@@ -61,7 +64,7 @@ def forward_maybe_mm(model, batch):
 
 
 def train_smoke(model_id: str) -> str:
-    from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+    from peft import LoraConfig, get_peft_model
     from transformers import AutoTokenizer, BitsAndBytesConfig
 
     tok = AutoTokenizer.from_pretrained(model_id)
@@ -77,7 +80,10 @@ def train_smoke(model_id: str) -> str:
     cls = load_model_class(model_id)
     log("loading 4-bit NF4 model on GPU ...")
     model = cls.from_pretrained(model_id, quantization_config=bnb, device_map={"": 0}, dtype=torch.bfloat16)
-    model = prepare_model_for_kbit_training(model)
+    # NOT prepare_model_for_kbit_training(): it upcasts every non-quantized param
+    # to fp32, and E4B's unquantized embeddings (+ per-layer embeddings) are ~5 GiB
+    # bf16 -> the fp32 copy OOMs a 16 GiB card. bf16 norms are fine for this smoke.
+    model.config.use_cache = False
     # NEVER target_modules="all-linear": PEFT crashes on Gemma4ClippableLinear.
     lcfg = LoraConfig(r=16, lora_alpha=32, lora_dropout=0.0, task_type="CAUSAL_LM", target_modules=TARGET_MODULES)
     model = get_peft_model(model, lcfg)

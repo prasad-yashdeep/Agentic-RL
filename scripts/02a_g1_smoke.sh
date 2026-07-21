@@ -13,5 +13,6 @@ LOG="$HOME/terminal-agent-rl/g1-smoke.log"
     fi
     echo "G1_DL_DONE model=$MODEL"
     CUDA_VISIBLE_DEVICES=1 TARL_BASE_MODEL="$MODEL" \
+        PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         python "$(dirname "$0")/02_smoke_gemma4_qlora.py"
 } 2>&1 | tee "$LOG"
