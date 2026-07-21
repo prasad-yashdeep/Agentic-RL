@@ -24,8 +24,13 @@ fi
 export VLLM_USE_FLASHINFER_SAMPLER=0
 # 16 GB card: 12.4 GiB weights leave no room for FULL cudagraphs (OOM at capture);
 # piecewise-only + slightly lower mem target keeps startup under budget.
+# TARL_SERVE_QUANT=fp8 -> online FP8 quantization (serving a merged bf16
+# checkpoint from the trainer; the pre-quantized FP8 repo needs no flag)
+QUANT_ARGS=()
+[ "${TARL_SERVE_QUANT:-}" = "fp8" ] && QUANT_ARGS=(--quantization fp8)
 CUDA_VISIBLE_DEVICES=0 exec vllm serve "$MODEL" \
     --served-model-name gemma-4-E4B-it \
+    "${QUANT_ARGS[@]}" \
     --host 0.0.0.0 --port 8000 \
     --max-model-len 32768 \
     --gpu-memory-utilization 0.87 \
