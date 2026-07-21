@@ -15,10 +15,14 @@ in_use() { pgrep -f "$(basename "$1")" >/dev/null 2>&1; }
 # emergency: critically low -> age no longer protects, only liveness does
 if [ "$(free_gb)" -lt 3 ]; then IDLE_MIN=0; fi
 
+# pinned artifacts (manually warmed big images) are never evicted
+pinned() { grep -qxF "$(basename "$1")" "$SIF_CACHE/.pinned" 2>/dev/null; }
+
 # 1. idle sandboxes (cheap to recreate from sif)
 for d in $(ls -dtr "$SIF_CACHE"/*.sandbox 2>/dev/null); do
     [ "$(free_gb)" -ge "$MIN_FREE_GB" ] && exit 0
     find "$d" -maxdepth 0 -mmin +"$IDLE_MIN" 2>/dev/null | grep -q . || continue
+    pinned "$d" && continue
     in_use "$d" && continue
     rm -rf "$d" "$d.lock" 2>/dev/null
 done
@@ -26,6 +30,7 @@ done
 for f in $(ls -tr "$SIF_CACHE"/*.sif 2>/dev/null); do
     [ "$(free_gb)" -ge "$MIN_FREE_GB" ] && exit 0
     find "$f" -maxdepth 0 -mmin +"$IDLE_MIN" 2>/dev/null | grep -q . || continue
+    pinned "$f" && continue
     in_use "$f" && continue
     rm -f "$f" "$f.lock" 2>/dev/null
 done
