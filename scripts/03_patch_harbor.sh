@@ -59,3 +59,27 @@ open(p, "w").write(src.replace(old, new))
 print(f"patched: {p}")
 EOF
 python3 -m py_compile "$SERVER" && echo "syntax OK"
+
+# --- patch 2: bootstrap.sh get-pip for containers with python < 3.10 ---------
+# Generic https://bootstrap.pypa.io/get-pip.py refuses py<=3.9 (qemu-* images
+# ship 3.9) -> "FATAL: cannot bootstrap pip". Use the versioned URL instead.
+BOOTSTRAP="$(dirname "$SERVER")/bootstrap.sh"
+if grep -q "PATCHED (tarl)" "$BOOTSTRAP"; then
+    echo "already patched: $BOOTSTRAP"
+else
+    cp "$BOOTSTRAP" "$BOOTSTRAP.orig"
+    python3 - "$BOOTSTRAP" <<'EOF'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+old = """urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', '/tmp/get-pip.py')"""
+new = """# PATCHED (tarl): generic get-pip.py requires py>=3.10; use versioned URL for older pythons
+import sys as _s
+_v = '%d.%d' % _s.version_info[:2]
+_url = 'https://bootstrap.pypa.io/get-pip.py' if _s.version_info[:2] >= (3, 10) else ('https://bootstrap.pypa.io/pip/%s/get-pip.py' % _v)
+urllib.request.urlretrieve(_url, '/tmp/get-pip.py')"""
+assert s.count(old) == 1, f"expected exactly 1 match, got {s.count(old)} (harbor version changed?)"
+open(p, "w").write(s.replace(old, new))
+print(f"patched: {p}")
+EOF
+fi
