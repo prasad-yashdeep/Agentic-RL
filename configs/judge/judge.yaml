@@ -1,0 +1,14 @@
+# Judge provider — pinned per gate G2 (verified against live /v1/models 2026-07-21)
+provider: xai
+api_base: https://api.x.ai/v1
+model: grok-4.5            # confirmed available on the project key
+temperature: 0.0
+env_key: XAI_API_KEY       # lives in ~/.config/tarl/env (chmod 600, never in git)
+rubric: configs/judge/rubric-v1.md   # written in M2.1; version-hashed into every score
+max_input_tokens: 15000    # compressed-trace budget
+cost_cap_usd_per_run: 500  # alarms.py hard-stops judge calls past this
+
+# Fallback (config flip, no code change) if G2/G3 fail:
+fallback:
+  provider: openai_compatible
+  candidates: [Qwen3-235B-A22B (hosted), GLM-4.6 (hosted)]

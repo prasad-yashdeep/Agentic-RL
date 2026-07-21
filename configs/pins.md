@@ -12,7 +12,7 @@
 | Eval sampling | t=1.0, top_p=0.95, top_k=64 | Gemma 4 recommended; pinned for all evals |
 | RL rollout sampling | t≈1.2 allowed | terminal-bench-rl precedent |
 | Eval benchmark | Terminal-Bench 2.1 ONLY | 2.0/2.1 scores not comparable; 2.1 = fixed tasks |
-| Judge | Grok 4.5 (xAI, OpenAI-compatible API) | user decision 2026-07-21; XAI_API_KEY in ~/.config/tarl/env |
+| Judge | `grok-4.5` (xAI, OpenAI-compatible API) | user decision 2026-07-21; model id verified live on the project key; XAI_API_KEY in ~/.config/tarl/env; see configs/judge/judge.yaml |
 
 ## Invariant environment (scripts/env.sh sources this contract)
 
