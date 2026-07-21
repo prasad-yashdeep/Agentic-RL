@@ -133,3 +133,17 @@ deeper (suspect: apt network fetch inside the sandbox-substituted container on t
 ⚠ Parked as **M1 baseline risk**: Terminus trials also run the asciinema setup, so images lacking
 python3/asciinema could hit the same stall → keep `--max-retries` in baseline config and debug with
 this repro if the failure rate is non-trivial. Not gate-relevant (G0 passed; oracle-only evidence).
+
+**Night-shift incidents during A0-ON (all fixed forward, run never stopped):**
+14. Orphaned apptainer runtime parents (TERM-immune after trial teardown) pinned every sandbox as
+    "in-use" → janitor starved → /tmp hit 1G. `_reaper.sh` (PPID-1 + >5 min → SIGKILL) each watch
+    tick; janitor emergency tier. (commit 17e50a6)
+15. Big ML images (mteb/hf/gpt2) can't convert in 16G /tmp → 6 conversion RuntimeErrors. Image
+    caches migrated live to /var/tmp/tarl (39G partition) with symlinks at the old baked paths;
+    janitor now measures the cache partition. Remaining attempts of those tasks recover. (cb7ae2b)
+16. qemu-* images ship python 3.9; generic get-pip.py refuses <3.10 → deterministic bootstrap
+    failure. Harbor patch 2: versioned get-pip URL. (8aa7d82)
+17. Unknown model name → litellm context-limit fallback = 1M; Terminus overruns the served 32k
+    window → vLLM 400 "max_tokens must be at least 1, got 0" (1 trial). Harbor patch 3 +
+    HARBOR_FALLBACK_CONTEXT_LIMIT=32768 in env.sh; applies to OFF arm and future runs — ON-arm
+    occurrences remain as errored trials (documented caveat). (08399b0)
