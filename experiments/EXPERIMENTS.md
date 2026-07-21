@@ -147,3 +147,15 @@ this repro if the failure rate is non-trivial. Not gate-relevant (G0 passed; ora
     window → vLLM 400 "max_tokens must be at least 1, got 0" (1 trial). Harbor patch 3 +
     HARBOR_FALLBACK_CONTEXT_LIMIT=32768 in env.sh; applies to OFF arm and future runs — ON-arm
     occurrences remain as errored trials (documented caveat). (08399b0)
+
+## 2026-07-21 A0-interim — thinking-ON subset (user call: subset first, prove pipeline, loop back)
+- Arm: A0 (INTERIM — run stopped at user request to prioritize pipeline proof)
+- Job: 2026-07-21__05-38-50 · 176/445 trials · commit at stop: 8f550a3
+- Model: gemma-4-E4B-it FP8 @ 32k ctx, thinking-ON template, t=1.0, Terminus 2, singularity+shim
+- **Result: trial-level 5/150 clean = 3.3%; mean per-task pass rate 3.61%; 5/83 touched tasks
+  solved ≥once (build-pmars, extract-elf, modernize-scientific-stack, prove-plus-comm,
+  sqlite-with-gcov)**; 26 errored trials all root-caused (incidents 14–17 + timeouts)
+- vs published 8.0: below, as expected (32k ctx cap, FP8, incomplete attempts); NOT the final A0 —
+  full 5×89 rerun scheduled after the training pipeline is proven end-to-end
+- Failure trajectories banked for judge pilot: ~145 failed trials with full ATIF + panes on NFS +
+  node05. Wall-clock: 10.2h for 176 trials @ n-concurrent 4.
