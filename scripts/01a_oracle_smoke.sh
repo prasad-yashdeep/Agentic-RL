@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
-# M0.4 / Gate G0 — Harbor oracle smoke on a few TB tasks via singularity backend.
-# Usage: 01a_oracle_smoke.sh <task-id> [<task-id> ...]   Run ON node08.
+# M0.4 / Gate G0 — Harbor oracle smoke on selected TB tasks via singularity backend.
+# Usage: 01a_oracle_smoke.sh <task-name> [<task-name> ...]   Run ON node08.
 set -euo pipefail
 . "$(dirname "$0")/env.sh"
 mkdir -p "$TARL_SIF_CACHE" "$APPTAINER_CACHEDIR"
-TASK_ARGS=()
-for t in "$@"; do TASK_ARGS+=(-t "$t"); done
-exec harbor run -d terminal-bench/terminal-bench-2 -a oracle \
+# terminal-bench@2.1 is not in the harbor registry — use a local clone of
+# laude-institute/terminal-bench-2 (TARL_TB_PATH) as the source of truth.
+if [ -n "${TARL_TB_PATH:-}" ]; then
+    DATASET_ARGS=(-p "$TARL_TB_PATH")
+else
+    DATASET_ARGS=(-d "${TARL_TB_DATASET:-terminal-bench}")
+fi
+INCLUDE_ARGS=()
+for t in "$@"; do INCLUDE_ARGS+=(-i "$t"); done
+exec harbor run "${DATASET_ARGS[@]}" -a oracle \
     -e singularity \
     --ek singularity_image_cache_dir="$TARL_SIF_CACHE" \
     --ek singularity_no_mount=home,tmp \
-    --n-concurrent 2 \
-    "${TASK_ARGS[@]}"
+    --n-concurrent "${TARL_N_CONCURRENT:-1}" \
+    --timeout-multiplier "${TARL_TIMEOUT_MULT:-2.0}" \
+    --jobs-dir "$HOME/terminal-agent-rl/jobs" \
+    "${INCLUDE_ARGS[@]}"

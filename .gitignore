@@ -11,3 +11,4 @@ traces/raw/
 *.jsonl.gz
 .ipynb_checkpoints/
 .venv/
+jobs/

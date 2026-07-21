@@ -5,7 +5,7 @@ cd "$HOME/terminal-agent-rl"
 export PATH="$HOME/.local/bin:$PATH"
 uv venv .venv -p /usr/bin/python3
 . .venv/bin/activate
-uv pip install -e .
+uv pip install -e . --torch-backend=cu128  # driver 570.133 supports CUDA <= 12.8; cu13 wheels fail CUDA init
 uv pip freeze > configs/lockfile.txt
 uv tool install harbor
 uv tool install 'huggingface_hub[cli]'

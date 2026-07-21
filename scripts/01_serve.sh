@@ -16,4 +16,4 @@ CUDA_VISIBLE_DEVICES=0 exec vllm serve "$MODEL" \
     --reasoning-parser gemma4 \
     --tool-call-parser gemma4 --enable-auto-tool-choice \
     --chat-template "$TEMPLATE" \
-    --limit-mm-per-prompt image=0,audio=0
+    --limit-mm-per-prompt '{"image": 0, "audio": 0}'

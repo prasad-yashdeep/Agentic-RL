@@ -58,12 +58,25 @@ stack. Findings:
    (`deeplm-*` aliases → tunnel to node08:8000). The harness is CPU-only;
    only HTTP traffic crosses the VPN. Works today; rollout throughput for RL
    is then bounded by the harness machine's CPU/RAM (each task = 1+ container).
-3. Apptainer/Singularity: not a substitute — terminal-bench drives the docker
-   API / compose; no supported backend.
+3. **Apptainer/Singularity — WORKS, and is what we use** (superseding the
+   earlier "no supported backend" assessment): Harbor ships a singularity
+   backend (`harbor run -e singularity`), and node08 allows unprivileged user
+   namespaces. Apptainer 1.5.2 installed user-space via micromamba/conda-forge
+   at `~/apptainer-env` (the official unprivileged installer fails on this
+   distro). Verified end-to-end with TB2 task images.
+   - **Gotcha (cost us a G0 trial):** Harbor passes `--fakeroot`; with no
+     subuid mapping, apptainer falls back to root-mapped-ns *plus* the host
+     `fakeroot` command, which LD_PRELOADs the host `libfakeroot.so`
+     (needs GLIBC_2.38) into the container. Any image with older glibc then
+     fails every exec. Fix: `APPTAINER_IGNORE_FAKEROOT_COMMAND=1`
+     (in `scripts/env.sh`) — root-mapped namespace alone is sufficient.
+   - First-time `.sif` conversion is CPU-heavy; run smoke tests `-n 1` until
+     the cache (`/tmp/sif-cache`) is warm, and expect healthcheck-race
+     retries (harbor #1713) during conversions.
 
-For the **baseline eval**, option 2 is sufficient. For **RL training** (needs
-hundreds of concurrent rollouts colocated with the model server), option 1 on
-node08 is strongly preferred — put the admin request in early.
+Option 3 is the primary path (baseline + RL, all on node08). Option 2 remains
+the docker-fidelity cross-check lane; option 1 (admin uidmap ask) is only
+needed if singularity fidelity turns out to be a problem.
 
 ## Other constraints
 
