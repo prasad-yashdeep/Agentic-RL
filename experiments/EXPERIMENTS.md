@@ -61,4 +61,15 @@ Verification: `/v1/models` healthy; chat probe with `chat_template_kwargs={"enab
 skip the thought channel even with thinking on (probe used a multi-step problem). Kwarg omitted → no
 reasoning field + "thinking process" text leaks into content (that's the thinking-OFF arm behavior).
 
-**In flight at close of entry:** G0 attempt 3 with compat fakeroot (tmux `g0`), watcher armed.
+**Gate G1 (QLoRA trainability) — training half PASSED (04:35).** Findings, all fixed in-script:
+10. `prepare_model_for_kbit_training` upcasts every non-quantized param to fp32; E4B's unquantized
+    embeddings (+PLE) are ~5 GiB bf16 → 10.5 GiB fp32 alloc OOMs the A4000. Skip the helper.
+11. Bare-name `target_modules` also match the vision/audio towers, which wrap projections in
+    `Gemma4ClippableLinear` (PEFT-incompatible). Meta-device inspection: language_model = 258 plain
+    nn.Linear ✓; vision tower = 112, audio tower = 36 Clippable ✗. → regex-scope LoRA to
+    `.*language_model.*(q|k|v|o|gate|up|down)_proj$`. **Design fact for the real trainer config.**
+    Result: 34.9M trainable (0.44%), loss 9.49→7.97 in one step, grad norm 20.6, zero base-grad leak.
+12. **Merge-fidelity insight:** a one-step LoRA ΔW is smaller than the bf16 ulp of the base weights —
+    bf16 `merge_and_unload` rounds most of it away (measured max |Δlogprob| = 0.656 vs unmerged).
+    Not a merge bug: fidelity must be asserted in fp32 (<1e-4), and bf16/FP8 fold-in noise becomes an
+    explicit tolerance term in the M2.6 `align_check` (trainer-vs-vLLM logprob comparison).

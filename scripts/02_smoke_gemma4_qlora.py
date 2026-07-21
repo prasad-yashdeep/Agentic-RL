@@ -124,7 +124,13 @@ def train_smoke(model_id: str) -> str:
 
 
 def merge_fidelity(model_id: str, adapter_dir: str) -> None:
-    """CPU bf16: logprobs(base+adapter) must equal logprobs(merged)."""
+    """CPU fp32: logprobs(base+adapter) must equal logprobs(merged).
+
+    fp32, not bf16: a one-step LoRA delta is smaller than the bf16 ulp of the
+    base weights, so a bf16 fold-in rounds most of it away (measured 0.66 max
+    logprob shift). fp32 isolates "is the merge math faithful"; bf16/FP8 fold-in
+    noise is a *tolerance* the M2.6 align-check owns, not a merge bug.
+    """
     from peft import PeftModel
     from transformers import AutoTokenizer
 
@@ -132,8 +138,8 @@ def merge_fidelity(model_id: str, adapter_dir: str) -> None:
     probe = tok("The quick brown fox jumps over the lazy dog.", return_tensors="pt")
 
     cls = load_model_class(model_id)
-    log("loading bf16 base on CPU for merge check ...")
-    base = cls.from_pretrained(model_id, dtype=torch.bfloat16)
+    log("loading fp32 base on CPU for merge check ...")
+    base = cls.from_pretrained(model_id, dtype=torch.float32)
     model = PeftModel.from_pretrained(base, adapter_dir)
     model.eval()
 
@@ -147,8 +153,8 @@ def merge_fidelity(model_id: str, adapter_dir: str) -> None:
     lp_merged = probe_logprobs(merged)
 
     diff = (lp_adapter - lp_merged).abs().max().item()
-    log(f"max |logprob diff| adapter-vs-merged: {diff:.6f}")
-    assert diff < 5e-3, f"merge changed logprobs by {diff} (>{5e-3})"
+    log(f"max |logprob diff| adapter-vs-merged (fp32): {diff:.6f}")
+    assert diff < 1e-4, f"merge changed fp32 logprobs by {diff} (>1e-4)"
     log("SMOKE_MERGE_OK")
 
 
@@ -156,10 +162,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=os.environ.get("TARL_BASE_MODEL", "google/gemma-4-E4B-it"))
     ap.add_argument("--skip-merge-check", action="store_true")
+    ap.add_argument("--merge-only", action="store_true", help="reuse /tmp/g1-adapter from a prior run")
     args = ap.parse_args()
 
     log(f"model: {args.model}")
-    adapter_dir = train_smoke(args.model)
+    adapter_dir = "/tmp/g1-adapter" if args.merge_only else train_smoke(args.model)
     if not args.skip_merge_check:
         merge_fidelity(args.model, adapter_dir)
     log("G1_SMOKE_DONE")
