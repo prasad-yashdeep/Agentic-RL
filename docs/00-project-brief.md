@@ -19,19 +19,23 @@ logits required).
   task = container + NL instruction + hidden verifier. Reward = verifier 0/1.
 - **Harness:** the benchmark's reference agent (Terminus) for leaderboard
   comparability; an identical-format minimal harness inside the training loop.
-- **Teacher:** Claude Sonnet 5 through the *same harness*, traces logged.
-- **Algorithm:** GRPO (with DAPO-style fixes) + teacher-trace mixing
-  (LUFFY-style) + SFT warm-start from teacher traces.
+- **Teacher = LLM-as-judge (clarified 2026-07-20):** Claude Sonnet 5 (or
+  Haiku for cheap scoring) shapes the GRPO reward by scoring trajectories
+  against a rubric — NOT knowledge distillation. Gated composite: pass ⇒ R=1,
+  else R = λ·r_J (λ ≤ 0.5), so the verifier always dominates. See
+  docs/03 §4.4 for the full formulation and anti-hacking design.
+- **Algorithm:** GRPO (DAPO/Dr.GRPO fixes) + judge-shaped reward; optional
+  teacher-free warm-start via self-STaR. Trace-mixing (LUFFY/CHORD) kept only
+  as documented extensions (they'd require distillation authorization).
 
 ## Ablation plan
 
-| Arm | Warm-start | RL | Teacher in RL | Question answered |
-|---|---|---|---|---|
-| A0 | — | — | — | baseline: raw model on benchmark |
-| A1 | SFT on teacher traces | — | — | how far does pure distillation go? |
-| A2 | — | GRPO | — | can RL alone lift a weak policy? (cold-start risk) |
-| A3 | SFT | GRPO | — | standard pipeline |
-| A4 | SFT | GRPO | mixed teacher traces | full method — does trace-nudging beat A3? |
+| Arm | Warm-start | RL reward | Question answered |
+|---|---|---|---|
+| A0 | — | — | baseline: raw model on benchmark |
+| B1 | — | verifier only (sparse 0/1) | can sparse-reward GRPO lift a weak policy? (cold-start control) |
+| B2 | — | verifier + judge-shaped (gated) | **headline: does judge shaping beat sparse reward?** |
+| B3 | self-STaR (own passing rollouts) | verifier + judge-shaped | does a teacher-free warm-start add on top? |
 
 Success metric: pass@1 on a held-out task split (n runs ≥ 5, report mean ± CI).
 

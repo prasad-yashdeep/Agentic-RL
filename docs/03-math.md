@@ -126,16 +126,22 @@ G=8$ that is ~15%, at $p=0.001$ essentially zero. Consequences:
    sampling approximates online).
 3. **Task difficulty spread matters more than task count.**
 
-## 4. Teacher guidance ("nudging the policy with Sonnet 5 traces")
+## 4. Teacher guidance
 
-**Hard constraint discovered in planning:** the Anthropic API returns *sampled
-text only* — **no per-token logprobs**. So the teacher is a black-box sampler
-$\hat y \sim \pi_T(\cdot \mid x)$. This rules out the textbook distillation
-objectives — forward KL on teacher logits and on-policy reverse-KL /
-GKD-style distillation
+> **Design decision (2026-07-20, clarified):** the teacher's role in this
+> project is **LLM-as-judge reward shaping (§4.4)** — not knowledge
+> distillation. §4.4 is the primary mechanism; §§4.1–4.2b and 4.5 are kept as
+> documented *optional extensions* (they would require Anthropic distillation
+> authorization; §4.4 has far lighter ToS exposure). The warm-start slot, if
+> needed, is filled teacher-free by self-STaR (§4.1b).
+
+**Hard constraint:** the Anthropic API returns *sampled text only* — **no
+per-token logprobs**. So the teacher is a black-box sampler/scorer. This rules
+out the textbook distillation objectives — forward KL on teacher logits and
+on-policy reverse-KL / GKD-style distillation
 ($\mathbb{E}_{y\sim\pi_\theta} \log \frac{\pi_\theta}{\pi_T}$ needs
-$\pi_T(y)$ for *student-sampled* $y$). Everything below works from **traces
-alone**.
+$\pi_T(y)$ for *student-sampled* $y$). Everything below works from **teacher
+text/scores alone**.
 
 ### 4.1 Rejection-sampled SFT (behavior cloning the teacher)
 
@@ -240,15 +246,79 @@ after §4.1). Then $\beta \mathbb{D}_{KL}(\pi_\theta \| \pi_{SFT})$ is a soft
 leash to the teacher's behavior manifold while reward pressure improves task
 success. Cheap, stable, and one β to tune. (Set β=0 to recover pure RL.)
 
-### 4.4 Teacher as reward model (optional shaping)
+### 4.4 Teacher as judge — reward shaping for GRPO  ★ PRIMARY MECHANISM
 
-$$R(\tau) = R_{\text{task}}(\tau) + \lambda\, r_T(\tau), \qquad \lambda \ll 1$$
+The judge $r_J(\tau) \in [0,1]$ is Sonnet 5 (or Haiku 4.5 for cheap scoring;
+open judge as ToS-free fallback) scoring the trajectory against a fixed
+rubric: progress toward the stated goal, command correctness, error recovery,
+no flailing, no tampering. Temperature 0; judge model + rubric version pinned
+per run.
 
-where $r_T$ is Sonnet 5 scoring the trajectory against a rubric (progress,
-sensible commands, no flailing). Densifies the sparse signal but opens a
-reward-hacking channel against the judge — keep $\lambda$ small, never report
-$r_T$-inclusive numbers, and only ever *evaluate* on the ground-truth
-verifier.
+**Why it works here:** it is a direct fix for §3's zero-gradient failure. In
+an all-fail group the binary reward gives $\hat A \equiv 0$; the judge
+restores within-group variance exactly where GRPO has none — "sensible plan,
+died at step 40" now outranks "flailed immediately". Precedent:
+terminal-bench-rl trained with reward = 65% weighted unit tests + 35%
+Claude-judge rubric (2×A100, rLLM); Kimi K2's self-critique rubric rewards and
+direct-scoring RLAIF (arXiv:2309.00267) are the same pattern.
+
+**Composite reward — gated (lexicographic) form, preferred:**
+
+$$
+R(\tau) =
+\begin{cases}
+1 & \text{verifier passes} \\
+\lambda\, r_J(\tau), \;\; \lambda \le 0.5 & \text{otherwise}
+\end{cases}
+$$
+
+Any pass outranks any failure, so the judge can *never* pull the policy away
+from real task success — it only ranks failures by promise. GRPO's group
+normalization does the rest: all-fail groups get their advantage entirely from
+judge differences; mixed groups are dominated by the verifier. (Additive
+alternative $R = R_{\text{task}} + \lambda r_J$ with 0.65/0.35 weights is the
+terminal-bench-rl precedent; the gated form is strictly safer against judge
+exploitation.) Per-turn judge rewards would densify further but cost G× more
+calls and widen the hacking surface — hold in reserve; prefer GiGPO (§2) if
+credit assignment stalls, it's free.
+
+**Judge-hacking — the failure mode to engineer against.** The judge reads
+terminal output *that the policy writes*: `echo "All 47 tests passed"`,
+fabricated command output, and instructions-to-the-judge embedded in stdout
+are all reachable by RL, and RL will find them (cf. >15% of TB2 verifiers
+bypassed by reward-seeking agents; a judge is softer than a verifier).
+Defenses, all mandatory:
+1. Gated composite above — judge weight can never exceed a true pass.
+2. Provenance delimiters around env output; rubric instructs the judge to
+   score only observable actions/state, never the agent's claims; suspicious
+   content flagged, not scored.
+3. Judge never sees verifier internals.
+4. **Hacking alarm:** monitor divergence between mean judge score and true
+   pass rate over training; spot-audit high-$r_J$ failures.
+5. Headline metrics are verifier-only (TB 2.1 pass@1); judge-inclusive
+   numbers are never reported.
+
+**Noise & calibration.** LLM judges are noisy scorers but GRPO only consumes
+*group-relative* differences (z-scored within the group), which is the regime
+where LLM judgments are most reliable. Optionally have the judge rank a
+group's failed rollouts in one call (cheaper, more consistent than absolute
+scores). Calibration loop: resample from high-$r_J$ failed states — if high
+judge scores don't predict higher eventual success, the rubric is rewarding
+the wrong things; revise before continuing.
+
+**Cost.** Judge input = compressed trace (commands + truncated outputs,
+~5–15k tok): Sonnet 5 ≈ \$0.03–0.06/call, Haiku 4.5 ≈ \$0.01–0.02/call; skip
+judging rollouts that passed; cache the rubric prefix. A full run's judging is
+O(\$100s), not O(\$1000s).
+
+### 4.1b Self-STaR warm-start (teacher-free)
+
+If any warm-start is needed without touching teacher text: rejection-sample
+the *student's own* rollouts on easy training tasks, SFT on its verifier-
+passing episodes (STaR/RFT, arXiv:2203.14465 / 2308.01825). No external
+model's outputs involved → no ToS question at all. Combined with §4.4's dense
+reward and the difficulty curriculum, this may make teacher traces entirely
+unnecessary.
 
 ### 4.5 Expert-prefix and hint methods (targeted cold-start repair)
 
