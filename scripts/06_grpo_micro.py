@@ -41,7 +41,10 @@ STEPS = 5
 LR = 1e-6
 CLIP_LO, CLIP_HI = 0.2, 0.28
 LAMBDA_JUDGE = 0.5
-MAX_SEQ = 8192
+# 16GB card: logits alone are seq×262k vocab — keep episodes short for the
+# micro-run (fix-git/regex-log run 1-2k tokens); real trainer needs fused
+# linear-cross-entropy (liger) to lift this.
+MAX_SEQ = 3072
 BASE_MODEL = "google/gemma-4-E4B-it"
 MERGED_DIR = Path("/var/tmp/tarl/merged-policy")
 PROBE_PROMPT = "List the files in a directory, sorted by size."
@@ -192,13 +195,19 @@ def load_trainable():
         r=16, lora_alpha=32, lora_dropout=0.0, task_type="CAUSAL_LM",
         target_modules=r".*language_model.*\.(q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|down_proj)$")
     model = get_peft_model(model, lcfg)
+    model.gradient_checkpointing_enable()
+    model.enable_input_require_grads()
     return tok, model
 
 
 def token_logprobs(model, ids: torch.Tensor) -> torch.Tensor:
-    out = model(input_ids=ids.unsqueeze(0).to(model.device)).logits.float()
-    logp = torch.log_softmax(out[0, :-1], dim=-1)
-    return logp.gather(1, ids[1:].unsqueeze(1).to(model.device)).squeeze(1)
+    """Per-token logprob of the realized ids WITHOUT materializing a full-vocab
+    fp32 copy: logp_t = logit[target] - logsumexp(logits_row), all in bf16."""
+    logits = model(input_ids=ids.unsqueeze(0).to(model.device)).logits[0, :-1]
+    targets = ids[1:].unsqueeze(1).to(model.device)
+    target_logit = logits.gather(1, targets).squeeze(1)
+    lse = torch.logsumexp(logits, dim=-1)
+    return (target_logit - lse).float()
 
 
 def grpo_step(model, opt, examples: list[tuple[torch.Tensor, torch.Tensor, float]]) -> dict:
