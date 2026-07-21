@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Transparent workaround for the squashfuse statx hang (rootless apptainer):
+# rust binaries (uv/uvx — used by every TB2 verifier) block forever in
+# statx(AT_EMPTY_PATH) against a squashfuse-mounted rootfs. Running the same
+# container from an extracted sandbox dir works. This shim rewrites container
+# EXEC invocations to use a cached sandbox extracted next to the .sif;
+# build/pull/etc. pass through untouched (their .sif args are outputs).
+set -u
+REAL="$HOME/apptainer-env/bin/apptainer"
+
+case "${1:-}" in
+    exec|run|shell|instance) ;;
+    *) exec "$REAL" "$@" ;;
+esac
+
+args=()
+for a in "$@"; do
+    if [[ "$a" == *.sif && -f "$a" ]]; then
+        sb="${a%.sif}.sandbox"
+        if [ ! -d "$sb" ]; then
+            (
+                flock 9
+                if [ ! -d "$sb" ]; then
+                    tmp="$sb.tmp.$$"
+                    if "$REAL" build --sandbox "$tmp" "$a" >/dev/null 2>&1; then
+                        mv "$tmp" "$sb"
+                    else
+                        rm -rf "$tmp"
+                    fi
+                fi
+            ) 9>"$sb.lock"
+        fi
+        [ -d "$sb" ] && a="$sb"
+    fi
+    args+=("$a")
+done
+exec "$REAL" "${args[@]}"
