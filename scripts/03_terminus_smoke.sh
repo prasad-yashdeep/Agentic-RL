@@ -11,7 +11,7 @@ INCLUDE_ARGS=()
 for t in "${TASKS[@]}"; do INCLUDE_ARGS+=(-i "$t"); done
 exec harbor run -p "${TARL_TB_PATH:-/tmp/tb2}" \
     -a terminus-2 \
-    --ak model_name=openai/gemma-4-E4B-it \
+    -m openai/gemma-4-E4B-it \
     --ak api_base=http://localhost:8000/v1 \
     --ak temperature=1.0 \
     -e singularity \
