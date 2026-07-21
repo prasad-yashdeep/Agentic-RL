@@ -18,6 +18,8 @@ for a in "$@"; do
     if [[ "$a" == *.sif && -f "$a" ]]; then
         sb="${a%.sif}.sandbox"
         if [ ! -d "$sb" ]; then
+            # make room before extracting (sandboxes are 2-4x sif size)
+            bash "$(dirname "${BASH_SOURCE[0]}")/../_janitor.sh" || true
             (
                 flock 9
                 if [ ! -d "$sb" ]; then
@@ -30,7 +32,10 @@ for a in "$@"; do
                 fi
             ) 9>"$sb.lock"
         fi
-        [ -d "$sb" ] && a="$sb"
+        if [ -d "$sb" ]; then
+            touch "$sb"   # LRU stamp for the janitor
+            a="$sb"
+        fi
     fi
     args+=("$a")
 done

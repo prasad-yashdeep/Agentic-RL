@@ -3,8 +3,18 @@
 set -euo pipefail
 . "$(dirname "$0")/env.sh"
 MODEL="${TARL_SERVE_MODEL:-prithivMLmods/gemma-4-E4B-it-FP8}"
-TEMPLATE="$(dirname "$0")/../configs/serve/tool_chat_template_gemma4.jinja"
+# TARL_THINKING=1 → serve with a template whose enable_thinking defaults to TRUE,
+# so agents (harbor/litellm) get thinking without request-level kwargs. The
+# baseline's thinking-OFF arm uses the stock template (default false).
+if [ "${TARL_THINKING:-0}" = "1" ]; then
+    TEMPLATE="$(dirname "$0")/../configs/serve/tool_chat_template_gemma4_thinking.jinja"
+else
+    TEMPLATE="$(dirname "$0")/../configs/serve/tool_chat_template_gemma4.jinja"
+fi
 if [ ! -f "$TEMPLATE" ]; then
+    # Only the stock template may be auto-fetched; the thinking variant is a
+    # repo-tracked derivative and must never be silently replaced by upstream.
+    [ "${TARL_THINKING:-0}" = "1" ] && { echo "missing thinking template: $TEMPLATE"; exit 1; }
     mkdir -p "$(dirname "$TEMPLATE")"
     curl -fsSL "https://raw.githubusercontent.com/vllm-project/vllm/main/examples/tool_chat_template_gemma4.jinja" \
         -o "$TEMPLATE"
