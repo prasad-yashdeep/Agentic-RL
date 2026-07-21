@@ -76,3 +76,20 @@ reasoning field + "thinking process" text leaks into content (that's the thinkin
 
 **⛩ GATE G1 PASSED (04:41).** fp32 merge check: max |Δlogprob| = 4.2e-5 → SMOKE_MERGE_OK, G1_SMOKE_DONE.
 Gemma-4 E4B is trainable with QLoRA on one A4000 and the merge path is numerically sound.
+
+**⛩ GATE G0 PASSED (05:15) — after finding the real container blocker.**
+13. **squashfuse statx hang (the cause of EVERY verifier timeout in attempts 1–3):** rust binaries
+    (uv/uvx — the toolchain every TB2 verifier bootstraps with) block forever in
+    statx(AT_EMPTY_PATH) against the squashfuse-mounted rootfs; daemon sits idle in
+    fuse_dev_do_read, request never answered (captured live from /proc/<pid>/task/*/syscall:
+    syscall 332, wchan=request_wait_answer). curl/apt/dpkg use older syscalls → worked, which
+    disguised the container as healthy. A/B proof: same `uv python install` — squashfuse ∞ hang
+    vs extracted sandbox dir 2.09s. Fix: `scripts/shims/singularity` rewrites exec-type calls to
+    cached sandbox extractions (build/pull untouched); wired via PATH in env.sh.
+    Also raised `sessiondir max size` 64→8192 MB (ruled out as the cause, kept as headroom).
+    ⚠ M1 note: sandboxes are 2–4× sif size — /tmp (16 GB) needs cache eviction before the
+    89-task baseline; move image caches to node05 /local or add LRU cleanup.
+    Task-set note: adaptive-rejection-sampler (R-from-source oracle, ~30 min+) and
+    break-filter-js-from-html (selenium/chrome verifier) excluded from smoke → docker-fidelity lane.
+**G0 attempt 4 (job 2026-07-21__05-12-48): 3/3 reward=1, mean 1.000, zero exceptions.**
+Per-trial wall: fix-git 30s · large-scale-text-editing 84s · regex-log 41s (vs 1800–2400s timeouts before).
