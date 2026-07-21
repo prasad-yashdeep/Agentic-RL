@@ -83,3 +83,30 @@ open(p, "w").write(s.replace(old, new))
 print(f"patched: {p}")
 EOF
 fi
+
+# --- patch 3: env-configurable context-limit fallback ------------------------
+# Unknown models (our vLLM endpoint name) fall back to a 1M context limit;
+# Terminus then overruns the server's real window until vLLM 400s with
+# "max_tokens must be at least 1, got 0". Set HARBOR_FALLBACK_CONTEXT_LIMIT
+# (env.sh pins it to the served --max-model-len).
+LITE="$(dirname "$SERVER")/../../llms/lite_llm.py"
+LITE="$(readlink -f "$LITE")"
+if grep -q "HARBOR_FALLBACK_CONTEXT_LIMIT" "$LITE"; then
+    echo "already patched: $LITE"
+else
+    cp "$LITE" "$LITE.orig"
+    python3 - "$LITE" <<'EOF'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+old = "        fallback_context_limit = 1000000"
+new = """        # PATCHED (tarl): unknown models (our vLLM endpoint) fell back to 1M and
+        # blew past the server's real window -> vLLM 400 "max_tokens ... got 0".
+        import os as _os
+        fallback_context_limit = int(_os.environ.get("HARBOR_FALLBACK_CONTEXT_LIMIT", "1000000"))"""
+assert s.count(old) == 1, f"expected exactly 1 match, got {s.count(old)} (harbor version changed?)"
+open(p, "w").write(s.replace(old, new))
+print(f"patched: {p}")
+EOF
+    python3 -m py_compile "$LITE" && echo "syntax OK"
+fi

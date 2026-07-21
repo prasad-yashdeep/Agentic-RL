@@ -1,6 +1,7 @@
 # Source me. Single source of truth for runtime environment on node08.
 export NCCL_P2P_DISABLE=1
 export HF_HOME="$HOME/hf-cache"
+export HARBOR_FALLBACK_CONTEXT_LIMIT=32768  # match vLLM --max-model-len (patch 3, 03_patch_harbor.sh)
 export APPTAINER_CACHEDIR=/var/tmp/tarl/apptainer-cache  # 39G partition; /tmp symlinks here
 export TARL_SIF_CACHE=/var/tmp/tarl/sif-cache  # 39G partition; /tmp/sif-cache symlinks here
 # PATH order matters, leftmost wins:
