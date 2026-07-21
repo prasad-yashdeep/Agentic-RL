@@ -94,6 +94,21 @@ Gemma-4 E4B is trainable with QLoRA on one A4000 and the merge path is numerical
 **G0 attempt 4 (job 2026-07-21__05-12-48): 3/3 reward=1, mean 1.000, zero exceptions.**
 Per-trial wall: fix-git 30s · large-scale-text-editing 84s · regex-log 41s (vs 1800–2400s timeouts before).
 
+**✅ M0.6 PASSED (05:24) — Terminus 2 × our endpoint (job 2026-07-21__05-18-40).**
+First live model-in-the-loop run: 3 tasks, ~5 min total, zero exceptions, rewards 0.0 (expected —
+untrained policy). Transcript inspection: JSON actions parsed every turn; real commands executed in
+tmux (fix-git: model ran `git status`/`git branch` and reasoned over their actual outputs across
+8 steps); regex-log went 11 agent turns incl. Terminus 2's completion-confirmation protocol;
+42.9k prompt / 7.0k completion tokens through the FP8 endpoint; recording.cast panes captured.
+CLI gotcha: model goes in `-m openai/gemma-4-E4B-it` (harbor passes model_name itself; `--ak
+model_name=` collides), api_base via `--ak`.
+⚠ M1 TODO: this ran thinking-OFF — the thinking-ON baseline arm needs `chat_template_kwargs:
+{"enable_thinking": true}` plumbed through harbor/litellm (extra_body) to the endpoint.
+
+**🏁 M0 (plumbing + hard gates) COMPLETE — day 1.** All gates green: G0 containers, G1 trainability,
+serve verified, agent-loop verified. Plan budgeted ~5 engineer-days; actual: one long day, 13
+documented failure→fix pairs.
+
 **Gate G0 root-cause chain (~05:00):** attempt 3 (compat fakeroot, warm cache, serial, 2x timeouts)
 still lost all trials to phase timeouts. Two independent hang bugs found and fixed:
 13. **harbor exec-server pipe-EOF hang**: `server.py exec_command()` uses `process.communicate()`,
