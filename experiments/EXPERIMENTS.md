@@ -169,3 +169,16 @@ this repro if the failure rate is non-trivial. Not gate-relevant (G0 passed; ora
   rationales explicitly call out the deception. PASS.
 - Cost: ~2.7k tokens in/call (compressor budget working), 45.5k in / 1.5k out for the whole pilot.
 - Full G3 (n≈100, Kendall τ) deferred until B2 prep; all signals green at n=12.
+
+**⛩ GATE G4 PASSED (18:5x) — end-to-end GRPO micro-run, 5/5 cycles (scripts/06_grpo_micro.py).**
+Per cycle: 7-8 clean Terminus-2 rollouts vs live serve → gated rewards (judge spread EVERY all-fail
+group, e.g. fix-git 0.30–0.78 → advantages −0.104..+0.136) → masked token-normalized clipped update
+(grad norms 0.018/0.059/0.068/0.144/0.042, zero NaN, zero base-grad leak) → CPU bf16 merge → serve
+relaunch on merged weights (online FP8) → adapter hash changed all 5 steps. ~9 min/cycle.
+Micro-run knobs vs production: LR 2e-4 (visibility), G=4, 2 tasks, judge-shaped from step 1.
+16GB-card constraints discovered (attempts 1–4, all committed): fused linear-CE required beyond
+~1.5k tok (logit grads = seq×262k vocab), DAPO overlong-drop not truncation, grad checkpointing
+mandatory, **sync cadence must exceed bf16 ulp: sub-ulp ΔW folds into merges as exactly zero** —
+production sync every N steps with N·ΔW > ulp, or higher-precision export.
+M2 status: judge lane DONE (G2/G3-mini), trainer loop DONE (G4). Pipeline proof complete —
+ready for loop-back (full A0) + module extraction + B1/B2 scale-up.
