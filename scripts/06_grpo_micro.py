@@ -38,7 +38,11 @@ from tarl.judge.rubric import load_rubric  # noqa: E402
 TASKS = ["fix-git", "regex-log"]
 G = 4                      # attempts per task per step
 STEPS = 5
-LR = 1e-6
+# Micro-run LR is deliberately hot: at 1e-6 a step's ΔW folds into bf16 as
+# EXACTLY zero (below weight ulp — measured: identical merged shards across
+# steps), so sync-verification has nothing to observe. Real runs: 1e-6 with
+# sync every N steps such that cumulative ΔW survives bf16 export.
+LR = 2e-4
 CLIP_LO, CLIP_HI = 0.2, 0.28
 LAMBDA_JUDGE = 0.5
 # 16GB card: logit GRADIENTS are seq×262k vocab bf16 (~0.5GB/1k tokens) on top
@@ -267,9 +271,17 @@ def merge_and_export(model, tok) -> str:
     merged.save_pretrained(MERGED_DIR, safe_serialization=True)
     tok.save_pretrained(MERGED_DIR)
     del base, merged
+    return adapter_hash(model)
+
+
+def adapter_hash(model) -> str:
+    """Hash the LoRA tensors — the state training actually changes. (Hashing
+    merged shards is misleading: head bytes are embeddings LoRA never touches,
+    and sub-ulp deltas fold into bf16 as zero.)"""
     h = hashlib.sha256()
-    for f in sorted(MERGED_DIR.glob("*.safetensors")):
-        h.update(f.read_bytes()[:1_000_000])
+    for n, p in sorted(model.named_parameters()):
+        if "lora" in n:
+            h.update(p.detach().cpu().to(torch.float32).numpy().tobytes())
     return h.hexdigest()[:12]
 
 
@@ -318,11 +330,11 @@ def main() -> int:
             f"({time.time()-t0:.0f}s)")
 
         whash = merge_and_export(model, tok)
-        assert whash != prev_hash, "merged weights identical to previous step"
+        assert whash != prev_hash, "adapter unchanged after optimizer step"
         prev_hash = whash
         restart_serve(str(MERGED_DIR))
         probe = probe_completion()
-        LOG(f"step {step}: SYNC weights={whash} probe_changed={probe != prev_probe}")
+        LOG(f"step {step}: SYNC adapter={whash} probe_changed={probe != prev_probe}")
         prev_probe = probe
 
     LOG("G4_MICRO_DONE")
