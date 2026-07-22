@@ -41,10 +41,11 @@ STEPS = 5
 LR = 1e-6
 CLIP_LO, CLIP_HI = 0.2, 0.28
 LAMBDA_JUDGE = 0.5
-# 16GB card: logits alone are seq×262k vocab — keep episodes short for the
-# micro-run (fix-git/regex-log run 1-2k tokens); real trainer needs fused
-# linear-cross-entropy (liger) to lift this.
-MAX_SEQ = 3072
+# 16GB card: logit GRADIENTS are seq×262k vocab bf16 (~0.5GB/1k tokens) on top
+# of the saved forward logits. 1536 keeps backward under budget; longer
+# episodes are DROPPED (DAPO overlong filter — truncating would misattribute
+# episode reward to a cut prefix). Real trainer: fused linear-CE (liger).
+MAX_SEQ = 1536
 BASE_MODEL = "google/gemma-4-E4B-it"
 MERGED_DIR = Path("/var/tmp/tarl/merged-policy")
 PROBE_PROMPT = "List the files in a directory, sorted by size."
@@ -169,7 +170,9 @@ def build_example(tok, traj_path: str) -> tuple[torch.Tensor, torch.Tensor] | No
         ids = cur
         mask.extend([flag] * span)
         prev_len = len(cur)
-    ids_t = torch.tensor(ids[:MAX_SEQ])
+    if len(ids) > MAX_SEQ:  # overlong filter, not truncation
+        return None
+    ids_t = torch.tensor(ids)
     mask_t = torch.tensor(mask[: len(ids_t)])
     if mask_t.sum() == 0:
         return None
