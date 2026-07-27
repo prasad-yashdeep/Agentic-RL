@@ -12,3 +12,5 @@ traces/raw/
 .ipynb_checkpoints/
 .venv/
 jobs/
+jobs-*/
+.serve-thinking
