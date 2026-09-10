@@ -1,0 +1,750 @@
+{
+  "a0": {
+    "ctx": 32768,
+    "errors_by_type": {
+      "AgentTimeoutError": 9,
+      "BadRequestError": 2,
+      "EnvironmentStartTimeoutError": 3,
+      "RuntimeError": 10,
+      "VerifierTimeoutError": 2
+    },
+    "job": "2026-07-21__05-38-50",
+    "max_steps": 899,
+    "mean_task_pass_rate": 0.0361,
+    "median_prompt_tokens": 28313,
+    "median_steps": 8,
+    "n_clean": 150,
+    "n_concurrent": 4,
+    "n_error": 26,
+    "n_fail": 145,
+    "n_pass": 5,
+    "n_planned": 445,
+    "n_summarized": 11,
+    "n_trajectories": 166,
+    "n_trial_dirs": 180,
+    "n_trials": 176,
+    "n_unverified": 0,
+    "n_with_trajectory": 163,
+    "pass_at_1": 0.0333,
+    "pass_at_1_all_trials": 0.0284,
+    "pass_at_1_all_trials_ci95": [
+      0.0122,
+      0.0648
+    ],
+    "pass_at_1_ci95": [
+      0.0143,
+      0.0757
+    ],
+    "phase_median_s": {
+      "agent_execution": 144.6738,
+      "agent_setup": 1.0883,
+      "environment_setup": 26.6704,
+      "verifier": 13.4012
+    },
+    "solved_tasks": [
+      "build-pmars",
+      "extract-elf",
+      "modernize-scientific-stack",
+      "prove-plus-comm",
+      "sqlite-with-gcov"
+    ],
+    "status": "interim",
+    "tasks_solved": 5,
+    "tasks_touched": 89,
+    "tasks_with_clean_trial": 83,
+    "temperature": 1.0,
+    "thinking": "on",
+    "wall_clock_h": 10.3
+  },
+  "coldstart": {
+    "sim": {
+      "final_pass_judge": 0.9318,
+      "final_pass_no_judge": 0.778,
+      "params": {
+        "G": 8,
+        "judge_corr": 0.6,
+        "judge_noise": 0.2,
+        "lam": 0.5,
+        "lr_gain": 0.3,
+        "n_tasks": 30,
+        "p0": 0.02,
+        "steps": 200,
+        "task_spread": 1.0
+      },
+      "seeds": 5,
+      "synthetic": true,
+      "useful_frac_judge": 0.4704,
+      "useful_frac_no_judge": 0.1922
+    },
+    "useful_fraction": {
+      "G16": {
+        "p0.001": 0.0159,
+        "p0.01": 0.1485,
+        "p0.02": 0.2762,
+        "p0.033": 0.4154,
+        "p0.05": 0.5599,
+        "p0.08": 0.7366,
+        "p0.1": 0.8147
+      },
+      "G4": {
+        "p0.001": 0.004,
+        "p0.01": 0.0394,
+        "p0.02": 0.0776,
+        "p0.033": 0.1256,
+        "p0.05": 0.1855,
+        "p0.08": 0.2836,
+        "p0.1": 0.3438
+      },
+      "G8": {
+        "p0.001": 0.008,
+        "p0.01": 0.0773,
+        "p0.02": 0.1492,
+        "p0.033": 0.2354,
+        "p0.05": 0.3366,
+        "p0.08": 0.4868,
+        "p0.1": 0.5695
+      }
+    }
+  },
+  "domains": {
+    "counts": {
+      "build-and-port": 14,
+      "git-vcs": 5,
+      "languages-interpreters-proofs": 6,
+      "ml-dl": 11,
+      "science-math-optimization": 16,
+      "security-crypto-forensics": 10,
+      "services-systems": 13,
+      "text-data-processing": 14
+    },
+    "n_instructions_recovered": 85,
+    "source": "v1-hand-curated"
+  },
+  "embeddings": {
+    "cluster_mean_judge": {
+      "0": 0.3125,
+      "1": 0.3,
+      "2": 0.4275,
+      "3": 0.3143
+    },
+    "cluster_sizes": {
+      "0": 8,
+      "1": 3,
+      "2": 20,
+      "3": 21
+    },
+    "cluster_terms": {
+      "0": [
+        "agent",
+        "file",
+        "called",
+        "task",
+        "terminal",
+        "file called"
+      ],
+      "1": [
+        "model",
+        "iterations",
+        "caffe",
+        "original",
+        "weights",
+        "test"
+      ],
+      "2": [
+        "changes",
+        "find",
+        "master",
+        "terminal",
+        "merge",
+        "git"
+      ],
+      "3": [
+        "regex",
+        "ipv4",
+        "dates",
+        "addresses",
+        "ipv4 addresses",
+        "matches"
+      ]
+    },
+    "dim": 384,
+    "leakage_hits": [
+      [
+        "proxy-train:fix-git",
+        "fix-git",
+        1.0
+      ],
+      [
+        "proxy-train:caffe-cifar-10",
+        "caffe-cifar-10",
+        1.0
+      ],
+      [
+        "proxy-train:crack-7z-hash",
+        "crack-7z-hash",
+        1.0
+      ],
+      [
+        "proxy-train:headless-terminal",
+        "headless-terminal",
+        1.0
+      ],
+      [
+        "proxy-train:gcode-to-text",
+        "gcode-to-text",
+        1.0
+      ],
+      [
+        "proxy-train:git-multibranch",
+        "git-multibranch",
+        1.0
+      ],
+      [
+        "proxy-train:make-mips-interpreter",
+        "make-mips-interpreter",
+        1.0
+      ],
+      [
+        "proxy-train:polyglot-c-py",
+        "polyglot-c-py",
+        1.0
+      ],
+      [
+        "proxy-train:prove-plus-comm",
+        "prove-plus-comm",
+        1.0
+      ],
+      [
+        "proxy-train:pytorch-model-recovery",
+        "pytorch-model-recovery",
+        1.0
+      ],
+      [
+        "proxy-train:regex-log",
+        "regex-log",
+        1.0
+      ],
+      [
+        "proxy-train:sanitize-git-repo",
+        "sanitize-git-repo",
+        1.0
+      ],
+      [
+        "proxy-train:tune-mjcf",
+        "tune-mjcf",
+        1.0
+      ]
+    ],
+    "leakage_threshold": 0.85,
+    "model": "all-MiniLM-L6-v2",
+    "n_clusters": 4,
+    "n_judged_trajectories": 52,
+    "n_tasks": 85,
+    "n_train_flagged": 13,
+    "near_duplicate_pairs": [
+      [
+        "make-mips-interpreter",
+        "make-doom-for-mips",
+        0.808
+      ],
+      [
+        "make-doom-for-mips",
+        "make-mips-interpreter",
+        0.808
+      ],
+      [
+        "polyglot-c-py",
+        "polyglot-rust-c",
+        0.804
+      ],
+      [
+        "polyglot-rust-c",
+        "polyglot-c-py",
+        0.804
+      ],
+      [
+        "feal-differential-cryptanalysis",
+        "feal-linear-cryptanalysis",
+        0.787
+      ],
+      [
+        "feal-linear-cryptanalysis",
+        "feal-differential-cryptanalysis",
+        0.787
+      ],
+      [
+        "break-filter-js-from-html",
+        "filter-js-from-html",
+        0.764
+      ],
+      [
+        "filter-js-from-html",
+        "break-filter-js-from-html",
+        0.764
+      ]
+    ],
+    "pca_var_explained": [
+      0.0623,
+      0.0569
+    ],
+    "review_band": [
+      0.75,
+      0.85
+    ],
+    "train_side": "proxy: 13 TB2 tasks used in G4/pilot (positive control)"
+  },
+  "f1": {
+    "agent_exec_s": 174,
+    "commands": [
+      "apt-get source pmars",
+      "sed -i 's/^/#/' /etc/apt/sources.list",
+      "echo 'deb-src http://deb.debian.org/debian stable main' >> /etc/apt/sources.list",
+      "apt-get update",
+      "apt-get source pmars",
+      "apt-get install -y dpkg-dev",
+      "apt-get source pmars",
+      "apt-get source pmars",
+      "cd pmars-0.9.4",
+      "ls",
+      "./configure --disable-x11",
+      "cd src",
+      "ls",
+      "make config --disable-x11",
+      "cat Makefile",
+      "CFLAGS=-O -DEXT94 -DPERMUTATE -DRWLIMIT LIB=\"\" make",
+      "cp pmars /usr/local/bin/pmars",
+      "make CFLAGS=\"-O -DEXT94 -DPERMUTATE -DRWLIMIT\" LIB=\"\"",
+      "cp pmars /usr/local/bin/pmars",
+      "touch flashpaper.red",
+      "touch rave.red",
+      "pmars -b -r 50 -f flashpaper.red rave.red | tail -n 1"
+    ],
+    "completion_tokens": 6608,
+    "env_setup_s": 14,
+    "error_corrections": [
+      "turn 1: 'deb-src' missing -> edited sources.list",
+      "turn 2: dpkg-dev missing -> apt-get install dpkg-dev"
+    ],
+    "failed_sibling": {
+      "empty_command_turns": 309,
+      "exception": "AgentTimeoutError",
+      "max_context_tokens": 32661,
+      "n_commands": 10,
+      "n_turns": 318,
+      "prompt_tokens": 5328146,
+      "summarization_count": 25,
+      "trial": "build-pmars__2Mn765V"
+    },
+    "final_context_tokens": 10074,
+    "max_api_latency_s": 25.8,
+    "model_calls": 12,
+    "n_commands": 22,
+    "n_turns": 12,
+    "prompt_tokens": 70035,
+    "task": "build-pmars",
+    "tests": "4/4",
+    "trial": "build-pmars__iqVnGoH",
+    "verifier_s": 6
+  },
+  "figures": [
+    "f1_agent_loop_table.md",
+    "f1_agent_loop_table.csv",
+    "f1_token_growth.svg",
+    "f1_context_growth.svg",
+    "f2_domains.svg",
+    "f2_domains.md",
+    "f2_domains.csv",
+    "f2_episode_length.svg",
+    "f9_error_taxonomy.md",
+    "f9_error_taxonomy.csv",
+    "f2_outcomes.svg",
+    "f3_pair.md",
+    "f3_pair.csv",
+    "f4_judge_scores.svg",
+    "f4_judge_rationales.md",
+    "f4_judge_rationales.csv",
+    "f5_useful_groups.svg",
+    "f5_useful_groups.md",
+    "f5_useful_groups.csv",
+    "f5_coldstart_sim.svg",
+    "f6_g4_steps.md",
+    "f6_g4_steps.csv",
+    "f6_g4_rewards.svg",
+    "f6_g4_gradnorm.svg",
+    "f6_g4_sync_strip.svg",
+    "f6_clipped_surrogate.svg",
+    "f7_reconstruction_gap.md",
+    "f7_reconstruction_gap.csv",
+    "f7_loss_mask.svg",
+    "f7_loss_mask.html",
+    "f8_task_pca.svg",
+    "f8_task_pca_domains.svg",
+    "f8_nn_within_eval.md",
+    "f8_nn_within_eval.csv",
+    "f8_nn_leakage.md",
+    "f8_nn_leakage.csv",
+    "f8_failure_clusters.md",
+    "f8_failure_clusters.csv",
+    "f8_failure_clusters.svg",
+    "f9_pass_at_1.svg",
+    "f9_per_domain.svg",
+    "f9_per_domain.md",
+    "f9_per_domain.csv",
+    "f9_pass_at_k.md",
+    "f9_pass_at_k.csv",
+    "f9_wilson_width.svg",
+    "f9_mcnemar_demo.md",
+    "f9_mcnemar_demo.csv",
+    "f9_results_skeleton.md",
+    "f9_results_skeleton.csv",
+    "f10_timeline.svg",
+    "f10_tmp_free.svg",
+    "f10_phase_breakdown.svg",
+    "f10_phases.md",
+    "f10_phases.csv"
+  ],
+  "flags": {
+    "cuda": false,
+    "gpu_cells": false,
+    "live_judge": false
+  },
+  "g4": {
+    "G": 4,
+    "adapter_hashes": [
+      "7cf41eae2e02",
+      "482d1827ff5d",
+      "e1de6e9d5bf9",
+      "84a9262cae3f",
+      "3ec0125a2a80"
+    ],
+    "adv_recompute_max_abs_err": 0.0005,
+    "all_groups_all_fail": true,
+    "grad_norms": [
+      0.0184,
+      0.0589,
+      0.0677,
+      0.1444,
+      0.0421
+    ],
+    "judge_max": 0.85,
+    "judge_mean": 0.3725,
+    "judge_min": 0.1,
+    "judge_model": "grok-4.5",
+    "loss_per_tok": [
+      0.0024,
+      0.025,
+      0.0172,
+      -0.0226,
+      -0.0125
+    ],
+    "min_per_cycle": 8.7,
+    "probe_changed": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "rollouts_per_step": 8,
+    "rubric": "61083938f358",
+    "seconds": [
+      484,
+      557,
+      437,
+      600,
+      545
+    ],
+    "step3_fix_git": {
+      "R": [
+        0.15,
+        0.39,
+        0.325,
+        0.15
+      ],
+      "adv": [
+        -0.104,
+        0.136,
+        0.071,
+        -0.104
+      ],
+      "judge": [
+        0.3,
+        0.78,
+        0.65,
+        0.3
+      ]
+    },
+    "steps": 5,
+    "tasks": [
+      "fix-git",
+      "regex-log"
+    ],
+    "tokens": [
+      1644,
+      347,
+      801,
+      1537,
+      1082
+    ]
+  },
+  "generated_at": "2026-09-10T02:02:14+00:00",
+  "git_commit": "7449714f3600e91f58d23d25eb2015a2f657df35",
+  "gpu": null,
+  "host": "node03",
+  "infra": {
+    "a0_end_utc": "2026-07-21T22:58:36.366311+00:00",
+    "a0_start_utc": "2026-07-21T12:38:53.745137+00:00",
+    "cpus": 24,
+    "gpu": "2x RTX A4000 16 GB (GPU0 vLLM FP8, GPU1 QLoRA)",
+    "lanes_used": 3,
+    "n_concurrent": 4,
+    "phase_table": [
+      {
+        "max_s": 627.9,
+        "median_s": 26.7,
+        "p90_s": 49.7,
+        "phase": "environment_setup"
+      },
+      {
+        "max_s": 1.3,
+        "median_s": 1.1,
+        "p90_s": 1.1,
+        "phase": "agent_setup"
+      },
+      {
+        "max_s": 12000.0,
+        "median_s": 144.7,
+        "p90_s": 511.0,
+        "phase": "agent_execution"
+      },
+      {
+        "max_s": 600.0,
+        "median_s": 13.4,
+        "p90_s": 74.2,
+        "phase": "verifier"
+      }
+    ],
+    "serve_down_ticks": 2,
+    "tmp_free_max_gb": 16.0,
+    "tmp_free_min_gb": 1.0,
+    "wall_clock_h": 10.3,
+    "watch_ticks": 621
+  },
+  "judge_live": null,
+  "judge_pilot": {
+    "adversarial_scores": [
+      0.0,
+      0.0
+    ],
+    "composite_R": [
+      0.275,
+      0.225,
+      0.2,
+      0.2,
+      0.175,
+      0.15,
+      0.15,
+      0.125,
+      0.125,
+      0.075,
+      0.075,
+      0.05
+    ],
+    "examples": {
+      "crack-7z-hash": "Agent correctly identified need to install p7zip-full after 7z missing, then extract secret_file.txt from secrets.7z and write to /app/solution.txt, showing basic comprehension and error reaction. Exploration is thin (little evidence of ls/find/verification of archive location or contents), and it prematurely declared task_complete despite the failure, so progress was incomplete.",
+      "gcode-to-text": "Agent misread the task as dumping raw gcode contents to out.txt rather than interpreting toolpath moves to recover the printed string. Exploration was minimal (only cat/redirect, with a spurious claim of empty output and no parsing of G0/G1 coordinates or comments), and it never adapted from that wrong plan.",
+      "headless-terminal": "Agent never inspected the environment or BaseTerminal interface (no ls/cat/find), instead writing a 'conceptual' implementation while admitting the interface details were unknown. It immediately declared task_complete with no testing, installs, or reaction to the actual API\u2014barely engaged and aimed at the wrong target."
+    },
+    "judge_input": "narrative-only (legacy compressor; no keystrokes/observations)",
+    "max": 0.55,
+    "mean": 0.3042,
+    "min": 0.1,
+    "model": "grok-4.5",
+    "n": 12,
+    "n_replay_entries": 52,
+    "retest_max_abs_delta": 0.05,
+    "rubric": "61083938f358",
+    "scores": {
+      "caffe-cifar-10": 0.35,
+      "crack-7z-hash": 0.55,
+      "gcode-to-text": 0.15,
+      "git-multibranch": 0.4,
+      "headless-terminal": 0.1,
+      "make-mips-interpreter": 0.15,
+      "polyglot-c-py": 0.4,
+      "prove-plus-comm": 0.45,
+      "pytorch-model-recovery": 0.25,
+      "regex-log": 0.25,
+      "sanitize-git-repo": 0.3,
+      "tune-mjcf": 0.3
+    },
+    "stdev": 0.1282,
+    "temperature": 0.0
+  },
+  "loss_mask": {
+    "fallback_tokenizer": false,
+    "generated_completion_tokens": 3466,
+    "legacy06": {
+      "n_assistant_turns": 7,
+      "overlong_at_1536": true,
+      "total_tokens": 1821,
+      "trained_fraction": 0.5788,
+      "trained_tokens": 1054
+    },
+    "legacy06_mask_method": "offsets",
+    "legacy06_mask_tokens_changed": 5,
+    "legacy06_prefix_stable": false,
+    "prefix_stable": true,
+    "reconstruction_gap_tokens": -2412,
+    "terminus_chat": {
+      "overlong_at_1536": true,
+      "total_tokens": 3215,
+      "trained_fraction": 0.4327,
+      "trained_tokens": 1391
+    },
+    "terminus_chat_prefix_stable": true,
+    "tokenizer": "google/gemma-4-E4B-it",
+    "trial": "fix-git__2E66fzc",
+    "vocab": 262144
+  },
+  "notebook": "notebooks/00_terminal_agent_rl_poc.ipynb",
+  "pair": {
+    "failed": "fix-git__YjYkrZQ",
+    "failed_commands": [
+      "git status",
+      "git branch",
+      "git reflog",
+      "git merge 650dba4",
+      "git status",
+      "git add _includes/about.md",
+      "git commit -m \"Merge commit: Integrating changes from previous session\""
+    ],
+    "failed_test_names": [
+      "test_outputs.py::test_about_file"
+    ],
+    "failed_tests": "1/2",
+    "failed_turns": 7,
+    "instruction": "I just made some changes to my personal site and checked out master, but now I can't find those changes. Please help me find them and merge them into master.",
+    "solved": "fix-git__2E66fzc",
+    "solved_commands": [
+      "git status",
+      "git reflog",
+      "git checkout 650dba4",
+      "git checkout master",
+      "git merge 650dba4",
+      "git status",
+      "git checkout --theirs _includes/about.md",
+      "git add _includes/about.md",
+      "git commit -m \"Merge recovery commit 650dba4\"",
+      "git status"
+    ],
+    "solved_tests": "2/2",
+    "solved_turns": 7,
+    "task": "fix-git",
+    "temperature": 1.2
+  },
+  "planned_runs": [
+    {
+      "arm": "A0",
+      "jobs": [
+        "jobs/2026-07-21__05-38-50"
+      ],
+      "seeds": 1,
+      "status": "interim"
+    },
+    {
+      "arm": "B1",
+      "jobs": [],
+      "seeds": 0,
+      "status": "pending"
+    },
+    {
+      "arm": "B2",
+      "jobs": [],
+      "seeds": 0,
+      "status": "pending"
+    },
+    {
+      "arm": "B3",
+      "jobs": [],
+      "seeds": 0,
+      "status": "pending"
+    }
+  ],
+  "pre_registered_success": "B2 - A0 >= +5 pp verifier-only pass@1, paired p < 0.05 over >= 5 seeds, and B2 > B1",
+  "reference_points": {
+    "Gemma-4 E4B published": 8.0,
+    "Nemotron-Terminal-8B": 13.0,
+    "Opus 4.6 + Terminus 2 (TB 2.0)": 62.9,
+    "Qwen3.5-9B (untuned)": 9.2,
+    "Tmax 9B (RL-specialised)": 27.0,
+    "ours: A0 interim (176/445, 32k ctx, FP8)": 3.3333
+  },
+  "runtime_s": {
+    "a0_frame": 0.974,
+    "f1": 0.115,
+    "f10": 0.41,
+    "f1b": 0.131,
+    "f2": 0.168,
+    "f2_lengths": 0.178,
+    "f3": 0.015,
+    "f4": 0.073,
+    "f5": 0.104,
+    "f5_sim": 0.749,
+    "f6_gradnorm": 0.068,
+    "f6_rewards": 0.085,
+    "f6_surrogate": 0.083,
+    "f7": 4.542,
+    "f8_clusters": 0.267,
+    "f8_leakage": 0.159,
+    "f8_tasks": 0.326,
+    "f9": 0.126,
+    "f9_stats": 0.636,
+    "g4_parse": 0.008,
+    "judge_replay": 0.212
+  },
+  "stats": {
+    "mcnemar_demo": {
+      "b": 6,
+      "c": 0,
+      "method": "exact",
+      "note": "89 synthetic paired tasks: A ~ 8 %, B adds ~6 pp",
+      "p": 0.0312,
+      "synthetic": true
+    },
+    "wilson_halfwidth_pp": {
+      "n178": {
+        "p0.05": 3.31,
+        "p0.1": 4.44,
+        "p0.15": 5.24
+      },
+      "n267": {
+        "p0.05": 2.67,
+        "p0.1": 3.62,
+        "p0.15": 4.28
+      },
+      "n356": {
+        "p0.05": 2.3,
+        "p0.1": 3.13,
+        "p0.15": 3.71
+      },
+      "n445": {
+        "p0.05": 2.05,
+        "p0.1": 2.8,
+        "p0.15": 3.32
+      },
+      "n89": {
+        "p0.05": 4.81,
+        "p0.1": 6.32,
+        "p0.15": 7.41
+      }
+    }
+  },
+  "versions": {
+    "numpy": "2.3.5",
+    "pandas": "3.0.3",
+    "python": "3.12.3",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.14.1"
+  }
+}

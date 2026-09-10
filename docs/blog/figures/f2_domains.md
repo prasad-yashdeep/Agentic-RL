@@ -1,0 +1,10 @@
+| domain | n_tasks | tasks |
+|---|---|---|
+| build-and-port | 14 | build-pmars, build-pov-ray, build-cython-ext, compile-compcert, caffe-cifar-10, modernize-scientific-stack, rstan-to-pystan, fix-ocaml-gc, custom-memory-heap-crash, cobol-modernization, make-doom-for-mips, install-windows-3.11, qemu-startup, qemu-alpine-ssh |
+| git-vcs | 5 | fix-git, git-multibranch, git-leak-recovery, sanitize-git-repo, configure-git-webserver |
+| security-crypto-forensics | 10 | crack-7z-hash, password-recovery, feal-differential-cryptanalysis, feal-linear-cryptanalysis, vulnerable-secret, fix-code-vulnerability, extract-elf, db-wal-recovery, openssl-selfsigned-cert, model-extraction-relu-logits |
+| text-data-processing | 14 | regex-log, regex-chess, log-summary-date-ranges, large-scale-text-editing, multi-source-data-merger, financial-document-processor, count-dataset-tokens, reshard-c4-data, gcode-to-text, write-compressor, overfull-hbox, code-from-image, extract-moves-from-video, video-processing |
+| services-systems | 13 | nginx-request-logging, mailman, pypi-server, kv-store-grpc, cancel-async-tasks, headless-terminal, filter-js-from-html, break-filter-js-from-html, sqlite-db-truncate, sqlite-with-gcov, query-optimize, sparql-university, llm-inference-batching-scheduler |
+| ml-dl | 11 | hf-model-inference, pytorch-model-cli, pytorch-model-recovery, torch-pipeline-parallelism, torch-tensor-parallelism, train-fasttext, sam-cell-seg, mteb-leaderboard, mteb-retrieve, gpt2-codegolf, tune-mjcf |
+| science-math-optimization | 16 | largest-eigenval, portfolio-optimization, raman-fitting, adaptive-rejection-sampler, distribution-search, constraints-scheduling, bn-fit-modify, mcmc-sampling-stan, protein-assembly, dna-assembly, dna-insert, circuit-fibsqrt, path-tracing, path-tracing-reverse, chess-best-move, merge-diff-arc-agi-task |
+| languages-interpreters-proofs | 6 | make-mips-interpreter, polyglot-c-py, polyglot-rust-c, schemelike-metacircular-eval, winning-avg-corewars, prove-plus-comm |

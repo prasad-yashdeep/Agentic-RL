@@ -1,0 +1,12 @@
+| category | n | hint |
+|---|---|---|
+| error:RuntimeError | 10 | infra: container image conversion / runtime |
+| error:AgentTimeoutError | 9 | agent hit the wall-clock budget |
+| error:EnvironmentStartTimeoutError | 3 | sandbox failed to start in time |
+| error:BadRequestError | 2 | model endpoint rejected a request (e.g. max_tokens=0 context overrun) |
+| error:VerifierTimeoutError | 2 | verifier hit its time budget |
+| pass | 5 | verifier reward 1 |
+| fail:verifier_partial | 73 | some pytest tests passed |
+| fail:verifier_all_failed | 72 | no test passed / no ctrf |
+| context_summarized | 11 | Terminus 2 compacted context at least once (overlaps other rows) |
+| unverified | 0 | no verifier result |

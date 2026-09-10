@@ -1,0 +1,13 @@
+label,rank,nn_label,cosine
+make-mips-interpreter,1,make-doom-for-mips,0.8076809048652649
+make-doom-for-mips,1,make-mips-interpreter,0.8076809048652649
+polyglot-c-py,1,polyglot-rust-c,0.8035348653793335
+polyglot-rust-c,1,polyglot-c-py,0.803534746170044
+feal-differential-cryptanalysis,1,feal-linear-cryptanalysis,0.7873249053955078
+feal-linear-cryptanalysis,1,feal-differential-cryptanalysis,0.7873249053955078
+break-filter-js-from-html,1,filter-js-from-html,0.7638260126113892
+filter-js-from-html,1,break-filter-js-from-html,0.7638258337974548
+torch-pipeline-parallelism,1,torch-tensor-parallelism,0.6887639760971069
+torch-tensor-parallelism,1,torch-pipeline-parallelism,0.6887639760971069
+sqlite-db-truncate,1,db-wal-recovery,0.6797159910202026
+db-wal-recovery,1,sqlite-db-truncate,0.679715633392334

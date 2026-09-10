@@ -1,0 +1,9 @@
+| agent_turn | retokenized_span | completion_tokens | delta | has_reasoning | n_commands | terminus_chat_span |
+|---|---|---|---|---|---|---|
+| 1 | 158 | 562 | -404 | True | 1 | 189 |
+| 2 | 187 | 539 | -352 | True | 1 | 219 |
+| 3 | 172 | 1043 | -871 | True | 1 | 211 |
+| 4 | 179 | 299 | -120 | False | 3 | 258 |
+| 5 | 200 | 805 | -605 | True | 4 | 318 |
+| 6 | 97 | 127 | -30 | False | 0 | 116 |
+| 7 | 61 | 91 | -30 | False | 0 | 80 |
