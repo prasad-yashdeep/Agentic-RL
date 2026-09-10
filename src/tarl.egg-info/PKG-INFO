@@ -14,3 +14,12 @@ Requires-Dist: httpx>=0.27
 Requires-Dist: pyyaml>=6.0
 Requires-Dist: numpy
 Requires-Dist: scipy
+Requires-Dist: pandas>=2.2
+Requires-Dist: rich>=13
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: matplotlib>=3.9; extra == "dev"
+Requires-Dist: ipykernel>=6.29; extra == "dev"
+Requires-Dist: nbconvert>=7.16; extra == "dev"
+Requires-Dist: nbclient>=0.10; extra == "dev"
+Requires-Dist: nbformat>=5.10; extra == "dev"

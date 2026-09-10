@@ -14,3 +14,9 @@ traces/raw/
 jobs/
 jobs-*/
 .serve-thinking
+runs/
+.cache/
+notebooks/_out/
+*.nbconvert.ipynb
+experiments/derived/*.npz
+jobs-nb/

@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "terminal-agent-rl: GRPO on terminal tasks with LLM-judge-shaped rewards"
 requires-python = ">=3.12"
 dependencies = [
+    # NOTE: the working venv carries transformers 5.14.1 (configs/lockfile.txt); the pin below is the
+    # M0.1 freeze (configs/pins.md). Always install this package with `uv pip install --no-deps -e .`
+    # so a re-resolve never downgrades the cu128/cu129 stack.
     "transformers==5.5.4",
     "trl>=1.8,<1.9",
     "vllm>=0.22",
@@ -15,7 +18,22 @@ dependencies = [
     "pyyaml>=6.0",
     "numpy",
     "scipy",
+    "pandas>=2.2",
+    "rich>=13",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "matplotlib>=3.9",
+    "ipykernel>=6.29",
+    "nbconvert>=7.16",
+    "nbclient>=0.10",
+    "nbformat>=5.10",
+]
+
+[project.scripts]
+tarl = "tarl.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -23,3 +41,13 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"
+markers = [
+    "real_data: needs the recorded job directories (jobs/, jobs-g4/, g4.log) on disk",
+    "gemma_tok: needs the Gemma-4 tokenizer in the offline HF cache",
+    "embed_model: needs the MiniLM sentence-embedding weights in the offline HF cache",
+    "gpu: needs a CUDA GPU (node08)",
+]

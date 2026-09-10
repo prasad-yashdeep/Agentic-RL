@@ -6,7 +6,12 @@ temperature: 0.0
 env_key: XAI_API_KEY       # lives in ~/.config/tarl/env (chmod 600, never in git)
 rubric: configs/judge/rubric-v1.md   # written in M2.1; version-hashed into every score
 max_input_tokens: 15000    # compressed-trace budget
-cost_cap_usd_per_run: 500  # alarms.py hard-stops judge calls past this
+cost_cap_usd_per_run: 500  # tarl.judge.cost.CostCappedJudge stops live calls past this
+# Conservative placeholder prices (USD per million tokens) used by the cost meter until confirmed
+# from the xAI console; overestimating is the safe direction for a cap.
+price_usd_per_mtok:
+  input: 5.0
+  output: 25.0
 
 # Fallback (config flip, no code change) if G2/G3 fail:
 fallback:

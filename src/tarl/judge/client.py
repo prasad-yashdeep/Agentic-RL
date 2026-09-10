@@ -47,6 +47,7 @@ class JudgeClient:
             timeout=timeout_s,
         )
         self.model = model
+        self.name = model  # Judge protocol
         self.temperature = temperature
         self.max_retries = max_retries
         self.total_prompt_tokens = 0

@@ -1,0 +1,25 @@
+# Registry of evaluation/training runs the notebook and blog read (single source for the results table).
+# status: interim | pending | done. Add job dirs as runs complete on node08.
+arms:
+  A0:
+    description: baseline, raw gemma-4-E4B-it (FP8, thinking-ON, t=1.0, 32k ctx), Terminus 2 on TB 2.1
+    status: interim
+    seeds: 1
+    jobs: [jobs/2026-07-21__05-38-50]
+    note: stopped at 176/445 trials on 2026-07-21 to prioritise the pipeline proof; full 5x89 rerun pending
+  B1:
+    description: GRPO, verifier-only reward (lambda_judge=0) - cold-start control
+    status: pending
+    seeds: 0
+    jobs: []
+  B2:
+    description: GRPO, verifier + judge-shaped gated reward (lambda_judge=0.5) - headline
+    status: pending
+    seeds: 0
+    jobs: []
+  B3:
+    description: self-STaR warm-start on own passing rollouts, then B2 recipe
+    status: pending
+    seeds: 0
+    jobs: []
+pre_registered_success: "B2 - A0 >= +5 pp verifier-only pass@1, paired p < 0.05 over >= 5 seeds, and B2 > B1"

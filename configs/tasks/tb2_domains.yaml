@@ -1,0 +1,103 @@
+# Hand-curated v1 taxonomy of the 89 Terminal-Bench 2.1 tasks (author's grouping, 2026-09-09).
+# Replace with `task.toml` category/tags once the TB2 clone on node08 is reachable
+# (`tarl data task-meta --tb-path /tmp/tb2`). tests/test_domains.py asserts this covers exactly
+# the 89 task names in jobs/2026-07-21__05-38-50/lock.json.
+version: v1-hand-curated
+domains:
+  build-and-port:
+    - build-pmars
+    - build-pov-ray
+    - build-cython-ext
+    - compile-compcert
+    - caffe-cifar-10
+    - modernize-scientific-stack
+    - rstan-to-pystan
+    - fix-ocaml-gc
+    - custom-memory-heap-crash
+    - cobol-modernization
+    - make-doom-for-mips
+    - install-windows-3.11
+    - qemu-startup
+    - qemu-alpine-ssh
+  git-vcs:
+    - fix-git
+    - git-multibranch
+    - git-leak-recovery
+    - sanitize-git-repo
+    - configure-git-webserver
+  security-crypto-forensics:
+    - crack-7z-hash
+    - password-recovery
+    - feal-differential-cryptanalysis
+    - feal-linear-cryptanalysis
+    - vulnerable-secret
+    - fix-code-vulnerability
+    - extract-elf
+    - db-wal-recovery
+    - openssl-selfsigned-cert
+    - model-extraction-relu-logits
+  text-data-processing:
+    - regex-log
+    - regex-chess
+    - log-summary-date-ranges
+    - large-scale-text-editing
+    - multi-source-data-merger
+    - financial-document-processor
+    - count-dataset-tokens
+    - reshard-c4-data
+    - gcode-to-text
+    - write-compressor
+    - overfull-hbox
+    - code-from-image
+    - extract-moves-from-video
+    - video-processing
+  services-systems:
+    - nginx-request-logging
+    - mailman
+    - pypi-server
+    - kv-store-grpc
+    - cancel-async-tasks
+    - headless-terminal
+    - filter-js-from-html
+    - break-filter-js-from-html
+    - sqlite-db-truncate
+    - sqlite-with-gcov
+    - query-optimize
+    - sparql-university
+    - llm-inference-batching-scheduler
+  ml-dl:
+    - hf-model-inference
+    - pytorch-model-cli
+    - pytorch-model-recovery
+    - torch-pipeline-parallelism
+    - torch-tensor-parallelism
+    - train-fasttext
+    - sam-cell-seg
+    - mteb-leaderboard
+    - mteb-retrieve
+    - gpt2-codegolf
+    - tune-mjcf
+  science-math-optimization:
+    - largest-eigenval
+    - portfolio-optimization
+    - raman-fitting
+    - adaptive-rejection-sampler
+    - distribution-search
+    - constraints-scheduling
+    - bn-fit-modify
+    - mcmc-sampling-stan
+    - protein-assembly
+    - dna-assembly
+    - dna-insert
+    - circuit-fibsqrt
+    - path-tracing
+    - path-tracing-reverse
+    - chess-best-move
+    - merge-diff-arc-agi-task
+  languages-interpreters-proofs:
+    - make-mips-interpreter
+    - polyglot-c-py
+    - polyglot-rust-c
+    - schemelike-metacircular-eval
+    - winning-avg-corewars
+    - prove-plus-comm
