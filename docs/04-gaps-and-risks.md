@@ -42,3 +42,11 @@ work pending · 🔴 open — needs a decision/action before the affected phase.
 |---|---|---|---|
 | 18 | Phase 2 (computer/VM GUI envs) is a different research problem | ✅ scoped | Explicit phase gate; keep env behind Harbor's abstraction (already has computer-use backends); don't promise it on 2×A4000. |
 | 19 | Leaderboard submission integrity rules (post-scandal): ATIF trajectories + judge review; hacked verifiers ⇒ zeroed | ✅ design | We keep ATIF trajectories and run the internal audit anyway (same artifact as gap 7). |
+
+## Added 2026-09-09 (found while building the code map / notebook)
+
+| # | Gap | Status | Action |
+|---|---|---|---|
+| 20 | **Trainer tokens ≠ rollout tokens (gap 9 was real).** `06_grpo_micro.build_example` rendered `steps[].message` prose; no commands/observations/thinking in the G4 sequence; the Gemma-4 template merges consecutive same-role turns → one model turn, unstable prefix tokenisation. | 🔶 | `tarl.data.examples` renders the real alternating conversation (`terminus_chat`) with offsets-based masks; `08_grpo_run.py` defaults to it; verify `--collect-rollout-details` (vLLM `return_token_ids`) on node08 and add the trainer-vs-vLLM align check (notebook §11) as a startup gate. |
+| 21 | **Judge scored claims, not actions.** The compressor sent narrative only, contradicting the rubric's "score actions, never claims". | 🔶 | `compress(include_actions=True, task_only=True)` is the default for new runs; re-run G2/G3 in that mode; keep legacy rendering only for replaying historical verdicts. |
+| 22 | Judge scores were never persisted per trial (only `g4.log` stdout). | ✅ | `scripts/08_grpo_run.py` writes `rollouts.jsonl` with score + rationale + prompt hash; `experiments/derived/g4-replay.jsonl` reconstructs the G4 verdicts (order-inferred). |

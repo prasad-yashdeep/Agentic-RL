@@ -182,3 +182,25 @@ mandatory, **sync cadence must exceed bf16 ulp: sub-ulp ΔW folds into merges as
 production sync every N steps with N·ΔW > ulp, or higher-precision export.
 M2 status: judge lane DONE (G2/G3-mini), trainer loop DONE (G4). Pipeline proof complete —
 ready for loop-back (full A0) + module extraction + B1/B2 scale-up.
+
+## 2026-09-09 code gap-fill + anchor notebook + explainer page (no new runs; all GPU nodes down)
+
+- Added the `tarl` package (data loader, judge replay/mock/cost/alarms/config, training math + run loop,
+  eval stats, embeddings, CLI, viz), `scripts/08_grpo_run.py`, 64 tests (`make test`, node03), the anchor
+  notebook `notebooks/00_terminal_agent_rl_poc.ipynb` (→ `docs/blog/figures/headline.json` + 55 figure/table
+  files) and the explainer page `docs/blog/terminal-agent-rl.html`. Map: docs/05-code-map.md.
+- Reproduced from disk: A0 interim 5/150 = 3.33 % [1.4, 7.6]; mean per-task 3.61 %; judge pilot mean 0.304
+  sd 0.128; all 40 G4 rewards/advantages reproduce from replayed judge scores (`make dry-run` →
+  `DRY_RUN_PARITY_OK`).
+- **Finding 1 (trainer fidelity):** `06_grpo_micro.build_example` tokenised `steps[].message` (Harbor's
+  "Analysis:/Plan:" prose); commands/observations/thinking were never in the G4 sequence. The Gemma-4 chat
+  template also merges consecutive `assistant` messages, so the episode became one model turn and prefix
+  tokenisation was not stable (5 mask tokens shift on the solved fix-git episode). G4 stands as a plumbing
+  proof. Fix: `tarl.data.examples` `render="terminus_chat"` (+ offsets-based mask); token-exact path needs
+  Harbor `collect_rollout_details` (verify vLLM `return_token_ids` on node08).
+- **Finding 2 (judge input):** `compress()` rendered only `message`; the judge never saw keystrokes or screen
+  output — pilot/G4 scores are narrative-only. Fix: `compress(include_actions=True, task_only=True)`, default
+  in scripts/08; re-run the G2 pilot in that mode before B2.
+- Reconstructed token counts on fix-git__2E66fzc: legacy 1,821 tokens (1,054 trained) vs terminus_chat 3,215
+  (1,391 trained) vs 3,466 actually generated — both above the 1,536 cap → fused linear-CE is on the critical
+  path for real runs.
