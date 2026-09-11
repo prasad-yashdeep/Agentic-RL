@@ -31,9 +31,22 @@ make dry-run       # G4 replay through scripts/08 → DRY_RUN_PARITY_OK
 make notebook      # figures + headline.json (node03)
 .venv/bin/python docs/blog/build_page.py             # rebuild the page, then republish the Artifact
 ```
-After node08 returns: start the serve, `tarl data task-meta --tb-path /tmp/tb2`, rerun the notebook with
-`TARL_GPU_CELLS=1 CUDA_VISIBLE_DEVICES=1` on node08, run `scripts/08_grpo_run.py` (B1 then B2), register the
-jobs in `experiments/runs.yaml`, rerun the notebook, rebuild and republish the page.
+After node08 returns: `make exp` launches `scripts/09_experiments.sh` in tmux `exp` on node08 — health/serve/smoke,
+notebook GPU cells, A0 resume, Endless Terminals prep, A0 on ET-dev, B1, B1 eval, B2 (only once
+`experiments/.allow-judge-spend` exists), B2 eval; `make exp-log` follows it, `runs/driver/<phase>.done` markers make
+every phase idempotent. Then register the job dirs in `experiments/runs.yaml`, rerun the notebook, rebuild and
+republish the page.
+
+### Training corpus (added 2026-09-10)
+
+| module / file | what | notes |
+|---|---|---|
+| `tarl.data.endless` | Endless Terminals snapshot → Harbor tree → `.sif` images; splits; leakage guard | `download`, `list_tasks/read_task/task_table`, `split/write_splits`, `convert` (adds `docker_image`), `build_sif/ensure_sifs` (apptainer, node-local, locked), `leakage_guard` (MiniLM vs TB2 instructions) |
+| `tarl data et …` | CLI: `download | table | split | convert | build-sif | leakage` | `leakage` exits 3 when any training task is within cosine 0.85 of a TB2 task |
+| `RunConfig` flags | `--task-source endless`, `--tasks-file`, `--tasks-per-step N`, `--sample-strategy`, `--sif-workers` | per-step curriculum sampling; `HarborRolloutSource(before_collect=…)` builds images first |
+| `scripts/09_experiments.sh` | the unattended sequence on node08 (tmux `exp`) | knobs via `TARL_*` env; logs in `runs/driver/` |
+| `scripts/_node08_health.sh` | one-shot node08 report | run before anything else after a reboot |
+| paths | `ET_ROOT` `/nfs-share/datasets/endless-terminals`, `ET_HARBOR` `~/datasets/endless-terminals-harbor`, `ET_SIF` `/var/tmp/tarl/et-sif`, `ET_SPLITS` | env overrides `TARL_ET_ROOT/HARBOR/SIF` |
 
 ## Findings recorded while building this (2026-09-09)
 1. The G4 trainer tokenised Harbor's "Analysis/Plan" prose (`message`), not the JSON actions, commands or

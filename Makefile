@@ -9,7 +9,7 @@ ENV   := PYTHONDONTWRITEBYTECODE=1 HF_HOME=$(HOME)/hf-cache HF_HUB_OFFLINE=1 TRA
 NB    ?= 00_terminal_agent_rl_poc.ipynb
 T     ?= tests/test_advantages.py
 
-.PHONY: install-dev kernel embed-model test test-local dry-run notebook lint clean-figures
+.PHONY: install-dev kernel embed-model test test-local dry-run notebook lint clean-figures exp exp-log exp-status
 
 install-dev:  ## dev deps + console script (headnode ok; never re-resolves the CUDA stack)
 > df -h $(HOME) | tail -1
@@ -39,3 +39,12 @@ lint:         ## byte-compile + whitespace check
 
 clean-figures:
 > rm -f docs/blog/figures/*.svg docs/blog/figures/*.md docs/blog/figures/*.csv docs/blog/figures/*.html docs/blog/figures/headline.json
+
+exp:          ## launch the unattended experiment driver on node08 (tmux `exp`); TARL_PHASES="..." to subset
+> ssh -o BatchMode=yes node08 'tmux has-session -t exp 2>/dev/null && echo "exp already running" || tmux new -d -s exp "cd $(REPO) && TARL_PHASES=\"$(TARL_PHASES)\" bash scripts/09_experiments.sh"'
+
+exp-log:      ## follow the driver log
+> tail -n 40 -f $(REPO)/runs/driver/driver.log
+
+exp-status:   ## phase markers + last log lines
+> ls -la $(REPO)/runs/driver/*.done 2>/dev/null; tail -n 15 $(REPO)/runs/driver/driver.log 2>/dev/null

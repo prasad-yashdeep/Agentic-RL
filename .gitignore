@@ -20,3 +20,5 @@ notebooks/_out/
 *.nbconvert.ipynb
 experiments/derived/*.npz
 jobs-nb/
+.serve-model
+jobs-et/

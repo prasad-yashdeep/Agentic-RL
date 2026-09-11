@@ -6,7 +6,7 @@ import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, Sequence
+from typing import Callable, Protocol, Sequence
 
 from tarl.common.env import refuse_on_headnode
 from tarl.common.paths import REPO
@@ -33,7 +33,7 @@ class RolloutRecord:
 
 
 class RolloutSource(Protocol):
-    def collect(self, step: int) -> list[RolloutRecord]: ...
+    def collect(self, step: int, tasks: Sequence[str] | None = None) -> list[RolloutRecord]: ...
 
 
 class ReplayRolloutSource:
@@ -48,15 +48,16 @@ class ReplayRolloutSource:
         self.step_to_job = step_to_job
         self.last_job: Path | None = None
 
-    def collect(self, step: int) -> list[RolloutRecord]:
+    def collect(self, step: int, tasks: Sequence[str] | None = None) -> list[RolloutRecord]:
         name = self.step_to_job.get(step)
         if name is None:
             raise KeyError(f"no recorded job for step {step} (have {sorted(self.step_to_job)})")
         job = self.jobs_dir / name
         self.last_job = job
         out = [RolloutRecord.from_trial(step, t) for t in legacy_rollout_order(job)]
-        if self.tasks is not None:
-            out = [r for r in out if r.task in self.tasks]
+        keep = set(tasks) if tasks else self.tasks
+        if keep is not None:
+            out = [r for r in out if r.task in keep]
         return out
 
 
@@ -64,20 +65,30 @@ class HarborRolloutSource:
     """Launch `harbor run` (Terminus 2, singularity backend) against the local vLLM serve and read the
     newest job dir back — scripts/06_grpo_micro.py:105-135 behind one class. node08 only."""
 
-    def __init__(self, cfg, *, env_sh: Path = REPO / "scripts" / "env.sh"):
+    def __init__(
+        self,
+        cfg,
+        *,
+        env_sh: Path = REPO / "scripts" / "env.sh",
+        before_collect: Callable[[list[str]], None] | None = None,
+    ):
         refuse_on_headnode("harbor rollouts")
         self.cfg = cfg
         self.env_sh = env_sh
+        self.before_collect = before_collect  # e.g. build the Endless Terminals .sif images for this step's tasks
         self.last_job: Path | None = None
 
-    def collect(self, step: int) -> list[RolloutRecord]:
+    def collect(self, step: int, tasks: Sequence[str] | None = None) -> list[RolloutRecord]:
         from tarl.serving.harbor_cmd import build_harbor_cmd
 
         cfg = self.cfg
+        step_tasks = list(tasks) if tasks else list(cfg.tasks)
+        if self.before_collect is not None:
+            self.before_collect(step_tasks)
         cfg.jobs_dir.mkdir(parents=True, exist_ok=True)
         cmd = build_harbor_cmd(
             tb_path=cfg.tb_path,
-            tasks=cfg.tasks,
+            tasks=step_tasks,
             k=cfg.G,
             jobs_dir=cfg.jobs_dir,
             temperature=cfg.temperature,
@@ -92,4 +103,4 @@ class HarborRolloutSource:
             raise RuntimeError(f"no rollout job dir; harbor stderr: {r.stderr[-500:]}")
         self.last_job = jobs[-1]
         out = [RolloutRecord.from_trial(step, t) for t in legacy_rollout_order(self.last_job)]
-        return [ro for ro in out if ro.task in set(cfg.tasks)]
+        return [ro for ro in out if ro.task in set(step_tasks)]

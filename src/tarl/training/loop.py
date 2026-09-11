@@ -8,10 +8,11 @@ given asserts parity with the historical g4.log (R and advantages per task group
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Sequence
 
 from tarl.common.env import has_cuda, hostname, require_cuda
 from tarl.data.examples import build_example, load_gemma_tokenizer, load_serve_chat_template, to_tensors
@@ -83,8 +84,9 @@ def run_step(
     chat_template: str | None = None,
     log: Callable[[str], None] = print,
     serve=None,
+    tasks: Sequence[str] | None = None,
 ) -> StepResult:
-    ros = source.collect(step)
+    ros = source.collect(step, tasks=tasks)
     job = getattr(source, "last_job", None)
     log(f"step {step}: {len(ros)} clean rollouts from {job.name if job else '?'}")
     fired = score_rollouts(
@@ -204,6 +206,28 @@ class _ServeSync:
         return {"adapter_hash": h, "probe_changed": changed, "merged_dir": str(self.cfg.merged_dir)}
 
 
+def sample_step_tasks(cfg: RunConfig, curriculum: Curriculum) -> list[str] | None:
+    """The tasks to roll out this step: None = every configured task (06 behaviour); otherwise a
+    curriculum sample of `tasks_per_step` distinct pool tasks."""
+    if not cfg.tasks_per_step or cfg.tasks_per_step >= len(cfg.tasks):
+        return None
+    return curriculum.sample(cfg.tasks_per_step, cfg.sample_strategy)
+
+
+def _sif_hook(cfg: RunConfig, log):
+    """Endless Terminals only: make sure this step's images exist before `harbor run` validates task.toml."""
+    if cfg.task_source != "endless":
+        return None
+    from tarl.data.endless import ensure_sifs
+
+    def hook(tasks: list[str]) -> None:
+        t0 = time.time()
+        built = ensure_sifs(tasks, workers=cfg.sif_workers, log=log)
+        log(f"sifs ready for {len(built)} task(s) in {time.time() - t0:.0f}s")
+
+    return hook
+
+
 def run(cfg: RunConfig, *, log_to_stdout: bool = True) -> Path:
     cfg.validate()
     ts = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
@@ -236,7 +260,7 @@ def run(cfg: RunConfig, *, log_to_stdout: bool = True) -> Path:
         step_to_job = {s.step: s.job for s in g4.steps} if g4 else None
         source: RolloutSource = ReplayRolloutSource(cfg.replay_jobs, step_to_job, tasks=cfg.tasks)
     else:
-        source = HarborRolloutSource(cfg)
+        source = HarborRolloutSource(cfg, before_collect=_sif_hook(cfg, log))
 
     model = opt = serve = None
     if not cfg.dry_run and not cfg.no_train:
@@ -265,9 +289,14 @@ def run(cfg: RunConfig, *, log_to_stdout: bool = True) -> Path:
                 g4_step = g4.step(step)
             except KeyError:
                 g4_step = None
+        step_tasks = sample_step_tasks(cfg, curriculum)
+        if step_tasks is not None:
+            writer.write({"kind": "sample", "step": step, "tasks": step_tasks, "fallback": curriculum.last_sample_fallback,
+                          "trainable_fraction": curriculum.trainable_fraction()})
+            log(f"step {step}: sampled {step_tasks} (strategy={cfg.sample_strategy}, band fallback={curriculum.last_sample_fallback})")
         res = run_step(
             step, cfg, source, judge, rubric, rubric_hash, tok, model, opt, writer, rw, alarms,
-            curriculum=curriculum, g4_step=g4_step, chat_template=chat_template, log=log, serve=serve,
+            curriculum=curriculum, g4_step=g4_step, chat_template=chat_template, log=log, serve=serve, tasks=step_tasks,
         )
         results.append(res)
         if res.parity_ok is False:

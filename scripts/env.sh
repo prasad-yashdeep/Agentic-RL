@@ -4,6 +4,7 @@ export HF_HOME="$HOME/hf-cache"
 export HARBOR_FALLBACK_CONTEXT_LIMIT=32768  # match vLLM --max-model-len (patch 3, 03_patch_harbor.sh)
 export APPTAINER_CACHEDIR=/var/tmp/tarl/apptainer-cache  # 39G partition; /tmp symlinks here
 export TARL_SIF_CACHE=/var/tmp/tarl/sif-cache  # 39G partition; /tmp/sif-cache symlinks here
+export TARL_ET_SIF=/var/tmp/tarl/et-sif  # Endless Terminals task images (tarl.data.endless), ~50 MB each
 # PATH order matters, leftmost wins:
 #  1. shims/          — singularity shim: rewrites exec to extracted sandbox dirs
 #                       (squashfuse statx hang breaks uv/uvx in every TB2 verifier)

@@ -204,3 +204,47 @@ ready for loop-back (full A0) + module extraction + B1/B2 scale-up.
 - Reconstructed token counts on fix-git__2E66fzc: legacy 1,821 tokens (1,054 trained) vs terminus_chat 3,215
   (1,391 trained) vs 3,466 actually generated — both above the 1,536 cap → fused linear-CE is on the critical
   path for real runs.
+
+## 2026-09-10 — node08 powered on but unreachable; training corpus wired (Endless Terminals)
+
+- **node08 and node04 answer ping but no TCP port** (22, 9100, 9400 all dropped) since power-on; Slurm still
+  `NOT_RESPONDING`. Consistent with both nodes sitting in the BCM node-installer (provisioning never finished)
+  — needs the BMC console or cmsupport. Nothing GPU-side ran today; everything below was prepared on the
+  headnode (file work) and node03 (tests, image-build validation, embeddings).
+- **Training corpus decision (gap #3, docs/02 §3): Endless Terminals** — HF `obiwan96/endless-terminals`
+  (arXiv:2601.16443, MIT): 2,492 Harbor-format tasks, 106 MB without the bundled model traces, now at
+  `/nfs-share/datasets/endless-terminals` (git clone; the per-file HF download hit 429 rate limits).
+  Every task: `instruction.md`, `environment/container.def` (`Bootstrap: localimage` from one shared
+  `ubuntu_22.04.sif` + a %post script), pytest `tests/test_final_state.py`, `tests/test.sh` (uvx pytest →
+  `/logs/verifier/reward.txt`), `solution/solve.sh`. All 2,492 are tagged easy/programming. `task.toml`
+  carries **no `docker_image`**, which the singularity backend requires, so `tarl data et convert` writes
+  `docker_image = /var/tmp/tarl/et-sif/<task>.sif` (converted tree: `~/datasets/endless-terminals-harbor`)
+  and `tarl data et build-sif` builds the image with `apptainer build --fakeroot` from the def.
+  **Validated on node03** (unprivileged userns, fakeroot-compat): base pull 30 MB in 6 s, task image 50 MB
+  in 19 s, `%post` apt-get/pip under the fakeroot command fine. terminal-bench-rl (Dockerfile-only, 331
+  tasks) is out until we have a Docker builder; `termigen-environments@1.0` (3,566 Docker images, in the
+  Harbor registry) is the fallback corpus.
+- **Leakage guard** (MiniLM nearest neighbour of every ET instruction against the 90 TB 2.1 instructions,
+  `~/datasets/terminal-bench-2-1` @ 7131e43): max cosine 0.71 (`openssl-selfsigned-cert`,
+  `log-summary-date-ranges`), **0 drops at 0.85, 0 in the review band** → `experiments/derived/et-leakage.csv`.
+  Canary scan over all instructions + tests: 0 hits. `experiments/derived/et-tasks.csv` = the task table.
+- **Split** seed 0, dev 10 %: train 2,243 / dev 249 (`experiments/et-splits.json`). First-run pools: train 160,
+  dev 60 (`experiments/et-{train,dev}-pool.txt`); images for both ≈ 11 GB on node08 `/var/tmp/tarl/et-sif`.
+- **Loop**: `scripts/08_grpo_run.py --task-source endless --tasks-file <pool> --tasks-per-step N` samples N
+  pool tasks per step through the Beta-posterior curriculum (`band_uniform`; uniform until there is
+  evidence), builds any missing `.sif` before `harbor run`, and logs a `sample` record per step. Default
+  (no `--tasks-per-step`) is the 06 behaviour: every configured task every step.
+- **Serve babysitter fix**: `tarl.serving.harbor_cmd.restart_serve` writes `.serve-model`; `watch.sh` relaunches
+  the *same* merged policy after a crash (it would have reverted to the base model mid-run). The janitor now
+  also manages the ET image dir.
+- **Driver** `scripts/09_experiments.sh` (`make exp` → tmux `exp` on node08; `make exp-log`): health → serve →
+  smoke → gpu_cells → **a0_resume** (`harbor jobs resume`, re-running the infra error types
+  CancelledError/RuntimeError/EnvironmentStartTimeoutError; AgentTimeout/VerifierTimeout stay failures) →
+  et_prep → a0_etdev → **b1** → b1_eval → **b2** (gated on `experiments/.allow-judge-spend`, live grok judge,
+  cost cap $40) → b2_eval. Each phase idempotent (`runs/driver/<phase>.done`). Budget ≈ 65 h GPU wall-clock:
+  A0 ≈ 15 h, each GRPO arm ≈ 10 h (50 steps × 4 tasks × G=8), each TB 2.1 k=5 eval ≈ 15 h, ET-dev evals ≈ 1 h.
+- A0 interim error taxonomy (26): RuntimeError 10, AgentTimeoutError 9, EnvironmentStartTimeoutError 3,
+  BadRequestError 2, VerifierTimeoutError 2.
+- TB 2.1 source cloned to `~/datasets/terminal-bench-2-1` (90 tasks, 106 MB) so `/tmp/tb2` can be restored if
+  the reprovision wiped node08's `/tmp` (the driver's health phase does it).
+- Tests: 77 pass on node03 (13 new: corpus module, per-step sampling, config flags, real-snapshot layout).

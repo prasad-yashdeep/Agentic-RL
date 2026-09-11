@@ -18,13 +18,17 @@ while true; do
         serve=DOWN
         if ! tmux has-session -t serve 2>/dev/null; then
             mode=$(cat "$HOME/terminal-agent-rl/.serve-thinking" 2>/dev/null || echo 1)
+            # .serve-model = merged-policy dir written by tarl.serving.harbor_cmd.restart_serve (empty = base)
+            pol=$(head -1 "$HOME/terminal-agent-rl/.serve-model" 2>/dev/null | tr -d '[:space:]')
+            extra=""; [ -n "$pol" ] && [ -d "$pol" ] && extra="TARL_SERVE_MODEL=$pol TARL_SERVE_QUANT=fp8"
             tmux new-session -d -s serve \
-                "cd $HOME/terminal-agent-rl && TARL_THINKING=$mode bash scripts/01_serve.sh 2>&1 | tee $HOME/terminal-agent-rl/serve.log"
-            echo "$ts ALARM serve dead -> relaunched (thinking=$mode)" >> "$LOG"
+                "cd $HOME/terminal-agent-rl && TARL_THINKING=$mode $extra bash scripts/01_serve.sh 2>&1 | tee $HOME/terminal-agent-rl/serve.log"
+            echo "$ts ALARM serve dead -> relaunched (thinking=$mode model=${pol:-base})" >> "$LOG"
         fi
     fi
     bash scripts/_reaper.sh >> "$LOG" 2>&1 || true
     bash scripts/_janitor.sh || true
+    TARL_SIF_CACHE="${TARL_ET_SIF:-/var/tmp/tarl/et-sif}" bash scripts/_janitor.sh || true   # Endless Terminals images
     if [ $((tick % 60)) -eq 0 ]; then
         bash scripts/07_sync_node05.sh >> "$LOG" 2>&1 || echo "$ts ALARM node05 sync failed" >> "$LOG"
     fi

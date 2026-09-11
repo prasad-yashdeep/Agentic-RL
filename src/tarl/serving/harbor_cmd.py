@@ -70,6 +70,10 @@ def serve_healthy(base: str = SERVE_BASE, timeout_s: float = 5.0) -> bool:
 
 def restart_serve(model_dir: str | None, *, thinking: bool = True, wait_s: int = 600, base: str = SERVE_BASE) -> None:
     """tmux session `serve` <- scripts/01_serve.sh (06:72-87). node08 only."""
+    # watch.sh reads these two files when it has to relaunch a dead serve, so a crash mid-run never
+    # silently reverts the policy to the base model.
+    (REPO / ".serve-thinking").write_text("1\n" if thinking else "0\n")
+    (REPO / ".serve-model").write_text((model_dir or "") + "\n")
     subprocess.run(["bash", "-lc", "tmux kill-session -t serve 2>/dev/null; sleep 2"], check=False)
     extra = f"TARL_SERVE_MODEL={model_dir} TARL_SERVE_QUANT=fp8 " if model_dir else ""
     launch = (

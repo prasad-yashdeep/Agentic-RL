@@ -36,6 +36,14 @@ SECRETS_ENV = HOME / ".config" / "tarl" / "env"
 
 # node-local hot tier on node08 (16 GB /tmp, evicted by scripts/_janitor.sh)
 SIF_CACHE = Path(os.environ.get("TARL_SIF_CACHE", "/tmp/sif-cache"))
+# Endless Terminals (arXiv:2601.16443) — the RL training corpus (TB2 is eval-only):
+#   ET_ROOT   raw HF snapshot (obiwan96/endless-terminals) on shared NFS
+#   ET_HARBOR converted Harbor task dirs (task.toml gains docker_image=<sif>) — small, on NFS
+#   ET_SIF    per-task .sif images built from container.def — node-local (node08 /var/tmp)
+ET_ROOT = Path(os.environ.get("TARL_ET_ROOT", "/nfs-share/datasets/endless-terminals"))
+ET_HARBOR = Path(os.environ.get("TARL_ET_HARBOR", str(HOME / "datasets" / "endless-terminals-harbor")))
+ET_SIF = Path(os.environ.get("TARL_ET_SIF", "/var/tmp/tarl/et-sif"))
+ET_SPLITS = EXPERIMENTS / "et-splits.json"
 TB2_LOCAL = Path(os.environ.get("TARL_TB_PATH", "/tmp/tb2"))
 
 # capacity tier: node05 /local — big, wipeable on reprovision; reached via

@@ -182,6 +182,10 @@ artifact of the tool's formula, not a measurement.
 - Nothing in this project (serve/eval/train) can run until node08 returns.
   First checks: `sinfo -N -l`, `ssh node08 hostname`, then
   `bash ~/exporters/exporters_ctl.sh start`.
+- **2026-09-10 19:00 PDT:** node08 and node04 were powered on and answer ping, but **no TCP port is open**
+  (22, 9100, 9400 all dropped) and Slurm still says `NOT_RESPONDING` → most likely stuck in the BCM
+  node-installer (provisioning never finished). Needs the BMC console or cmsupport; nothing user-side can
+  fix it. When ssh works: `ssh node08 'bash ~/terminal-agent-rl/scripts/_node08_health.sh'`, then `make exp`.
 
 ## Other projects on this cluster (under `/home/yashp`)
 
@@ -244,6 +248,13 @@ laptop — use 8090.
   the cluster `jupyter` module is broken, always use `.venv/bin/python -m jupyter`.
 - Judge API key: `~/.config/tarl/env` holds `XAI_API_KEY` (never print it). All judge use defaults to
   replay/mock; live calls only with `--yes-spend`.
+- Training corpus (2026-09-10): **Endless Terminals** at `/nfs-share/datasets/endless-terminals` (2,492 Harbor
+  tasks, 106 MB); converted tree `~/datasets/endless-terminals-harbor`; images built per task on node08 into
+  `/var/tmp/tarl/et-sif` (≈50 MB each, `apptainer build --fakeroot`, validated on node03). TB 2.1 source clone:
+  `~/datasets/terminal-bench-2-1` (restores `/tmp/tb2`). Never train on TB2 tasks (eval set); the leakage guard
+  (`tarl data et leakage`) must pass before any run. Pools: `experiments/et-{train,dev}-pool.txt`.
+- Experiments run through `scripts/09_experiments.sh` (`make exp`, tmux `exp` on node08, log `runs/driver/`).
+  B2 spends real money on the xAI judge and only runs once `experiments/.allow-judge-spend` exists.
 - Two findings to keep in mind (details in `docs/04-gaps-and-risks.md` #20–22, `experiments/EXPERIMENTS.md`
   2026-09-09): the G4 trainer tokenised prose not actions (and the Gemma template merges consecutive
   same-role turns), and the judge pilot saw prose only. Use `render="terminus_chat"` and

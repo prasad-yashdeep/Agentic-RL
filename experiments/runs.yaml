@@ -22,4 +22,23 @@ arms:
     status: pending
     seeds: 0
     jobs: []
+  A0-ETdev:
+    description: baseline on the Endless Terminals dev pool (k=1) - cold-start p on the training distribution
+    status: pending
+    jobs: []
+  B1-ETdev:
+    description: B1 policy on the ET dev pool (k=1) - model selection metric, not the headline
+    status: pending
+    jobs: []
+  B2-ETdev:
+    description: B2 policy on the ET dev pool (k=1)
+    status: pending
+    jobs: []
+planned:  # what scripts/09_experiments.sh runs (2026-09-10); B1/B2 jobs above get filled from runs/driver/*.json
+  driver: scripts/09_experiments.sh
+  train_corpus: endless-terminals (experiments/et-train-pool.txt = 160 tasks; dev = experiments/et-dev-pool.txt, 60)
+  leakage_guard: experiments/derived/et-leakage.csv (max cosine vs TB 2.1 = 0.71, 0 drops at 0.85)
+  grpo: {G: 8, steps: 50, tasks_per_step: 4, lr: 1.0e-6, sync_every: 5, clip: [0.2, 0.28], max_seq: 1536, render: terminus_chat, temperature: 1.2}
+  eval: {tb2_k: 5, et_dev_k: 1, a0_resume_rerun_errors: [CancelledError, RuntimeError, EnvironmentStartTimeoutError]}
+  judge: {model: grok-4.5, lambda: 0.5, cost_cap_usd: 40, gate: experiments/.allow-judge-spend, prompt: actions+task_only}
 pre_registered_success: "B2 - A0 >= +5 pp verifier-only pass@1, paired p < 0.05 over >= 5 seeds, and B2 > B1"

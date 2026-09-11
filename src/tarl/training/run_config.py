@@ -6,7 +6,7 @@ import argparse
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from tarl.common.paths import BASE_MODEL, JOBS, RUNS, TB2_LOCAL
+from tarl.common.paths import BASE_MODEL, ET_HARBOR, JOBS, RUNS, TB2_LOCAL
 
 
 @dataclass
@@ -50,6 +50,13 @@ class RunConfig:
     no_tokenize: bool = False
     no_serve: bool = False
     no_train: bool = False
+    # task pool: `tb2` = the eval set (dev/plumbing only), `endless` = Endless Terminals (converted Harbor
+    # tree at tb_path, .sif built per sampled task). tasks_per_step < len(tasks) => curriculum sampling.
+    task_source: str = "tb2"
+    tasks_file: Path | None = None
+    tasks_per_step: int | None = None
+    sample_strategy: str = "band_uniform"
+    sif_workers: int = 2
 
     @property
     def arm(self) -> str:
@@ -74,6 +81,14 @@ class RunConfig:
             raise ValueError(f"render {self.render!r}")
         if self.G < 2:
             raise ValueError("G must be >= 2 (group-relative advantages need siblings)")
+        if not self.tasks:
+            raise ValueError("no tasks (pass --tasks ... or --tasks-file)")
+        if self.task_source not in ("tb2", "endless"):
+            raise ValueError(f"task_source {self.task_source!r}")
+        if self.tasks_per_step is not None and not (1 <= self.tasks_per_step <= len(self.tasks)):
+            raise ValueError(f"tasks_per_step must be in [1, {len(self.tasks)}]")
+        if self.sample_strategy not in ("band_uniform", "uncertainty", "uniform"):
+            raise ValueError(f"sample_strategy {self.sample_strategy!r}")
 
 
 def to_dict(cfg: RunConfig) -> dict:
@@ -131,6 +146,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-tokenize", action="store_true", dest="no_tokenize")
     p.add_argument("--no-serve", action="store_true", dest="no_serve")
     p.add_argument("--no-train", action="store_true", dest="no_train")
+    p.add_argument("--task-source", choices=["tb2", "endless"], default=d.task_source, dest="task_source",
+                   help="endless => --tb-path defaults to the converted Endless Terminals tree; .sif built per task")
+    p.add_argument("--tasks-file", type=Path, default=None, dest="tasks_file", help="task pool, one name per line (# comments)")
+    p.add_argument("--tasks-per-step", type=int, default=d.tasks_per_step, dest="tasks_per_step",
+                   help="sample this many pool tasks per step via the curriculum (default: run every task every step)")
+    p.add_argument("--sample-strategy", choices=["band_uniform", "uncertainty", "uniform"], default=d.sample_strategy, dest="sample_strategy")
+    p.add_argument("--sif-workers", type=int, default=d.sif_workers, dest="sif_workers")
     return p
 
 
@@ -140,6 +162,11 @@ def parse_args(argv=None) -> RunConfig:
     legacy_prompt = d.pop("judge_legacy_prompt")
     no_max_seq = d.pop("no_max_seq")
     cfg = RunConfig(**d)
+    if cfg.tasks_file is not None:
+        lines = Path(cfg.tasks_file).read_text().splitlines()
+        cfg.tasks = [ln.strip() for ln in lines if ln.strip() and not ln.lstrip().startswith("#")]
+    if cfg.task_source == "endless" and cfg.tb_path == TB2_LOCAL:
+        cfg.tb_path = ET_HARBOR
     if legacy_prompt:
         cfg.judge_include_actions = False
         cfg.judge_task_only = False

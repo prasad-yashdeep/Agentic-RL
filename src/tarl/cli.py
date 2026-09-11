@@ -11,6 +11,7 @@
     tarl embed download|leakage|clusters
     tarl run --task T [--live]        one live episode against the vLLM serve (node08 only)
     tarl data task-meta --tb-path P   regenerate the domain YAML from task.toml files
+    tarl data et <download|table|split|convert|build-sif|leakage>   Endless Terminals training corpus
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ import json
 import sys
 from pathlib import Path
 
-from tarl.common.paths import A0_JOB, G4_LOG, JOBS, JOBS_G4, PILOT_JSONL, TB2_DOMAINS, TB2_LOCAL
+from tarl.common.paths import A0_JOB, ET_HARBOR, ET_ROOT, ET_SIF, ET_SPLITS, G4_LOG, JOBS, JOBS_G4, PILOT_JSONL, TB2_DOMAINS, TB2_LOCAL
 
 
 def _print_df(df, title: str | None = None, max_rows: int = 60) -> None:
@@ -282,6 +283,74 @@ def cmd_data(a) -> int:
         Path(a.out).write_text(yaml.safe_dump(out, sort_keys=False))
         print(f"wrote {a.out}: {len(groups)} categories, {sum(len(v) for v in groups.values())} tasks")
         return 0
+    if a.data_cmd == "et":
+        return cmd_data_et(a)
+    return 1
+
+
+def _et_names(a) -> list[str]:
+    from tarl.data import endless as et
+
+    root = Path(a.root)
+    if getattr(a, "tasks", None):
+        names = list(a.tasks)
+    elif getattr(a, "split", None):
+        names = et.read_splits(Path(a.splits))[a.split]
+    else:
+        names = et.list_tasks(root)
+    lim = getattr(a, "limit", None)
+    return names[:lim] if lim else names
+
+
+def cmd_data_et(a) -> int:
+    from tarl.data import endless as et
+
+    root = Path(a.root)
+    if a.et_cmd == "download":
+        p = et.download(root)
+        print(f"snapshot at {p}: {len(et.list_tasks(p))} tasks")
+        return 0
+    if a.et_cmd == "table":
+        df = et.task_table(root, _et_names(a))
+        if a.csv:
+            df.to_csv(a.csv, index=False)
+            print(f"wrote {a.csv} ({len(df)} rows)")
+        _print_df(df.head(a.show), f"Endless Terminals ({len(df)} tasks)")
+        if len(df):
+            print("\ndifficulty:", df["difficulty"].value_counts().to_dict())
+            print("category:", df["category"].value_counts().head(12).to_dict())
+            print("canary hits:", int(df["canary_hits"].sum()), "| localimage defs:", int(df["localimage"].sum()), "/", len(df))
+        return 0
+    if a.et_cmd == "split":
+        names = et.list_tasks(root)
+        s = et.split(names, dev_frac=a.dev_frac, seed=a.seed)
+        p = et.write_splits(s, Path(a.out), root=str(root), dev_frac=a.dev_frac, seed=a.seed)
+        print(f"wrote {p}: train {len(s['train'])}, dev {len(s['dev'])} (seed {a.seed})")
+        return 0
+    if a.et_cmd == "convert":
+        names = _et_names(a)
+        paths = et.convert(names, root, out_root=Path(a.out_root), sif_dir=Path(a.sif_dir))
+        print(f"converted {len(paths)} task(s) -> {a.out_root} (docker_image -> {a.sif_dir}/<task>.sif)")
+        return 0
+    if a.et_cmd == "build-sif":
+        names = _et_names(a)
+        built = et.ensure_sifs(names, root, Path(a.sif_dir), workers=a.workers, log=print, force=a.force)
+        print(f"{len(built)} image(s) ready;", et.sif_usage(Path(a.sif_dir)))
+        return 0
+    if a.et_cmd == "leakage":
+        names = _et_names(a)
+        rep = et.leakage_guard(names, root, tb_root=Path(a.tb_root), threshold=a.threshold, top_k=a.top_k)
+        top = rep[rep["rank"] == 1].sort_values("cosine", ascending=False)
+        if a.csv:
+            rep.to_csv(a.csv, index=False)
+            print(f"wrote {a.csv} ({len(rep)} rows)")
+        _print_df(top.head(a.show), f"nearest TB2 instruction per training task (top {a.show} of {len(top)})")
+        counts = top["action"].value_counts().to_dict()
+        print(f"\nactions over {len(top)} training tasks: {counts}  (threshold {a.threshold}, drop = cosine >= threshold)")
+        if counts.get("drop", 0):
+            print("LEAKAGE: drop these before training:", ", ".join(top[top['action'] == 'drop']['train_label'].tolist()))
+            return 3
+        return 0
     return 1
 
 
@@ -386,6 +455,24 @@ def build_parser() -> argparse.ArgumentParser:
     tm = dts.add_parser("task-meta", help="regenerate the domain YAML from task.toml files")
     tm.add_argument("--tb-path", default=str(TB2_LOCAL), dest="tb_path")
     tm.add_argument("--out", default=str(TB2_DOMAINS))
+    et = dts.add_parser("et", help="Endless Terminals training corpus (download/convert/build-sif/leakage)")
+    ets = et.add_subparsers(dest="et_cmd", required=True)
+
+    def _sel(sp_):
+        sp_.add_argument("--root", default=str(ET_ROOT))
+        sp_.add_argument("--tasks", nargs="*", default=None)
+        sp_.add_argument("--split", choices=["train", "dev"], default=None)
+        sp_.add_argument("--splits", default=str(ET_SPLITS))
+        sp_.add_argument("--limit", type=int, default=None)
+
+    e0 = ets.add_parser("download"); e0.add_argument("--root", default=str(ET_ROOT))
+    e1 = ets.add_parser("table"); _sel(e1); e1.add_argument("--csv", default=None); e1.add_argument("--show", type=int, default=20)
+    e2 = ets.add_parser("split"); e2.add_argument("--root", default=str(ET_ROOT)); e2.add_argument("--dev-frac", type=float, default=0.1, dest="dev_frac")
+    e2.add_argument("--seed", type=int, default=0); e2.add_argument("--out", default=str(ET_SPLITS))
+    e3 = ets.add_parser("convert"); _sel(e3); e3.add_argument("--out-root", default=str(ET_HARBOR), dest="out_root"); e3.add_argument("--sif-dir", default=str(ET_SIF), dest="sif_dir")
+    e4 = ets.add_parser("build-sif"); _sel(e4); e4.add_argument("--sif-dir", default=str(ET_SIF), dest="sif_dir"); e4.add_argument("--workers", type=int, default=2); e4.add_argument("--force", action="store_true")
+    e5 = ets.add_parser("leakage"); _sel(e5); e5.add_argument("--tb-root", default=str(TB2_LOCAL), dest="tb_root"); e5.add_argument("--threshold", type=float, default=0.85); e5.add_argument("--top-k", type=int, default=3, dest="top_k")
+    e5.add_argument("--csv", default=None); e5.add_argument("--show", type=int, default=15)
     dt.set_defaults(fn=cmd_data)
     return p
 
