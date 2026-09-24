@@ -301,3 +301,16 @@ ready for loop-back (full A0) + module extraction + B1/B2 scale-up.
   ```
   Then `et_prep` reruns idempotently (existing SIFs are skipped), followed by a0_etdev, b1, a0_tb21, b1_eval, and b2 (still gated on `.allow-judge-spend`).
 - **Uncommitted output:** the regenerated figures from the 03:33 gpu_cells run (`docs/blog/figures/*`) are still uncommitted in the working tree.
+
+### Handover notes from the other session (Migration_to_Agent_RL), 2026-09-24 — fix before B1 when terminal-bench resumes
+
+1. **Trainer vs sampler log-prob gap.**
+   - **Setup:** a fresh adapter, i.e. the NF4 base, in fp32, on identical token ids, against an offline FP8 vLLM engine.
+   - **Assistant tokens:** mean |Δlogp| 0.28 nats, 16 % of tokens above 0.5, signed mean +0.09.
+   - **All tokens:** mean 0.63, signed +0.18.
+   - **bf16 rounding alone** accounts for only 0.01–0.02.
+   - **Why it matters:** `grpo_step` takes the "old" log-probs from the trainer, so the importance ratio is exactly 1 and B1 would be uncorrected off-policy REINFORCE.
+   - **Evidence:** `scripts/10_align_check.py` (untracked) and `runs/align/base.json`.
+2. **`max_seq=1536` is a drop filter.**
+   - `terminus_chat` renders real episodes to 2–3k+ tokens (fix-git: 3,215), so B1 would likely skip nearly every update.
+3. **Warning.** `prompt_logprobs` on a ~1k-token prompt against the live vLLM at `gpu_memory_utilization 0.87` OOM'd the gemma serve at 03:40. Use an offline engine on a free GPU for log-prob checks.
