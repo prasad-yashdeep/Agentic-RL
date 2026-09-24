@@ -75,3 +75,30 @@ def test_scripted_truncation_keeps_text_and_ids_consistent(qwen_tok):
     g = pol.generate([1, 2, 3], max_tokens=20)
     assert len(g.token_ids) == 20 and g.finish_reason == "length"
     assert qwen_tok(g.text, add_special_tokens=False)["input_ids"] == g.token_ids[:-1]
+
+
+
+def _qwen3_tok():
+    from transformers import AutoTokenizer
+
+    from sarl.paths import MODELS, model_snapshot
+
+    if not (model_snapshot("qwen3-1.7b") / "tokenizer_config.json").exists():
+        pytest.skip("Qwen3-1.7B not in the HF cache")
+    mid, rev = MODELS["qwen3-1.7b"]
+    return AutoTokenizer.from_pretrained(mid, revision=rev)
+
+
+def test_qwen3_nonthinking_deltas_and_episode():
+    """Qwen3's template is not append-only (the last assistant turn gets an empty <think> block), so deltas are taken
+    from one render; every generation prompt must end in non-thinking mode."""
+    tok = _qwen3_tok()
+    fmt = ChatFormat(tok, tools_for("tool_call"))
+    assert fmt.tool_prefix.startswith("\n<|im_start|>user\n<tool_response>\n")
+    assert fmt.tool_suffix.endswith("<|im_start|>assistant\n<think>\n\n</think>\n\n")
+    replies = [action_text("cat pkg/f.py", "read", "tool_call"), action_text(f"cat > pkg/f.py <<'EOF'\n{FIX}EOF", "fix", "tool_call"),
+               action_text(f"echo {SUBMIT}", "submit", "tool_call")]
+    tr = run_episode(ScriptedPolicy(tok, replies), MockEnv({"pkg/f.py": SRC}), _Task(), fmt, Limits(max_turns=6), protocol="tool_call")
+    assert tr.exit_reason == "submitted" and "+    return x + 1" in tr.patch
+    prompt = tok.decode(tr.ids[: tr.mask.index(1)])
+    assert prompt.endswith("<|im_start|>assistant\n<think>\n\n</think>\n\n")

@@ -70,9 +70,12 @@ class ChatFormat:
 
     PROBE = "\x00SARL_PROBE\x00"
 
-    def __init__(self, tokenizer, tools: list[dict] | None = None):
+    def __init__(self, tokenizer, tools: list[dict] | None = None, template_kwargs: dict | None = None):
         self.tok = tokenizer
         self.tools = [BASH_TOOL] if tools is None else list(tools)  # [] = no tools block (backticks protocol)
+        # Qwen3 templates take enable_thinking; sarl runs them in non-thinking mode. Templates that do not know the
+        # kwarg ignore it (Jinja), so passing it for Qwen2.5 is harmless.
+        self.template_kwargs = {"enable_thinking": False, **(template_kwargs or {})}
         self._special = sorted({t for t in getattr(tokenizer, "all_special_tokens", []) if t.startswith("<|")} |
                                {t for t in getattr(tokenizer, "added_tokens_encoder", {}) if t.startswith("<|")}, key=len, reverse=True)
         self.im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
@@ -81,18 +84,23 @@ class ChatFormat:
         self.user_prefix, self.user_suffix = self._delta("user")
 
     def _render(self, messages, gen=True) -> str:
-        return self.tok.apply_chat_template(messages, tools=self.tools or None, add_generation_prompt=gen, tokenize=False)
+        return self.tok.apply_chat_template(messages, tools=self.tools or None, add_generation_prompt=gen, tokenize=False,
+                                            **self.template_kwargs)
 
     def _delta(self, role: str) -> tuple[str, str]:
-        base = [{"role": "system", "content": "S"}, {"role": "user", "content": "U"}, {"role": "assistant", "content": "A"}]
-        before = self._render(base, gen=False)
+        """The text between the end of a sampled assistant reply (its <|im_end|>) and the start of the next one.
+
+        Derived from a single render in which the assistant turn is followed by the new turn and the generation
+        prompt. We do not require the template to be append-only: Qwen3's template renders the *last* assistant turn
+        with an empty <think></think> block but earlier ones without, so the transcript is never re-rendered — the
+        harness keeps the sampled ids, and only these deltas come from the template."""
+        base = [{"role": "system", "content": "S"}, {"role": "user", "content": "U"},
+                {"role": "assistant", "content": "SARL_ASSISTANT_REPLY"}]
         after = self._render(base + [{"role": role, "content": self.PROBE}], gen=True)
-        assert after.startswith(before), "chat template is not append-only for this turn type"
-        # `before` ends with the assistant's "<|im_end|>\n"; the policy samples "<|im_end|>" itself, so the delta
-        # starts right after that token (i.e. with the "\n").
-        cut = before.rindex("<|im_end|>") + len("<|im_end|>")
+        cut = after.index("SARL_ASSISTANT_REPLY") + len("SARL_ASSISTANT_REPLY")
         tail = after[cut:]
-        pre, post = tail.split(self.PROBE)
+        assert tail.startswith("<|im_end|>"), f"unexpected assistant turn ending: {tail[:40]!r}"
+        pre, post = tail[len("<|im_end|>"):].split(self.PROBE)  # the policy samples <|im_end|> itself
         return pre, post
 
     def encode(self, text: str) -> list[int]:

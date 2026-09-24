@@ -159,3 +159,29 @@ def contamination_report(train: Iterable[Task], evaluation: Iterable[Task]) -> d
         "base_commit": sorted({t.instance_id for t in train if t.base_commit in ev_commits}),
     }
     return {"n_train": len(train), "n_eval": len(evaluation), "hits": hits, "clean": not any(hits.values())}
+
+
+def hashed_subset(tasks: Iterable[Task], salt: str, n: int, exclude: Iterable[str] = ()) -> list[Task]:
+    """A fixed, pre-registered eval subset: order by sha256(salt + instance_id) and take the first n. Changing the
+    subset means a new salt (never edit a subset once results exist)."""
+    import hashlib
+
+    ex = set(exclude)
+    ranked = sorted((t for t in tasks if t.instance_id not in ex),
+                    key=lambda t: hashlib.sha256((salt + t.instance_id).encode()).hexdigest())
+    return ranked[:n]
+
+
+def write_subset(path: str | Path, tasks: Sequence[Task], *, salt: str, source: str, excluded: Sequence[str] = (), note: str = "") -> str:
+    """Write an id list with a provenance header; returns the sha256 of the id list (one id per line, newline-terminated)."""
+    import hashlib
+
+    ids = [t.instance_id for t in tasks]
+    body = "\n".join(ids) + "\n"
+    digest = hashlib.sha256(body.encode()).hexdigest()
+    header = [f"# pre-registered eval subset — {source}", f"# salt: {salt}   n: {len(ids)}   excluded: {', '.join(excluded) or '-'}",
+              f"# sha256(ids): {digest}", "# never edit once results exist; a new subset needs a new salt"]
+    if note:
+        header.append(f"# {note}")
+    Path(path).write_text("\n".join(header) + "\n" + body)
+    return digest

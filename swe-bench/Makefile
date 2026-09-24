@@ -31,7 +31,7 @@ grader:      ## node-local swebench==5.0.2 grader venv on node08 (/var/tmp/swe/g
 > ssh -o BatchMode=yes $(GPU_NODE) 'bash $(SWE)/scripts/11_grader_venv.sh'
 
 serve:       ## vLLM policy server on node08 GPU0 :8001 (tmux swe-serve)
-> ssh -o BatchMode=yes $(GPU_NODE) 'tmux has-session -t swe-serve 2>/dev/null && echo "swe-serve already running" || tmux new -d -s swe-serve "bash $(SWE)/scripts/20_serve_policy.sh"'
+> ssh -o BatchMode=yes $(GPU_NODE) 'tmux has-session -t swe-serve 2>/dev/null && echo "swe-serve already running" || tmux new -d -s swe-serve "SARL_MODEL=$(or $(MODEL),0.5b) bash $(SWE)/scripts/20_serve_policy.sh"'
 
 train:       ## basic GRPO run on node08 GPU1 against the serve (tmux swe-train); CONFIG=configs/basic_run.yaml
 > ssh -o BatchMode=yes $(GPU_NODE) 'tmux has-session -t swe-train 2>/dev/null && echo "swe-train already running" || tmux new -d -s swe-train "bash $(SWE)/scripts/21_train.sh $(or $(CONFIG),configs/basic_run.yaml)"'

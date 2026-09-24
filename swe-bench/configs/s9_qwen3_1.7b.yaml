@@ -1,0 +1,22 @@
+# S9 run: GRPO on the diagram's tool-call protocol with Qwen3-1.7B (serve: make serve MODEL=qwen3-1.7b).
+# Gate: >= 1 non-oracle rollout earns reward within 10 steps. Same hyper-parameters as the reference/basic run otherwise.
+name: s9-qwen3-1.7b
+model: Qwen/Qwen3-1.7B        # non-thinking mode; native <tool_call> JSON (S9 probe: 97% valid calls, 0% turn-1 submits, 0/16 resolved)
+revision: 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
+serve_url: http://localhost:8001
+served_model: policy
+pool: configs/pool_dev.txt       # SWE-bench dev split only (repos disjoint from Verified)
+split: dev
+steps: 10
+tasks_per_step: 2
+group_size: 8                    # rollouts per task (the diagram: 16)
+oracle_per_group: 1              # scripted gold-patch rollouts inside each group
+protocol: tool_call              # the diagram's protocol
+seed: 0
+sampling: {temperature: 1.0, top_p: 1.0, top_k: -1, repetition_penalty: 1.0}   # plain sampling from π (the reference used top_p 0.95/top_k 20/rep 1.05)
+limits: {max_turns: 20, max_context_tokens: 16384, max_new_tokens: 1024, wall_clock_s: 600, command_timeout_s: 60, max_obs_chars: 10000, max_format_errors: 3}   # diagram: 30 min; s8-basic-v3b step 1 waited 30 min on one rollout re-running a >120 s test suite
+train: {lr: 1.0e-5, lora_r: 8, lora_alpha: 16, targets: [q_proj, k_proj, v_proj, o_proj], clip: 1.0, max_train_tokens: 16384, chunk: 1024}
+advantage: {eps: 1.0e-4, skip_degenerate: true}
+concurrency: {rollouts: 16, grading: 8}
+grading: {timeout_s: 1800, network: false}   # --network none; pool gate verifies gold=1/empty=0 offline
+env: {network: false}       # sandboxes get a private loopback only (no vLLM admin API, no internet)

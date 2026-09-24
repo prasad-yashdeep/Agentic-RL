@@ -32,6 +32,21 @@ FAKEROOT_COMPAT = HOME / "fakeroot-compat" / "bin"
 # pinned upstream assets
 MODEL_ID = "Qwen/Qwen2.5-Coder-0.5B-Instruct"
 MODEL_REVISION = "ea3f2471cf1b1f0db85067f1ef93848e38e88c25"
+# pinned policy models (key -> (hf id, revision)); the same Qwen2.5 tokenizer/chat template for all of them
+MODELS = {
+    "0.5b": (MODEL_ID, MODEL_REVISION),
+    # 1.5b and 7b-awq: S9 probe 2026-09-24 — 0 valid <tool_call>s (they write JSON inside markdown fences); snapshots deleted
+    "1.5b": ("Qwen/Qwen2.5-Coder-1.5B-Instruct", "2e1fd397ee46e1388853d2af2c993145b0f1098a"),
+    "7b-awq": ("Qwen/Qwen2.5-Coder-7B-Instruct-AWQ", "8e8ed243bbe6f9a5aff549a0924562fc719b2b8a"),  # int4 serve; train would need QLoRA
+    # Qwen3 (2025-04, non-thinking mode): native hermes <tool_call> JSON, weak at SWE -> headroom for RL
+    "qwen3-1.7b": ("Qwen/Qwen3-1.7B", "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"),
+    "qwen3-4b-awq": ("Qwen/Qwen3-4B-AWQ", "74d4bd2bd4bff9cafc9345221320bffb08b406a3"),
+}
+
+
+def model_snapshot(key: str) -> Path:
+    mid, rev = MODELS[key]
+    return HF_CACHE / "hub" / f"models--{mid.replace('/', '--')}" / "snapshots" / rev
 DATASETS = {
     # name: (hf repo, revision, split)
     "dev": ("SWE-bench/SWE-bench", "c6fe717fd7a4c3ac1daa4055a4fd082c6a1d28a2", "dev"),  # training (repos disjoint from Verified)
