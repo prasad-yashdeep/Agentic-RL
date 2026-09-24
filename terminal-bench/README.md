@@ -1,4 +1,6 @@
-# terminal-agent-rl
+# terminal-bench (Agentic-RL)
+
+*Formerly the `terminal-agent-rl` repository; moved into the Agentic-RL monorepo on 2026-09-24 (see the root README).*
 
 Turning a small open model into a stronger agentic-reasoning model via RL on
 terminal tasks, with a frontier teacher (Claude Sonnet 5) nudging the policy.

@@ -1,0 +1,12 @@
+# Monorepo root. Each subproject keeps its own .gitignore for its runtime state.
+/.venv/
+__pycache__/
+*.py[cod]
+*.log
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+*.sif
+*.safetensors
+*.pt
+*.bin
+.claude/settings.local.json
