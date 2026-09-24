@@ -176,6 +176,10 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     prefix = f"sarl-{run_tag}-"
     stop_all(prefix)
     atexit.register(stop_all, prefix)  # a crashed trainer must not leave sandboxes behind
+    import signal
+    import sys
+
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))  # SIGTERM (pkill, tmux kill) skips atexit otherwise
     traj_root = refuse_on_home(SCRATCH / "trajectories" / run_dir.name, "per-token trajectories")  # node-local (NFS ~92% full)
     if (gone := sync.unload_leftovers()):
         print(f"unloaded leftover adapters: {gone}", flush=True)
