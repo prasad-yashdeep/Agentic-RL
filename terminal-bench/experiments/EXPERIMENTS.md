@@ -264,3 +264,26 @@ ready for loop-back (full A0) + module extraction + B1/B2 scale-up.
   - smoke: done. A live fix-git episode ran from the local task, new paths in every record, no exception, reward 0.
   - gpu_cells: running.
   - Order after that: et_prep, a0_etdev, b1, b1_eval. B2 stays gated on `experiments/.allow-judge-spend`.
+
+## 2026-09-24 03:30 — driver died in gpu_cells; fixes; relaunch with a same-version A0
+
+- The 03:12 launch **died at 03:19:13 in `gpu_cells`**, not "running" as the previous entry says (that commit landed
+  26 s later). Cause: the notebook's results-table cell read `seeds` for every arm in `runs.yaml`, and the three
+  ET-dev arms added on 09-10 had none (`KeyError: 'seeds'`). It never reached the GPU cells. Fixed in
+  `build_notebook.py` (`.get`) and every arm now carries `seeds`.
+- **Smoke-run side effect:** `tarl run` single-quoted `singularity_image_cache_dir=$TARL_SIF_CACHE`, so harbor cached
+  the fix-git image into `terminal-bench/$TARL_SIF_CACHE/` on NFS (446 MB). `build_harbor_cmd` now resolves the
+  path in Python and refuses any `$` (`tests/test_harbor_cmd.py`). The `.sif` was moved into node08's
+  `/var/tmp/tarl/sif-cache`; the stray directory is gone. Driver-launched harbor runs were never affected (bash
+  expands the variable there).
+- **Driver changes** (`scripts/09_experiments.sh`):
+  - New phase **`a0_tb21`**: fresh base-model A0 on the current TB 2.1 tasks (@`TB_REV` of
+    `~/datasets/terminal-bench-2-1`), k = 5. Order: … a0_etdev → b1 → **a0_tb21** → b1_eval → b2 → b2_eval.
+    Training goes first so the novel part of the pipeline fails fast; the 26 h baseline follows.
+  - `arm_eval` now compares against the `a0_tb21` job and never against the July A0 (different task snapshot).
+  - Every harbor eval has a fixed `--job-name` (`jobs/<arm>-tb21-<rev>`, `jobs-et/<arm>-etdev`). Harbor resumes a
+    job dir whose config is identical, so a crash mid-eval resumes instead of restarting.
+  - `gpu_cells` is a soft phase: a failure writes `gpu_cells.failed`, logs a warning, and the sequence continues.
+  - The result lines read `summary.*` from `tarl eval --json` (they would have printed `None`).
+- `viz.save_svg` strips matplotlib's trailing spaces, so regenerated figures pass `git diff --check`.
+- Tests: 83 pass, 1 skip on node08 (GPU1 only; the serve holds GPU0).

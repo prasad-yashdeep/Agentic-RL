@@ -75,6 +75,7 @@ def save_svg(fig, name: str, *, fig_dir: Path = FIGURES, max_kb: int = 300) -> P
     svg = path.read_text()
     svg = svg.replace(_SENTINEL, "currentColor")
     svg = re.sub(r"<metadata>.*?</metadata>", "", svg, flags=re.S)
+    svg = re.sub(r"[ \t]+$", "", svg, flags=re.M)  # matplotlib path data ends lines with a space (git diff --check)
     path.write_text(svg)
     import matplotlib.pyplot as plt
 

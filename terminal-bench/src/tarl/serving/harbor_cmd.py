@@ -4,6 +4,7 @@ scripts/06_grpo_micro.py:107-115 both spelled it inline) plus the vLLM serve lif
 from __future__ import annotations
 
 import json
+import os
 import shlex
 import subprocess
 import time
@@ -15,6 +16,15 @@ from tarl.common.paths import JOBS, JOBS_G4, REPO, SIF_CACHE
 SERVE_BASE = "http://localhost:8000"
 SERVED_MODEL = "gemma-4-E4B-it"
 PROBE_PROMPT = "List the files in a directory, sorted by size."
+
+
+def resolve_sif_cache(sif_cache: str | Path | None = None) -> str:
+    """Concrete image-cache path for Harbor. Never a shell variable: format_cmd single-quotes arguments, so a
+    literal `$TARL_SIF_CACHE` reached harbor unexpanded and it cached images into ./$TARL_SIF_CACHE (on NFS)."""
+    path = str(sif_cache) if sif_cache else os.environ.get("TARL_SIF_CACHE") or str(SIF_CACHE)
+    if "$" in path:
+        raise ValueError(f"unexpanded shell variable in image cache path: {path!r}")
+    return path
 
 
 def build_harbor_cmd(
@@ -38,7 +48,7 @@ def build_harbor_cmd(
         "harbor", "run", "-p", str(tb_path), "-a", agent, "-m", model,
         "--ak", f"api_base={api_base}", "--ak", f"temperature={temperature}",
         "-e", "singularity",
-        "--ek", f"singularity_image_cache_dir={sif_cache or '$TARL_SIF_CACHE'}",
+        "--ek", f"singularity_image_cache_dir={resolve_sif_cache(sif_cache)}",
         "--ek", "singularity_no_mount=home,tmp",
         "-k", str(k), "--n-concurrent", str(n_concurrent), "--timeout-multiplier", str(timeout_multiplier),
         "--jobs-dir", str(jobs_dir),

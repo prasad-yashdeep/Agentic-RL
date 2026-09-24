@@ -7,6 +7,11 @@ arms:
     seeds: 1
     jobs: [jobs/2026-07-21__05-38-50]
     note: stopped at 176/445 trials on 2026-07-21 to prioritise the pipeline proof; full 5x89 rerun pending
+  A0-tb21:
+    description: fresh baseline on TB 2.1 @7131e43 (k=5) - the July A0 ran on a different task snapshot (all 89 digests differ), so B1/B2 compare against this
+    status: pending
+    seeds: 0
+    jobs: []
   B1:
     description: GRPO, verifier-only reward (lambda_judge=0) - cold-start control
     status: pending
@@ -25,14 +30,17 @@ arms:
   A0-ETdev:
     description: baseline on the Endless Terminals dev pool (k=1) - cold-start p on the training distribution
     status: pending
+    seeds: 0
     jobs: []
   B1-ETdev:
     description: B1 policy on the ET dev pool (k=1) - model selection metric, not the headline
     status: pending
+    seeds: 0
     jobs: []
   B2-ETdev:
     description: B2 policy on the ET dev pool (k=1)
     status: pending
+    seeds: 0
     jobs: []
 planned:  # what scripts/09_experiments.sh runs (2026-09-10); B1/B2 jobs above get filled from runs/driver/*.json
   driver: scripts/09_experiments.sh

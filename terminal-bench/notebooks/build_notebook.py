@@ -593,12 +593,12 @@ with T("f9_stats"):
     runs = yaml.safe_load(open(RUNS_YAML))
     rows = []
     for arm, r in runs["arms"].items():
-        row = {"arm": arm, "description": r["description"], "status": r["status"], "seeds": r["seeds"], "pass@1 mean ± 95 % CI": "pending", "Δ vs A0 (pp)": "—" if arm == "A0" else "pending", "McNemar p": "—" if arm == "A0" else "pending", "tasks gained / lost": "—" if arm == "A0" else "pending", "judge calls / cost": "0" if arm in ("A0", "B1") else "pending", "wall-clock": "pending"}
+        row = {"arm": arm, "description": r["description"], "status": r["status"], "seeds": r.get("seeds", 0), "pass@1 mean ± 95 % CI": "pending", "Δ vs A0 (pp)": "—" if arm == "A0" else "pending", "McNemar p": "—" if arm == "A0" else "pending", "tasks gained / lost": "—" if arm == "A0" else "pending", "judge calls / cost": "0" if arm in ("A0", "B1") else "pending", "wall-clock": "pending"}
         if arm == "A0":
             row["pass@1 mean ± 95 % CI"] = f"{HEAD['a0']['pass_at_1']*100:.1f} % [{lo*100:.1f}, {hi*100:.1f}] (interim, 1 seed)"; row["wall-clock"] = f"{HEAD['a0']['wall_clock_h']} h"
         rows.append(row)
     skel = pd.DataFrame(rows); tab_done(viz.save_table(skel, "f9_results_skeleton"))
-    HEAD["planned_runs"] = [{"arm": k, "status": v["status"], "seeds": v["seeds"], "jobs": v["jobs"]} for k, v in runs["arms"].items()]
+    HEAD["planned_runs"] = [{"arm": k, "status": v["status"], "seeds": v.get("seeds", 0), "jobs": v.get("jobs", [])} for k, v in runs["arms"].items()]
     HEAD["pre_registered_success"] = runs["pre_registered_success"]
 skel
 ''')

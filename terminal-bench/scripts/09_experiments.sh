@@ -10,11 +10,14 @@
 #   serve      base FP8 serve (thinking ON) in tmux `serve` + babysitter in tmux `watch`
 #   smoke      one live fix-git episode through `tarl run --live`
 #   gpu_cells  notebook §11 on GPU1: real QLoRA step, trainer-vs-vLLM logprob align check, live episode
-#   a0_resume  finish the 445-trial A0 job on TB 2.1 (harbor jobs resume; infra errors re-run)       ~15 h
+#   a0_resume  SKIPPED 2026-09-24 (marker kept): the July A0 ran on another TB snapshot, see a0_tb21
 #   et_prep    Endless Terminals: split, convert, leakage guard vs TB2, build .sif images              ~30 min
 #   a0_etdev   base model on the ET dev pool, k=1 (cold-start p on the training distribution)         ~1 h
 #   b1         GRPO verifier-only (lambda=0) on the ET train pool                                      ~10 h
-#   b1_eval    B1 policy on ET dev (k=1) then TB 2.1 (k=TARL_EVAL_K); merged weights freed after       ~1 h + ~15 h
+#   a0_tb21    fresh base-model A0 on the current TB 2.1 tasks (k=TARL_EVAL_K) = the baseline B1/B2 compare to ~26 h
+#   b1_eval    B1 policy on ET dev (k=1) then TB 2.1 (k=TARL_EVAL_K), paired compare vs a0_tb21       ~1 h + ~26 h
+# Every harbor eval job has a fixed name (jobs/<arm>-tb21-<rev>, jobs-et/<arm>-etdev): re-running a phase after a
+# crash resumes the same job (harbor re-runs only trials without a result) instead of starting over.
 #   b2         GRPO judge-shaped (lambda=0.5, LIVE grok judge, cost cap) — REQUIRES experiments/.allow-judge-spend
 #   b2_eval    as b1_eval
 # Knobs (env): TARL_ET_TRAIN=160 TARL_ET_DEV=60 TARL_STEPS=50 TARL_G=8 TARL_TASKS_PER_STEP=4 TARL_EVAL_K=5
@@ -38,7 +41,8 @@ ET_TRAIN="${TARL_ET_TRAIN:-160}"; ET_DEV="${TARL_ET_DEV:-60}"
 STEPS="${TARL_STEPS:-50}"; G="${TARL_G:-8}"; TPS="${TARL_TASKS_PER_STEP:-4}"; EVAL_K="${TARL_EVAL_K:-5}"
 NC="${TARL_N_CONCURRENT:-4}"; CAP="${TARL_JUDGE_CAP_USD:-40}"; LR="${TARL_LR:-1e-6}"
 RERUN_ERRORS="${TARL_A0_RERUN_ERRORS:-CancelledError,RuntimeError,EnvironmentStartTimeoutError}"  # infra-only; timeouts stay failures
-PHASES="${TARL_PHASES:-health serve smoke gpu_cells a0_resume et_prep a0_etdev b1 b1_eval b2 b2_eval}"
+PHASES="${TARL_PHASES:-health serve smoke gpu_cells a0_resume et_prep a0_etdev b1 a0_tb21 b1_eval b2 b2_eval}"
+TB_REV=$(git -C "$HOME/datasets/terminal-bench-2-1" rev-parse --short HEAD 2>/dev/null || echo unknown)
 STAMP=$(date +%Y%m%d)
 
 log()  { echo "$(date '+%F %T') [driver] $*" | tee -a "$LOG"; }
@@ -62,8 +66,9 @@ ensure_serve() {  # make sure the serve runs policy $1 ("" = base)
 }
 ensure_watch() { tmux has-session -t watch 2>/dev/null || { tmux new-session -d -s watch "bash $REPO/scripts/watch.sh"; log "watch.sh started"; }; }
 latest_job() { ls -dt "$1"/2* 2>/dev/null | head -1; }
-harbor_eval() {  # $1 jobs-dir  $2 tasks-root  $3 k  $4 tasks-file|"" ; prints the job dir
-    local jobs="$1" root="$2" k="$3" pool="${4:-}" sel=()
+harbor_eval() {  # $1 jobs-dir  $2 tasks-root  $3 k  $4 tasks-file|""  $5 job name ; prints the job dir
+    local jobs="$1" root="$2" k="$3" pool="${4:-}" name="$5" sel=()
+    [ -n "$name" ] || die "harbor_eval needs a job name (resumability)"
     [ -n "$pool" ] && while read -r t; do [ -n "$t" ] && [ "${t#\#}" = "$t" ] && sel+=(-i "$t"); done < "$pool"
     mkdir -p "$jobs"
     harbor run -p "$root" -a terminus-2 -m openai/gemma-4-E4B-it \
@@ -71,17 +76,25 @@ harbor_eval() {  # $1 jobs-dir  $2 tasks-root  $3 k  $4 tasks-file|"" ; prints t
         -e singularity --ek singularity_image_cache_dir="$TARL_SIF_CACHE" --ek singularity_no_mount=home,tmp \
         -k "$k" --n-concurrent "$NC" --timeout-multiplier 1.0 \
         --max-retries 1 --retry-exclude AgentTimeoutError,VerifierTimeoutError \
-        --jobs-dir "$jobs" "${sel[@]}" >> "$D/harbor.log" 2>&1
-    latest_job "$jobs"
+        --jobs-dir "$jobs" --job-name "$name" "${sel[@]}" >> "$D/harbor.log" 2>&1
+    [ -f "$jobs/$name/result.json" ] || log "WARNING: $jobs/$name has no job-level result.json (see $D/harbor.log)"
+    echo "$jobs/$name"
+}
+jsum() {  # $1 = tarl eval --json file, rest = keys; the numbers live under "summary"
+    "$PY" -c 'import json,sys; d=json.load(open(sys.argv[1])); d=d.get("summary", d); print({k: d.get(k) for k in sys.argv[2:]})' "$@" 2>/dev/null
 }
 pool_flags() { local sel=(); while read -r t; do [ -n "$t" ] && [ "${t#\#}" = "$t" ] && sel+=("$t"); done < "$1"; echo "${sel[@]}"; }
 
+SOFT_PHASES=" gpu_cells "  # blog material only: a failure is logged and retried next launch, never blocks the runs
 run_phase() {
     local ph="$1"
     if [ -f "$D/$ph.done" ]; then log "phase $ph already done ($(cat "$D/$ph.done")) — skip"; return 0; fi
     log "=== phase $ph START ==="
-    "phase_$ph" || die "phase $ph failed"
-    done_marker "$ph"
+    if "phase_$ph"; then rm -f "$D/$ph.failed"; done_marker "$ph"; return 0; fi
+    case "$SOFT_PHASES" in
+        *" $ph "*) date '+%F %T' > "$D/$ph.failed"; log "WARNING: soft phase $ph failed (see $D/$ph.log) — continuing; it reruns on the next launch" ;;
+        *) die "phase $ph failed" ;;
+    esac
 }
 
 # ---------------------------------------------------------------------------- phases
@@ -129,7 +142,7 @@ phase_a0_resume() {
     log "harbor jobs resume $A0_JOB (re-running error types: $RERUN_ERRORS)"
     harbor jobs resume -p "$A0_JOB" "${f[@]}" >> "$D/a0_resume.harbor.log" 2>&1 || log "harbor jobs resume exited non-zero (see a0_resume.harbor.log)"
     "$TARL" eval "$A0_JOB" --json "$D/a0.json" > "$D/a0_eval.txt" 2>&1 || return 1
-    log "A0: $("$PY" -c "import json;d=json.load(open('$D/a0.json'));print({k:d.get(k) for k in ('n_clean','n_pass','pass_at_1','pass_at_1_ci95','n_error')})")"
+    log "A0: $(jsum "$D/a0.json" n_clean n_pass pass_at_1 pass_at_1_ci95 n_error)"
     bash scripts/07_sync_node05.sh >> "$LOG" 2>&1 || true
 }
 phase_et_prep() {
@@ -156,9 +169,9 @@ EOF
 }
 phase_a0_etdev() {
     ensure_serve ""
-    local j; j=$(harbor_eval "$REPO/jobs-et/A0-dev" "$ET_HARBOR" 1 "$DEV_POOL"); [ -n "$j" ] || return 1
+    local j; j=$(harbor_eval "$REPO/jobs-et" "$ET_HARBOR" 1 "$DEV_POOL" "A0-etdev"); [ -d "$j" ] || return 1
     "$TARL" eval "$j" --json "$D/a0_etdev.json" > "$D/a0_etdev_eval.txt" 2>&1 || true
-    log "A0 on ET dev: $j $("$PY" -c "import json;d=json.load(open('$D/a0_etdev.json'));print({k:d.get(k) for k in ('n_clean','n_pass','pass_at_1','n_error')})" 2>/dev/null)"
+    log "A0 on ET dev: $j $(jsum "$D/a0_etdev.json" n_clean n_pass pass_at_1 n_error)"
 }
 grpo_arm() {  # $1 arm  $2 lambda  $3.. extra args
     local arm="$1" lam="$2"; shift 2
@@ -179,13 +192,27 @@ arm_eval() {  # $1 arm
     local arm="$1" adir="/var/tmp/tarl/$1" j jt
     [ -d "$adir/merged" ] || die "$arm merged policy missing at $adir/merged (rerun phase $arm)"
     ensure_serve "$adir/merged"
-    j=$(harbor_eval "$REPO/jobs-et/$arm-dev" "$ET_HARBOR" 1 "$DEV_POOL"); "$TARL" eval "$j" --json "$D/${arm}_etdev.json" > /dev/null 2>&1 || true
-    log "$arm on ET dev: $j $("$PY" -c "import json;d=json.load(open('$D/${arm}_etdev.json'));print({k:d.get(k) for k in ('n_clean','n_pass','pass_at_1')})" 2>/dev/null)"
-    jt=$(harbor_eval "$REPO/jobs" /tmp/tb2 "$EVAL_K" ""); "$TARL" eval "$jt" --json "$D/${arm}_tb2.json" > "$D/${arm}_tb2_eval.txt" 2>&1 || true
-    log "$arm on TB2 (k=$EVAL_K): $jt $("$PY" -c "import json;d=json.load(open('$D/${arm}_tb2.json'));print({k:d.get(k) for k in ('n_clean','n_pass','pass_at_1','pass_at_1_ci95')})" 2>/dev/null)"
-    "$TARL" compare "$A0_JOB" "$jt" > "$D/${arm}_vs_a0.txt" 2>&1 || true
+    j=$(harbor_eval "$REPO/jobs-et" "$ET_HARBOR" 1 "$DEV_POOL" "$arm-etdev"); "$TARL" eval "$j" --json "$D/${arm}_etdev.json" > /dev/null 2>&1 || true
+    log "$arm on ET dev: $j $(jsum "$D/${arm}_etdev.json" n_clean n_pass pass_at_1)"
+    jt=$(harbor_eval "$REPO/jobs" /tmp/tb2 "$EVAL_K" "" "$arm-tb21-$TB_REV"); "$TARL" eval "$jt" --json "$D/${arm}_tb2.json" > "$D/${arm}_tb2_eval.txt" 2>&1 || true
+    log "$arm on TB2 (k=$EVAL_K): $jt $(jsum "$D/${arm}_tb2.json" n_clean n_pass pass_at_1 pass_at_1_ci95)"
+    local a0j; a0j=$(cat "$D/a0_tb21.job" 2>/dev/null)
+    if [ -n "$a0j" ] && [ -d "$a0j" ]; then
+        "$TARL" compare "$a0j" "$jt" > "$D/${arm}_vs_a0.txt" 2>&1 || true
+        log "$arm vs A0-tb21: $(tail -3 "$D/${arm}_vs_a0.txt" | tr '\n' ' ')"
+    else
+        log "no same-version A0 yet (phase a0_tb21) — paired compare skipped; never compare against the July A0"
+    fi
     echo "{\"arm\": \"$arm\", \"et_dev_job\": \"$j\", \"tb2_job\": \"$jt\", \"eval_k\": $EVAL_K}" > "$D/${arm}_eval.json"
     rm -rf "$adir/merged"; log "$arm merged weights removed from /var/tmp (adapter kept on NFS)"
+    bash scripts/07_sync_node05.sh >> "$LOG" 2>&1 || true
+}
+phase_a0_tb21() {  # the baseline every arm is compared to: same task snapshot, same harness, base FP8 policy
+    ensure_serve ""
+    local j; j=$(harbor_eval "$REPO/jobs" /tmp/tb2 "$EVAL_K" "" "A0-tb21-$TB_REV"); [ -d "$j" ] || return 1
+    echo "$j" > "$D/a0_tb21.job"
+    "$TARL" eval "$j" --json "$D/a0_tb21.json" > "$D/a0_tb21_eval.txt" 2>&1 || return 1
+    log "A0-tb21 (k=$EVAL_K, TB 2.1 @$TB_REV): $j $(jsum "$D/a0_tb21.json" n_clean n_pass pass_at_1 pass_at_1_ci95 n_error)"
     bash scripts/07_sync_node05.sh >> "$LOG" 2>&1 || true
 }
 phase_b1()      { grpo_arm B1 0; }
