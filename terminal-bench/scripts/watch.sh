@@ -3,11 +3,12 @@
 #  - vLLM health -> restart serve (mode from .serve-thinking) if BOTH dead
 #  - /tmp janitor
 #  - hourly rsync of jobs/ to node05 capacity tier
-# Log: ~/terminal-agent-rl/watch.log (one line per tick, alarms marked ALARM).
+# Log: terminal-bench/watch.log (one line per tick, alarms marked ALARM).
 set -u
-cd "$HOME/terminal-agent-rl"
+REPO="${TARL_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"   # self-locating: terminal-bench/ (real path)
+cd "$REPO" || exit 1
 . scripts/env.sh >/dev/null 2>&1
-LOG="$HOME/terminal-agent-rl/watch.log"
+LOG="$REPO/watch.log"
 tick=0
 while true; do
     ts=$(date "+%m-%d %H:%M:%S")
@@ -17,12 +18,12 @@ while true; do
     else
         serve=DOWN
         if ! tmux has-session -t serve 2>/dev/null; then
-            mode=$(cat "$HOME/terminal-agent-rl/.serve-thinking" 2>/dev/null || echo 1)
+            mode=$(cat "$REPO/.serve-thinking" 2>/dev/null || echo 1)
             # .serve-model = merged-policy dir written by tarl.serving.harbor_cmd.restart_serve (empty = base)
-            pol=$(head -1 "$HOME/terminal-agent-rl/.serve-model" 2>/dev/null | tr -d '[:space:]')
+            pol=$(head -1 "$REPO/.serve-model" 2>/dev/null | tr -d '[:space:]')
             extra=""; [ -n "$pol" ] && [ -d "$pol" ] && extra="TARL_SERVE_MODEL=$pol TARL_SERVE_QUANT=fp8"
             tmux new-session -d -s serve \
-                "cd $HOME/terminal-agent-rl && TARL_THINKING=$mode $extra bash scripts/01_serve.sh 2>&1 | tee $HOME/terminal-agent-rl/serve.log"
+                "cd $REPO && TARL_THINKING=$mode $extra bash scripts/01_serve.sh 2>&1 | tee $REPO/serve.log"
             echo "$ts ALARM serve dead -> relaunched (thinking=$mode model=${pol:-base})" >> "$LOG"
         fi
     fi

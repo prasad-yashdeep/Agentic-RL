@@ -22,8 +22,10 @@ def git_commit(repo: Path = REPO) -> str:
 
 
 def git_dirty(repo: Path = REPO) -> bool | None:
+    """Uncommitted changes under `repo` only. The git root is the Agentic-RL monorepo, so without the
+    pathspec an unrelated swe-bench edit would mark every terminal-bench run dirty."""
     try:
-        out = subprocess.check_output(["git", "-C", str(repo), "status", "--porcelain"], text=True, timeout=10)
+        out = subprocess.check_output(["git", "-C", str(repo), "status", "--porcelain", "--", str(repo)], text=True, timeout=10)
         return bool(out.strip())
     except Exception:
         return None

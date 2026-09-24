@@ -22,3 +22,4 @@ experiments/derived/*.npz
 jobs-nb/
 .serve-model
 jobs-et/
+src/tarl.egg-info/

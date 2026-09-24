@@ -5,6 +5,7 @@
 # One infra retry (server races); model timeouts are NOT retried as infra.
 set -uo pipefail
 . "$(dirname "$0")/env.sh"
+REPO="${TARL_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"   # self-locating: terminal-bench/ (real path)
 export OPENAI_API_KEY="${OPENAI_API_KEY:-dummy-local}"
 exec harbor run -p "${TARL_TB_PATH:-/tmp/tb2}" \
     -a terminus-2 \
@@ -18,4 +19,4 @@ exec harbor run -p "${TARL_TB_PATH:-/tmp/tb2}" \
     --n-concurrent "${TARL_N_CONCURRENT:-4}" \
     --timeout-multiplier 1.0 \
     --max-retries 1 --retry-exclude AgentTimeoutError,VerifierTimeoutError \
-    --jobs-dir "$HOME/terminal-agent-rl/jobs"
+    --jobs-dir "$REPO/jobs"

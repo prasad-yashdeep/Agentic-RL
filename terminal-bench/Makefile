@@ -1,15 +1,18 @@
-# Dev workflow for terminal-agent-rl. GNU make >= 3.82 (RECIPEPREFIX avoids tab-vs-space accidents).
+# Dev workflow for terminal-bench (Agentic-RL monorepo). GNU make >= 3.82 (RECIPEPREFIX avoids tab-vs-space accidents).
 .RECIPEPREFIX = >
 SHELL := /bin/bash
-REPO  := /home/yashp/terminal-agent-rl
-PY    := $(REPO)/.venv/bin/python
+# Self-locating: REPO = terminal-bench/ (real path), ARL = the Agentic-RL monorepo root, PY = the shared venv.
+# (No inline comments on assignments: make keeps the spaces before '#' in the value.)
+REPO  := $(patsubst %/,%,$(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
+ARL   := $(patsubst %/,%,$(dir $(REPO)))
+PY    := $(ARL)/.venv/bin/python
 UV    := $(HOME)/.local/bin/uv
 NODE  ?= node03
 ENV   := PYTHONDONTWRITEBYTECODE=1 HF_HOME=$(HOME)/hf-cache HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 TOKENIZERS_PARALLELISM=false OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 MPLBACKEND=Agg
 NB    ?= 00_terminal_agent_rl_poc.ipynb
 T     ?= tests/test_advantages.py
 
-.PHONY: install-dev kernel embed-model test test-local dry-run notebook lint clean-figures exp exp-log exp-status
+.PHONY: install-dev kernel embed-model test test-local dry-run notebook lint clean-figures exp exp-log exp-status doctor
 
 install-dev:  ## dev deps + console script (headnode ok; never re-resolves the CUDA stack)
 > df -h $(HOME) | tail -1
@@ -41,6 +44,7 @@ clean-figures:
 > rm -f docs/blog/figures/*.svg docs/blog/figures/*.md docs/blog/figures/*.csv docs/blog/figures/*.html docs/blog/figures/headline.json
 
 exp:          ## launch the unattended experiment driver on node08 (tmux `exp`); TARL_PHASES="..." to subset
+> bash $(ARL)/tools/doctor.sh
 > ssh -o BatchMode=yes node08 'tmux has-session -t exp 2>/dev/null && echo "exp already running" || tmux new -d -s exp "cd $(REPO) && TARL_PHASES=\"$(TARL_PHASES)\" bash scripts/09_experiments.sh"'
 
 exp-log:      ## follow the driver log
@@ -48,3 +52,6 @@ exp-log:      ## follow the driver log
 
 exp-status:   ## phase markers + last log lines
 > ls -la $(REPO)/runs/driver/*.done 2>/dev/null; tail -n 15 $(REPO)/runs/driver/driver.log 2>/dev/null
+
+doctor:       ## monorepo health: stale paths, venv, kernel, A0 resume consistency
+> bash $(ARL)/tools/doctor.sh

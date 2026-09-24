@@ -4,6 +4,7 @@
 # Not a score run — we expect few/no passes from the untrained model.
 set -uo pipefail
 . "$(dirname "$0")/env.sh"
+REPO="${TARL_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"   # self-locating: terminal-bench/
 export OPENAI_API_KEY="${OPENAI_API_KEY:-dummy-local}"
 TASKS=("${@:-fix-git}")
 [ $# -eq 0 ] && TASKS=(fix-git regex-log large-scale-text-editing)
@@ -19,5 +20,5 @@ exec harbor run -p "${TARL_TB_PATH:-/tmp/tb2}" \
     --ek singularity_no_mount=home,tmp \
     --n-concurrent "${TARL_N_CONCURRENT:-1}" \
     --timeout-multiplier 2.0 \
-    --jobs-dir "$HOME/terminal-agent-rl/jobs" \
+    --jobs-dir "$REPO/jobs" \
     "${INCLUDE_ARGS[@]}"

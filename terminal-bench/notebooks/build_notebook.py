@@ -705,7 +705,7 @@ else:
 code(r'''
 if GPU_OK and Path("/tmp/tb2/fix-git").exists():
     with T("gpu_live_episode"):
-        r = subprocess.run([str(REPO / ".venv/bin/tarl"), "run", "--task", "fix-git", "--k", "1", "--jobs-dir", str(REPO / "jobs-nb"), "--live"], text=True, capture_output=True)
+        r = subprocess.run([str(Path(sys.executable).with_name("tarl")), "run", "--task", "fix-git", "--k", "1", "--jobs-dir", str(REPO / "jobs-nb"), "--live"], text=True, capture_output=True)
         print(r.stdout[-2000:], r.stderr[-1000:])
         latest = sorted((REPO / "jobs-nb").glob("2*"))[-1]
         trial = sorted(latest.glob("fix-git__*"))[-1]
@@ -739,7 +739,7 @@ make test                                                 # unit + real-data tes
 make dry-run                                              # replay G4 through scripts/08 → DRY_RUN_PARITY_OK
 make notebook                                             # this notebook, headless, on node03
 # after node08 returns:
-ssh node08 'cd ~/terminal-agent-rl && TARL_GPU_CELLS=1 CUDA_VISIBLE_DEVICES=1 make notebook NODE=node08'
+TARL_GPU_CELLS=1 CUDA_VISIBLE_DEVICES=1 make -C /home/yashp/Agentic-RL/terminal-bench notebook NODE=node08
 ```
 """)
 

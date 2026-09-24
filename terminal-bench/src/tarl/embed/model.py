@@ -38,7 +38,7 @@ def ensure_model(model: str = DEFAULT_MODEL) -> Path:
     if snap is None:
         raise EmbedModelUnavailable(
             f"{model} is not in {HF_CACHE}/hub. Download once (headnode has internet): "
-            f"HF_HOME={HF_CACHE} .venv/bin/python -c \"from huggingface_hub import snapshot_download as s; "
+            f"HF_HOME={HF_CACHE} python -c \"from huggingface_hub import snapshot_download as s; "
             f"s('{model}', allow_patterns=['*.json','*.txt','model.safetensors'])\"  (or: tarl embed download)"
         )
     return snap

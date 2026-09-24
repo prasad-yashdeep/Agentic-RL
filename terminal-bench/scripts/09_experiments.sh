@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # scripts/09_experiments.sh — the pre-registered experiment sequence, unattended, ON node08 (tmux `exp`).
 #
-#   ssh node08 'tmux new -d -s exp "bash ~/terminal-agent-rl/scripts/09_experiments.sh"'
-#   tail -f ~/terminal-agent-rl/runs/driver/driver.log
+#   make -C /home/yashp/Agentic-RL/terminal-bench exp     (runs tools/doctor.sh first, then tmux `exp` on node08)
+#   tail -f /home/yashp/Agentic-RL/terminal-bench/runs/driver/driver.log
 #
 # Phases run in order; each is idempotent and skipped once runs/driver/<phase>.done exists
 # (delete the marker to redo a phase). TARL_PHASES="a b c" runs a subset.
@@ -21,12 +21,13 @@
 #              TARL_N_CONCURRENT=4 TARL_JUDGE_CAP_USD=40 TARL_LR=1e-6
 #              TARL_A0_RERUN_ERRORS=CancelledError,RuntimeError,EnvironmentStartTimeoutError (A0 infra errors re-run on resume)
 set -uo pipefail
-REPO="$HOME/terminal-agent-rl"
+REPO="${TARL_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"   # self-locating: terminal-bench/ (real path)
 cd "$REPO" || exit 1
 . scripts/env.sh >/dev/null 2>&1
 export OPENAI_API_KEY="${OPENAI_API_KEY:-dummy-local}"
 export PYTHONDONTWRITEBYTECODE=1 TOKENIZERS_PARALLELISM=false
-PY="$REPO/.venv/bin/python"; TARL="$REPO/.venv/bin/tarl"
+ARL_ROOT="$(cd "$REPO/.." && pwd -P)"; VENV="${ARL_VENV:-$ARL_ROOT/.venv}"   # shared monorepo venv
+PY="$VENV/bin/python"; TARL="$VENV/bin/tarl"
 D="$REPO/runs/driver"; mkdir -p "$D" checkpoints experiments/derived
 LOG="$D/driver.log"
 ET_HARBOR="${TARL_ET_HARBOR:-$HOME/datasets/endless-terminals-harbor}"

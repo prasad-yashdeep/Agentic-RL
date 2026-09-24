@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Day-1 M0.1 environment bring-up. Run ON node08 (tmux session `setup`).
 set -euo pipefail
-cd "$HOME/terminal-agent-rl"
+REPO="${TARL_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"   # self-locating: terminal-bench/
+[ "${TARL_ALLOW_HISTORICAL:-0}" = 1 ] || { echo "historical one-off (2026-07); re-running would rebuild or re-resolve the shared venv. Set TARL_ALLOW_HISTORICAL=1 to run anyway."; exit 1; }
+ARL_ROOT="$(cd "$REPO/.." && pwd -P)"   # the shared venv lives at the monorepo root since 2026-09-24
+cd "$REPO"
 export PATH="$HOME/.local/bin:$PATH"
 uv venv .venv -p /usr/bin/python3
 . .venv/bin/activate

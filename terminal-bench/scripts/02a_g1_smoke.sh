@@ -3,7 +3,8 @@
 # unsloth mirror when no HF token), then run the QLoRA smoke on GPU1.
 set -uo pipefail
 . "$(dirname "$0")/env.sh"
-LOG="$HOME/terminal-agent-rl/g1-smoke.log"
+REPO="${TARL_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"   # self-locating: terminal-bench/
+LOG="$REPO/g1-smoke.log"
 {
     MODEL="google/gemma-4-E4B-it"
     if ! hf download "$MODEL" --exclude "*.gguf" >/dev/null 2>&1; then

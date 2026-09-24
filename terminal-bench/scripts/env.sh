@@ -12,8 +12,12 @@ export TARL_ET_SIF=/var/tmp/tarl/et-sif  # Endless Terminals task images (tarl.d
 #                       needs GLIBC_2.38 and kills execs in older-glibc images;
 #                       apptainer resolves fakeroot-sysv from PATH
 #  3. apptainer-env   — the real apptainer/singularity binaries
-export PATH="$HOME/terminal-agent-rl/scripts/shims:$HOME/fakeroot-compat/bin:$HOME/apptainer-env/bin:$HOME/.local/bin:$PATH"
+# Self-locating (Agentic-RL monorepo, 2026-09-24): _TB = terminal-bench/, _ARL = monorepo root (shared venv).
+_TB="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+_ARL="$(cd "$_TB/.." && pwd -P)"
+export PATH="$_TB/scripts/shims:$HOME/fakeroot-compat/bin:$HOME/apptainer-env/bin:$HOME/.local/bin:$PATH"
 # Secrets (XAI_API_KEY etc.) — never in git:
 [ -f "$HOME/.config/tarl/env" ] && . "$HOME/.config/tarl/env"
 # Project venv, if present:
-[ -f "$HOME/terminal-agent-rl/.venv/bin/activate" ] && . "$HOME/terminal-agent-rl/.venv/bin/activate"
+_VENV="${ARL_VENV:-$_ARL/.venv}"
+[ -f "$_VENV/bin/activate" ] && . "$_VENV/bin/activate"

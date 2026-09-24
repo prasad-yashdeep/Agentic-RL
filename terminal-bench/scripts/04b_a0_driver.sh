@@ -3,7 +3,8 @@
 # Flips the serve template between arms via .serve-thinking + serve restart;
 # watch.sh reads the same file, so an unattended crash-restart keeps the mode.
 set -uo pipefail
-cd "$HOME/terminal-agent-rl"
+REPO="${TARL_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"   # self-locating: terminal-bench/ (real path)
+cd "$REPO" || exit 1
 . scripts/env.sh >/dev/null 2>&1
 
 restart_serve() {  # $1 = 1|0 (thinking on/off)
@@ -11,7 +12,7 @@ restart_serve() {  # $1 = 1|0 (thinking on/off)
     tmux kill-session -t serve 2>/dev/null || true
     sleep 3
     tmux new-session -d -s serve \
-        "cd $HOME/terminal-agent-rl && TARL_THINKING=$1 bash scripts/01_serve.sh 2>&1 | tee $HOME/terminal-agent-rl/serve.log"
+        "cd $REPO && TARL_THINKING=$1 bash scripts/01_serve.sh 2>&1 | tee $REPO/serve.log"
     for _ in $(seq 1 120); do
         curl -sf localhost:8000/v1/models >/dev/null 2>&1 && return 0
         sleep 5
