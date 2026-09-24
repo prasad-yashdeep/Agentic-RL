@@ -6,6 +6,7 @@ case "$(hostname)" in bcm11-headnode*) echo "refusing on the headnode"; exit 1;;
 SWE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"; ARL="$(cd "$SWE/.." && pwd -P)"
 export HF_HOME="${HF_HOME:-$HOME/hf-cache}" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_DATASETS_OFFLINE=1
 export PYTHONDONTWRITEBYTECODE=1 TOKENIZERS_PARALLELISM=false OMP_NUM_THREADS=8 NCCL_P2P_DISABLE=1
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"  # trajectories vary 2k-24k tokens
 export CUDA_VISIBLE_DEVICES="${SARL_TRAIN_GPU:-1}"
 cd "$SWE" && mkdir -p runs
 CFG="${1:-configs/basic_run.yaml}"; shift || true

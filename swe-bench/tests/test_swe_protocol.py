@@ -37,3 +37,29 @@ def test_harness_filter_drops_test_files_only():
     kept, dropped = filter_patch(src + conf + tst)
     assert kept == src and dropped == ["conftest.py", "tests/test_mod.py"]
     assert filter_patch("") == ("", [])
+
+
+def test_mswea_protocol_matches_mini_swe_agent_v1():
+    from sarl import prompts_mswea
+    from sarl.protocol import format_observation_mswea, instance_prompt, parse_reply, system_prompt, tools_for
+
+    ok = parse_reply("THOUGHT: look first.\n\n```bash\nls -la\n```", "mswea")
+    assert ok.ok and ok.command == "ls -la"
+    two = parse_reply("```bash\nls\n```\nthen\n```bash\npwd\n```", "mswea")
+    assert not two.ok and two.error == prompts_mswea.FORMAT_ERROR.format(n=2)
+    none = parse_reply("I would run ls.", "mswea")
+    assert not none.ok and "found 0 actions" in none.error
+    assert not parse_reply("```sh\nls\n```", "mswea").ok  # v1 accepts only ```bash
+    assert tools_for("mswea") == [] and system_prompt("mswea") == prompts_mswea.SYSTEM
+    ip = instance_prompt("Bug X", "mswea")
+    assert ip.startswith("<pr_description>\nConsider the following PR description:\nBug X\n</pr_description>")
+    assert "echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && git add -A && git diff --cached" in ip
+    assert is_submit("echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && git add -A && git diff --cached")
+    # observation text byte-for-byte as in the corpus: no newline is added before </output>
+    assert format_observation_mswea(0, "a\n") == "<returncode>0</returncode>\n<output>\na\n</output>"
+    assert format_observation_mswea(0, "") == "<returncode>0</returncode>\n<output>\n</output>"
+    big = format_observation_mswea(1, "h" * 5000 + "m" * 3000 + "t" * 5000)
+    assert big.startswith("<returncode>1</returncode>\n<warning>\n") and "</warning><output_head>\n" + "h" * 5000 + "\n</output_head>" in big
+    assert "<elided_chars>\n3000 characters elided\n</elided_chars>\n<output_tail>\n" + "t" * 5000 + "\n</output_tail>" in big
+    assert format_observation_mswea(None, "partial", command="sleep 99", timed_out=True).startswith(
+        "The last command <command>sleep 99</command> timed out")

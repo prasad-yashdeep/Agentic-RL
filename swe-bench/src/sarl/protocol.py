@@ -30,6 +30,8 @@ import json
 import re
 from dataclasses import dataclass
 
+from sarl import prompts_mswea
+
 SUBMIT = "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
 
 BASH_TOOL = {
@@ -91,7 +93,7 @@ echo {SUBMIT}
 
 One short sentence of reasoning, then exactly one command block."""
 
-PROTOCOLS = ("tool_call", "backticks")
+PROTOCOLS = ("tool_call", "backticks", "mswea")  # mswea = mini-swe-agent v1 text (the mini-coder SFT format)
 
 INSTANCE_TEMPLATE = """Fix the issue described below in the repository at /testbed.
 
@@ -109,6 +111,7 @@ FORMAT_ERROR_BAD = "Format error: {why}. The call must look like {{\"name\": \"b
 NO_COMMAND = "No command found. Reply with exactly one ```bash block."  # the reference's message
 
 _BASH_RE = re.compile(r"```(?:bash|sh)?\s*\n(.*?)```", re.S)  # the reference's first_bash_block
+_MSWEA_RE = re.compile(r"```bash\s*\n(.*?)\n```", re.S)  # mini-swe-agent v1 action_regex; exactly one match required
 _CALL_RE = re.compile(r"<tool_call>\s*(.*?)\s*</tool_call>", re.S)
 _OPEN_RE = re.compile(r"<tool_call>(?!.*</tool_call>)", re.S)
 _SUBMIT_RE = re.compile(r"^\s*echo\s+['\"]?" + SUBMIT + r"['\"]?\s*(?:&&.*)?$", re.S)
@@ -145,7 +148,15 @@ def _command_from(obj) -> tuple[str | None, str | None]:
 
 
 def system_prompt(protocol: str = "tool_call") -> str:
+    if protocol == "mswea":
+        return prompts_mswea.SYSTEM
     return SYSTEM_PROMPT if protocol == "tool_call" else BACKTICKS_SYSTEM_PROMPT
+
+
+def instance_prompt(problem_statement: str, protocol: str = "tool_call") -> str:
+    if protocol == "mswea":
+        return prompts_mswea.instance(problem_statement)
+    return INSTANCE_TEMPLATE.format(problem_statement=problem_statement)
 
 
 def tools_for(protocol: str = "tool_call") -> list[dict]:
@@ -154,11 +165,17 @@ def tools_for(protocol: str = "tool_call") -> list[dict]:
 
 def parse_reply(text: str, protocol: str = "tool_call") -> Parsed:
     """tool_call: exactly one well-formed bash call. backticks: the first fenced bash block (reference semantics).
-    Anything else is a format error fed back to the policy (mask 0, not graded)."""
+    mswea: exactly one ```bash block (mini-swe-agent v1). Anything else is a format error fed back to the policy
+    (mask 0, not graded)."""
     if protocol == "backticks":
         m = _BASH_RE.search(text)
         cmd = m.group(1).strip() if m else ""
         return Parsed(cmd, None, 1) if cmd else Parsed(None, NO_COMMAND, 0)
+    if protocol == "mswea":
+        found = _MSWEA_RE.findall(text)
+        if len(found) == 1:  # v1 runs even an empty block (it just returns empty output)
+            return Parsed(found[0].strip(), None, 1)
+        return Parsed(None, prompts_mswea.FORMAT_ERROR.format(n=len(found)), len(found))
     if protocol != "tool_call":
         raise ValueError(f"unknown protocol {protocol!r}")
     bodies = _CALL_RE.findall(text)
@@ -193,8 +210,23 @@ def format_observation(returncode: int | None, output: str, *, max_chars: int = 
     return f"<returncode>{rc}</returncode>\n{body}"
 
 
+def format_observation_mswea(returncode: int | None, output: str, *, command: str = "", timed_out: bool = False) -> str:
+    """mini-swe-agent v1's observation text, byte-for-byte as in the mini-coder corpus: `<output>\\n` + raw output +
+    `</output>`; 10k characters or more keep a 5k head and a 5k tail behind a <warning>."""
+    if timed_out:
+        return prompts_mswea.TIMEOUT.format(command=command, output=output)
+    head = f"<returncode>{'' if returncode is None else returncode}</returncode>\n"
+    if len(output) < 10_000:
+        return head + f"<output>\n{output}</output>"
+    return (head + prompts_mswea.LONG_OUTPUT_WARNING + f"<output_head>\n{output[:5000]}\n</output_head>\n"
+            f"<elided_chars>\n{len(output) - 10_000} characters elided\n</elided_chars>\n"
+            f"<output_tail>\n{output[-5000:]}\n</output_tail>")
+
+
 def action_text(command: str, thought: str = "", protocol: str = "tool_call") -> str:
     """How a well-formed reply looks in either protocol (used by the scripted oracle and tests)."""
+    if protocol == "mswea":
+        return f"THOUGHT: {thought.strip()}\n\n```bash\n{command}\n```"
     if protocol == "backticks":
         return (thought.strip() + "\n" if thought else "") + f"```bash\n{command}\n```"
     return tool_call_text(command, thought)

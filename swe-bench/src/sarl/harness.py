@@ -15,7 +15,8 @@ import time
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from sarl.protocol import BASH_TOOL, INSTANCE_TEMPLATE, SUBMIT, action_text, format_observation, is_submit, parse_reply, system_prompt, tools_for
+from sarl.protocol import (BASH_TOOL, SUBMIT, action_text, format_observation, format_observation_mswea, instance_prompt, is_submit,
+                           parse_reply, system_prompt, tools_for)
 
 
 @dataclass
@@ -132,7 +133,7 @@ def initial_messages(task, limits: Limits, protocol: str = "tool_call", fmt: "Ch
     if len(issue) > limits.max_issue_chars:
         issue = issue[: limits.max_issue_chars] + "\n[... issue truncated ...]"
     return [{"role": "system", "content": system_prompt(protocol)},
-            {"role": "user", "content": INSTANCE_TEMPLATE.format(problem_statement=issue)}]
+            {"role": "user", "content": instance_prompt(issue, protocol)}]
 
 
 def run_episode(policy, env, task, fmt: ChatFormat, limits: Limits | None = None, *, policy_name: str = "",
@@ -191,11 +192,14 @@ def run_episode(policy, env, task, fmt: ChatFormat, limits: Limits | None = None
             if is_submit(cmd):
                 exit_reason = "submitted"
                 break
-            obs = fmt.sanitize(format_observation(res.returncode, res.output, max_chars=lim.max_obs_chars, timed_out=res.timed_out))
+            if protocol == "mswea":
+                obs = fmt.sanitize(format_observation_mswea(res.returncode, res.output, command=cmd, timed_out=res.timed_out))
+            else:
+                obs = fmt.sanitize(format_observation(res.returncode, res.output, max_chars=lim.max_obs_chars, timed_out=res.timed_out))
             if protocol == "tool_call":
                 messages.append({"role": "tool", "content": obs})
                 d = fmt.tool_turn(obs)
-            else:  # the reference appends the observation as a plain user turn
+            else:  # backticks (the reference) and mswea append the observation as a plain user turn
                 messages.append({"role": "user", "content": obs})
                 d = fmt.user_turn(obs)
         ids += d

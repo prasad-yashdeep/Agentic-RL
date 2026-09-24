@@ -75,3 +75,27 @@ def test_degenerate_group_is_a_noop(tiny_qwen):
 def test_mismatch_stats():
     s = mismatch_stats(np.array([-1.0, -2.0, -0.5]), [-1.1, None, -0.5])
     assert s["n"] == 2 and s["max"] == pytest.approx(0.1) and s["frac_gt_0.5"] == 0.0
+
+
+def test_tis_and_token_mean(tiny_qwen):
+    """Truncated importance sampling: sampler log-probs equal to the trainer's give weight 1 (same update as without
+    TIS); a sampler that under-rates the tokens gets its weight capped. token_mean normalises by all batch tokens."""
+    b = _batch(2, seed=3)
+    adv = [1.0, -1.0]
+    tr = LoRATrainer("tiny", model=tiny_qwen, cfg=TrainConfig(lr=1e-2, lora_r=4, lora_alpha=8, tis_cap=2.0), device="cpu")
+    same = []
+    for i, m in b:
+        t = tr.logprobs_nograd(i, m)
+        s = [None] * len(i)
+        for k, pos in enumerate([p for p in range(1, len(i)) if m[p]]):
+            s[pos] = float(t[k])
+        same.append(s)
+    low = [[None if v is None else v - 5.0 for v in s] for s in same]  # vLLM gave these tokens much lower probability
+    out = tr.step([(i, m, a, s) for (i, m), a, s in zip(b, adv, same)])
+    assert out["stepped"] and abs(out["tis"]["mean_w"] - 1.0) < 1e-4 and out["tis"]["frac_capped"] == 0.0
+    assert out["mismatch"]["n"] == 2 * 22 and out["mismatch"]["max"] < 1e-4  # measured in the update's own forward pass
+    out2 = tr.step([(i, m, a, s) for (i, m), a, s in zip(b, adv, low)])
+    assert out2["tis"]["frac_capped"] == 1.0 and abs(out2["tis"]["mean_w"] - 2.0) < 1e-6
+    tm = LoRATrainer("tiny", model=tiny_qwen, cfg=TrainConfig(lr=1e-2, loss_agg="token_mean"), device="cpu")
+    out3 = tm.step([(i, m, a) for (i, m), a in zip(b, adv)])
+    assert out3["stepped"] and np.isfinite(out3["loss"])

@@ -41,6 +41,14 @@ class TrainConfig:
     max_train_tokens: int = 8192
     chunk: int = 1024
     grad_checkpointing: bool = True
+    # "seq_mean" (reference): each trajectory's mean token log-prob, averaged over trajectories.
+    # "token_mean" (DAPO/Dr.GRPO style): Σ over all supervised tokens in the batch / their count, so long trajectories
+    # are not down-weighted per token.
+    loss_agg: str = "seq_mean"
+    # truncated importance sampling (Yao et al. 2025, "Your efficient RL framework secretly brings you off-policy RL"):
+    # weight each sampled token by min(π_trainer/π_vLLM, cap) (detached) to correct the train-inference mismatch.
+    # None = off (the reference). Needs the sampler's log-probs per token.
+    tis_cap: float | None = None
 
 
 class LoRATrainer:
@@ -104,33 +112,62 @@ class LoRATrainer:
             return self.token_logprobs(ids, mask).float().cpu().numpy()
 
     # the update -----------------------------------------------------------------------------------------------
-    def step(self, batch: Sequence[tuple[Sequence[int], Sequence[int], float]]) -> dict:
-        """batch = [(ids, mask, advantage)]; returns loss, grad-norm, token counts, mean log-p before the step."""
+    def step(self, batch: Sequence[tuple]) -> dict:
+        """batch = [(ids, mask, advantage)] or [(ids, mask, advantage, sampler_logprobs)], sampler_logprobs aligned
+        with ids (None where not sampled). Returns loss, grad-norm, token counts, mean log-p before the step and,
+        with tis_cap, the importance-weight statistics."""
         import torch
 
         n = len(batch)
         if n == 0:
             return {"skipped": "empty_batch"}
+        agg, cap = self.cfg.loss_agg, self.cfg.tis_cap
+        if agg not in ("seq_mean", "token_mean"):
+            raise ValueError(f"unknown loss_agg {agg!r}")
+        n_tok_total = sum(sum(1 for i in range(1, len(b[1])) if b[1][i]) for b in batch)
         self.model.train()
         self.opt.zero_grad(set_to_none=True)
-        loss_total, toks, mean_lps = 0.0, 0, []
-        for ids, mask, adv in batch:
+        loss_total, toks, mean_lps, w_all, d_all = 0.0, 0, [], [], []
+        for item in batch:
+            ids, mask, adv = item[0], item[1], item[2]
             lp = self.token_logprobs(ids, mask)
             if lp.numel() == 0:
                 mean_lps.append(float("nan"))
                 continue
-            mean_lp = lp.mean()
-            loss = -(float(adv) * mean_lp) / n
+            w = None
+            if len(item) > 3 and item[3] is not None:  # the sampler's log-probs: mismatch stats, and TIS if enabled
+                s = [item[3][i] for i in range(1, len(ids)) if mask[i]]
+                s_t = torch.tensor([float("nan") if v is None else float(v) for v in s], device=lp.device)
+                diff = lp.detach().float() - s_t
+                d_all.append(diff.abs()[~torch.isnan(diff)].cpu())
+                if cap is not None:
+                    ratio = torch.exp(diff)
+                    w = torch.where(torch.isnan(ratio), torch.ones_like(ratio), ratio.clamp(max=cap))
+                    w_all.append(w.cpu())
+            wlp = lp * w if w is not None else lp
+            if agg == "seq_mean":
+                loss = -(float(adv) * wlp.mean()) / n
+            else:
+                loss = -(float(adv) * wlp.sum()) / max(n_tok_total, 1)
             loss.backward()
             loss_total += float(loss.detach())
             toks += int(lp.numel())
-            mean_lps.append(float(mean_lp.detach()))
+            mean_lps.append(float(lp.detach().mean()))
         gn = torch.nn.utils.clip_grad_norm_(self.params, self.cfg.clip)
         finite = math.isfinite(float(gn)) and math.isfinite(loss_total)
         if finite:
             self.opt.step()
         self.opt.zero_grad(set_to_none=True)
-        return {"loss": loss_total, "grad_norm": float(gn), "tokens": toks, "n_traj": n, "mean_logp_before": mean_lps, "stepped": finite}
+        out = {"loss": loss_total, "grad_norm": float(gn), "tokens": toks, "n_traj": n, "mean_logp_before": mean_lps, "stepped": finite}
+        if d_all and sum(d.numel() for d in d_all):
+            d = torch.cat(d_all).double()
+            out["mismatch"] = {"n": int(d.numel()), "mean": float(d.mean()), "p50": float(d.median()),
+                               "p99": float(torch.quantile(d, 0.99)) if d.numel() < 16_000_000 else None,
+                               "max": float(d.max()), "frac_gt_0.5": float((d > 0.5).double().mean())}
+        if w_all:
+            wc = torch.cat(w_all)
+            out["tis"] = {"mean_w": float(wc.mean()), "frac_capped": float((wc >= cap - 1e-6).float().mean()), "min_w": float(wc.min())}
+        return out
 
     # weights --------------------------------------------------------------------------------------------------
     def adapter_hash(self) -> str:

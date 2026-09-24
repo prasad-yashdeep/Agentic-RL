@@ -1,0 +1,38 @@
+# Short GRPO check on top of a public SFT checkpoint: does binary test reward flow through advantage -> update -> sync
+# once groups are mixed? Start: ricdomolm/mini-coder-1.7b (Qwen3-1.7B SFT'd on ~400k Qwen3-Coder-30B-A3B
+# mini-swe-agent trajectories). serve: make -C swe-bench serve MODEL=mini-coder-1.7b (GPU0 :8001); trainer on GPU1.
+# Pool = the dev tasks whose probe outcome was mixed (experiments/probe-minicoder-pool.json). mini-coder's SFT data
+# contains SWE-smith bugs from these repos, so pool rewards are optimistic; any claim about generalisation needs the
+# Verified eval (configs/eval_verified_v1.txt), not this run.
+name: grpo-minicoder-check
+model: ricdomolm/mini-coder-1.7b
+revision: 5b7fbc90b6c4684c546de7f811865cff4414a96c
+chat_template_kwargs: {enable_thinking: true}   # its SFT turns carry no <think> block; matches the authors' eval rendering
+serve_url: http://localhost:8001
+served_model: policy
+pool: configs/pool_minicoder_mixed.txt
+split: dev
+steps: 30
+tasks_per_step: 2
+group_size: 8
+oracle_per_group: 0              # groups are mixed on their own now; no off-policy gold rollouts
+protocol: mswea                  # mini-swe-agent v1 text, byte-identical to the SFT corpus
+seed: 0
+sampling: {temperature: 1.0, top_p: 1.0, top_k: -1, repetition_penalty: 1.0}   # plain sampling = the distribution the probe measured
+limits: {max_turns: 50, max_context_tokens: 24576, max_new_tokens: 1024, wall_clock_s: 1800, command_timeout_s: 60, max_obs_chars: 10000, max_format_errors: 3}   # probe: all 31 resolved episodes <= 23.2k tokens; 10 of them needed > 30 turns
+train:
+  lr: 2.0e-5
+  lora_r: 16                     # vLLM serve --max-lora-rank 16
+  lora_alpha: 32
+  targets: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  clip: 1.0
+  max_train_tokens: 24576
+  truncate_overlong: true        # keep a context-limited rollout's first 24k tokens instead of dropping it
+  chunk: 1024
+  loss_agg: token_mean
+  tis_cap: 2.0                   # truncated importance sampling against vLLM's log-probs
+diagnostics: {mismatch: batch}   # mismatch + logp-before from the update's own forward pass (no extra passes)
+advantage: {eps: 1.0e-4, skip_degenerate: true}
+concurrency: {rollouts: 8, grading: 8}   # 8 per vLLM server keeps the prefix cache hitting (probe: 16 thrashed the 95k-token KV cache)
+grading: {timeout_s: 1800, network: false}
+env: {network: false}

@@ -126,6 +126,16 @@ def _run_rollout(ro: Rollout, cfg: dict, fmt: ChatFormat, policy_model: str, tok
     return ro
 
 
+def train_view(traj, max_tokens: int, truncate: bool):
+    """(ids, mask, sampler log-probs) the trainer sees: the whole trajectory, its first `max_tokens` tokens when
+    `truncate` (a context-limited rollout still teaches its first turns), or None (dropped, the S8/S9 behaviour)."""
+    if traj.n_tokens <= max_tokens:
+        return traj.ids, traj.mask, traj.logprobs
+    if not truncate:
+        return None
+    return traj.ids[:max_tokens], traj.mask[:max_tokens], traj.logprobs[:max_tokens]
+
+
 def _grade(ro: Rollout, cfg: dict) -> Rollout:
     if ro.traj is None:
         return ro
@@ -161,7 +171,7 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
 
     torch.manual_seed(cfg.get("seed", 0))  # LoRA init
     tok = AutoTokenizer.from_pretrained(cfg["model"], revision=cfg.get("revision"))
-    fmt = ChatFormat(tok, tools_for(cfg.get("protocol", "tool_call")))
+    fmt = ChatFormat(tok, tools_for(cfg.get("protocol", "tool_call")), cfg.get("chat_template_kwargs"))
     pool = read_pool(REPO / cfg["pool"], cfg.get("split", "dev"))
     missing = [t.instance_id for t in pool if not sif_for(t).exists()]
     if missing:
@@ -186,7 +196,9 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     tr = cfg["train"]
     trainer = LoRATrainer(cfg["model"], cfg.get("revision"), TrainConfig(
         lr=tr["lr"], lora_r=tr["lora_r"], lora_alpha=tr["lora_alpha"], targets=tuple(tr["targets"]), clip=tr["clip"],
-        max_train_tokens=tr["max_train_tokens"], chunk=tr.get("chunk", 1024)))
+        max_train_tokens=tr["max_train_tokens"], chunk=tr.get("chunk", 1024), loss_agg=tr.get("loss_agg", "seq_mean"),
+        tis_cap=tr.get("tis_cap")))
+    truncate = bool(tr.get("truncate_overlong", False))
     log(f"run {run_dir.name}: pool {len(pool)} tasks, {cfg['steps']} steps × {cfg['tasks_per_step']} tasks × G={cfg['group_size']} "
         f"(oracle {cfg['oracle_per_group']}/group); trainable {trainer.n_trainable:,}; adapter {trainer.adapter_hash()}")
     prev_probe = probe(base_policy, fmt)
@@ -206,7 +218,7 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
             ros = list(ex.map(lambda r: _grade(r, cfg), ros))
         t_grade = time.time() - t0 - t_roll
 
-        batch, groups, n_degenerate, dropped, oracle_idx = [], [], 0, 0, []
+        batch, groups, n_degenerate, dropped, truncated, oracle_idx = [], [], 0, 0, 0, []
         for t in tasks:
             # a crashed rollout, a failed grade or an infra failure is not a "reward 0" sample: leave it out of the
             # group (review finding) and skip the group if fewer than 2 valid members remain
@@ -227,22 +239,31 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
                     continue
                 if r.traj is None:
                     continue
-                if r.traj.n_tokens > tr["max_train_tokens"]:
+                view = train_view(r.traj, tr["max_train_tokens"], truncate)
+                if view is None:
                     dropped += 1
                     continue
+                truncated += int(len(view[0]) < r.traj.n_tokens)
                 if r.kind == "oracle":
                     oracle_idx.append(len(batch))
-                batch.append((r.traj.ids, r.traj.mask, float(a)))
+                batch.append((view[0], view[1], float(a), view[2]))
 
-        # train-inference mismatch on policy rollouts (before the update: same weights vLLM sampled with)
+        # train-inference mismatch on policy rollouts (before the update: same weights vLLM sampled with).
+        # diagnostics.mismatch = "all" (default): an extra no-grad pass over every policy rollout; "batch": taken from
+        # the update's own forward pass over the trained trajectories (no extra pass; degenerate groups not covered).
+        fast = cfg.get("diagnostics", {}).get("mismatch", "all") == "batch"
         t_all, s_all = [], []
-        for r in ros:
-            if r.kind == "policy" and r.traj is not None and r.traj.n_tokens <= tr["max_train_tokens"] and sum(r.traj.mask):
-                t_all.append(trainer.logprobs_nograd(r.traj.ids, r.traj.mask))
-                s_all += [r.traj.logprobs[i] for i in range(1, len(r.traj.ids)) if r.traj.mask[i]]
+        for r in ([] if fast else ros):
+            view = train_view(r.traj, tr["max_train_tokens"], truncate) if r.kind == "policy" and r.traj is not None else None
+            if view is not None and sum(view[1]):
+                t_all.append(trainer.logprobs_nograd(view[0], view[1]))
+                s_all += [view[2][i] for i in range(1, len(view[0])) if view[1][i]]
         mm_pooled = mismatch_stats(np.concatenate(t_all), s_all) if t_all else {"n": 0}
-        before = [trainer.logprobs_nograd(b[0], b[1]).mean() for b in batch]
+        before = None if fast else [trainer.logprobs_nograd(b[0], b[1]).mean() for b in batch]
         upd = trainer.step(batch) if batch else {"skipped": "no_informative_groups"}
+        if fast:
+            mm_pooled = upd.get("mismatch") or {"n": 0}
+            before = upd.get("mean_logp_before") or []
         after = [trainer.logprobs_nograd(b[0], b[1]).mean() for b in batch]
         # the surrogate this update ascends: J = (1/N) Σ A_i · mean_t log π(a_t|s_t); gain = J_after − J_before > 0
         objective_gain = float(np.mean([b[2] * (a - bf) for b, a, bf in zip(batch, after, before)])) if batch else None
@@ -265,7 +286,7 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
             "policy_resolved": int(sum(1 for r in pol if r.grade and r.grade.resolved)),
             "oracle_resolved": int(sum(1 for r in ros if r.kind == "oracle" and r.grade and r.grade.resolved)),
             "n_rollouts": len(ros), "n_errors": sum(1 for r in ros if r.error), "n_degenerate_groups": n_degenerate,
-            "n_train": len(batch), "dropped_overlong": dropped, "update": upd, "sync": sync_rec,
+            "n_train": len(batch), "dropped_overlong": dropped, "truncated_overlong": truncated, "update": upd, "sync": sync_rec,
             "objective_gain": objective_gain,
             "oracle_dlogp": [float(after[i] - before[i]) for i in oracle_idx],
             "policy_dlogp_mean": float(np.mean([after[i] - before[i] for i in range(len(batch)) if i not in set(oracle_idx)])) if len(batch) > len(oracle_idx) else None,

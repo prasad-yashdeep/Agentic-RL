@@ -1,0 +1,6 @@
+# GRPO pool for mini-coder-1.7b: the dev tasks whose probe outcome was mixed (0 < resolved < 16) under the mswea
+# protocol, 50 turns / 32k, T=1.0 (experiments/probe-minicoder-pool-{a,b}.json, 2026-09-24).
+# Left out: pydicom-811 (16/16, always degenerate) and astroid-946, marshmallow-1359, sqlfluff-1625, astroid-1268 (0/16).
+pylint-dev__astroid-1614    # 6/16
+pydicom__pydicom-1694       # 8/16
+pydicom__pydicom-1256       # 1/16

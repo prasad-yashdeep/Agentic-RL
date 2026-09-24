@@ -1,0 +1,779 @@
+{
+ "model": "ricdomolm/mini-coder-1.7b",
+ "revision": "5b7fbc90b6c4684c546de7f811865cff4414a96c",
+ "tasks": [
+  "sqlfluff__sqlfluff-1625",
+  "pydicom__pydicom-1256",
+  "pydicom__pydicom-1694",
+  "pylint-dev__astroid-1268"
+ ],
+ "episodes_per_task": 16,
+ "limits": {
+  "max_turns": 50,
+  "max_context_tokens": 32768,
+  "command_timeout_s": 60,
+  "wall_clock_s": 1800.0
+ },
+ "sampling": {
+  "temperature": 1.0,
+  "top_p": 1.0,
+  "top_k": -1
+ },
+ "template_kwargs": {
+  "enable_thinking": true
+ },
+ "protocols": {
+  "mswea": {
+   "episodes": 64,
+   "turns": 2403,
+   "valid_actions": 2381,
+   "valid_action_rate": 0.991,
+   "turn1_submit_rate": 0.0,
+   "mean_turns": 37.55,
+   "exits": {
+    "submitted": 51,
+    "max_turns": 13
+   },
+   "nonempty_patches": 61,
+   "loop_rate": 0.359,
+   "tokens": {
+    "median": 15096,
+    "max": 30221
+   },
+   "resolved": 9,
+   "per_task": {
+    "sqlfluff__sqlfluff-1625": {
+     "resolved": 0,
+     "episodes": 16,
+     "nonempty": 16
+    },
+    "pydicom__pydicom-1256": {
+     "resolved": 1,
+     "episodes": 16,
+     "nonempty": 13
+    },
+    "pydicom__pydicom-1694": {
+     "resolved": 8,
+     "episodes": 16,
+     "nonempty": 16
+    },
+    "pylint-dev__astroid-1268": {
+     "resolved": 0,
+     "episodes": 16,
+     "nonempty": 16
+    }
+   },
+   "mixed_tasks": [
+    "pydicom__pydicom-1256",
+    "pydicom__pydicom-1694"
+   ],
+   "top_commands": {
+    "#": 544,
+    "sed": 360,
+    "grep": 343,
+    "python": 266,
+    "cd": 252,
+    "cat": 145,
+    "find": 118,
+    "echo": 82,
+    "git": 67,
+    "nl": 67,
+    "cp": 27,
+    "python3": 26
+   },
+   "wall_s": 2428.7,
+   "episodes_detail": [
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 19,
+     "tokens": 9839,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 134.99
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 22495,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 509.81
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 21454,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 528.89
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 42,
+     "tokens": 26826,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 515.15
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 30221,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 627.01
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 44,
+     "tokens": 18344,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 566.64
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 39,
+     "tokens": 19593,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 444.01
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 40,
+     "tokens": 19260,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 575.95
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 49,
+     "tokens": 21381,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 653.15
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 27,
+     "tokens": 15944,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 286.97
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 24,
+     "tokens": 12797,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 232.98
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 22808,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 493.51
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 43,
+     "tokens": 20067,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 490.57
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 44,
+     "tokens": 26202,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 657.36
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 50,
+     "tokens": 23489,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 628.53
+    },
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": 36,
+     "tokens": 17696,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 528.74
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 32,
+     "tokens": 21534,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 457.5
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 46,
+     "tokens": 19579,
+     "patch": false,
+     "resolved": false,
+     "f2p": null,
+     "wall_s": 529.61
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 50,
+     "tokens": 20354,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 430.86
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 32,
+     "tokens": 14012,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 337.76
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 37,
+     "tokens": 16146,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 387.92
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 20599,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 495.6
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 20931,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 361.93
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 20,
+     "tokens": 8884,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 90.39
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 21024,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 524.97
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 24041,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 570.67
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 38,
+     "tokens": 20364,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 478.8
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 42,
+     "tokens": 19570,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 481.18
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 32,
+     "tokens": 17699,
+     "patch": false,
+     "resolved": false,
+     "f2p": null,
+     "wall_s": 437.25
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 30,
+     "tokens": 16313,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 417.35
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 31,
+     "tokens": 14196,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 299.29
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": 35,
+     "tokens": 15986,
+     "patch": false,
+     "resolved": false,
+     "f2p": null,
+     "wall_s": 296.69
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 43,
+     "tokens": 15096,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 233.72
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 48,
+     "tokens": 16569,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 198.74
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 14600,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 196.42
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 31,
+     "tokens": 14387,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 261.77
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 45,
+     "tokens": 13993,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 192.39
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 16058,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 261.68
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 29,
+     "tokens": 11223,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 140.18
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 15632,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 238.47
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 40,
+     "tokens": 11446,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 163.63
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 29,
+     "tokens": 9277,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 90.87
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 27,
+     "tokens": 10009,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 138.76
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 41,
+     "tokens": 11524,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 135.4
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 38,
+     "tokens": 14401,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 279.56
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 33,
+     "tokens": 8956,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 100.45
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 13605,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 170.38
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": 48,
+     "tokens": 15615,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 199.67
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 19,
+     "tokens": 7648,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 62.42
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 16,
+     "tokens": 6687,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 46.23
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 19,
+     "tokens": 7149,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 51.9
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 47,
+     "tokens": 12218,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 127.14
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 24,
+     "tokens": 8189,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 63.34
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 22,
+     "tokens": 7501,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 60.77
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 50,
+     "tokens": 12335,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 129.3
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 13186,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 152.83
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 15,
+     "tokens": 6889,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 50.27
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 13,
+     "tokens": 6333,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 39.49
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 48,
+     "tokens": 13348,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 131.73
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 37,
+     "tokens": 12005,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 106.53
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 44,
+     "tokens": 10597,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 96.08
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 28,
+     "tokens": 9422,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 88.34
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 13,
+     "tokens": 6244,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 43.35
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": 24,
+     "tokens": 8870,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 75.37
+    }
+   ],
+   "examples": [
+    {
+     "task": "sqlfluff__sqlfluff-1625",
+     "exit": "submitted",
+     "turns": [
+      "find . -name \"*.py\" | xargs grep -l \"L031\\|Avoid using aliases in join condition\" | head -10",
+      "cat ./src/sqlfluff/rules/L031.py",
+      "find ./test -name \"*L031*\" -o -name \"*031*\" | head -10",
+      "cat ./test/fixtures/rules/std_rule_cases/L031.yml",
+      "sqlfluff lint -d TSQL -i \"SELECT [hello] FROM mytable\" 2>&1",
+      "sqlfluff lint --help | head -20"
+     ]
+    },
+    {
+     "task": "pydicom__pydicom-1256",
+     "exit": "submitted",
+     "turns": [
+      "find . -name \"jsonrep.py\" -type f",
+      "grep -n \"BulkDataURI\\|from_json\\|json\" ./pydicom/jsonrep.py | head -20",
+      "nl -ba ./pydicom/jsonrep.py | sed -n '200,250p'",
+      "find . -name \"*.py\" -exec grep -l \"from_json\" {} \\; | head -5",
+      "grep -n -A 20 \"def from_json\" ./pydicom/dataelem.py",
+      "grep -n -A 50 \"def from_json\" ./pydicom/dataelem.py"
+     ]
+    },
+    {
+     "task": "pydicom__pydicom-1694",
+     "exit": "submitted",
+     "turns": [
+      "find . -name \"*.py\" | grep -E \"(dataset|valuerep)\" | head -10",
+      "grep -n \"def to_json_dict\" ./pydicom/dataset.py",
+      "sed -n '2460,2520p' ./pydicom/dataset.py",
+      "grep -n \"suppress_invalid_tags\" ./pydicom/tests/test_dataset.py",
+      "grep -rn \"suppress_invalid_tags\" ./pydicom/tests/",
+      "sed -n '270,290p' ./pydicom/tests/test_json.py"
+     ]
+    },
+    {
+     "task": "pylint-dev__astroid-1268",
+     "exit": "submitted",
+     "turns": [
+      "find . -name \"*.py\" -path \"*/nodes/*\" | head -20",
+      "cat ./astroid/nodes/as_string.py",
+      "grep -n \"class Unknown\" ./astroid/nodes/node_classes.py",
+      "head -4350 ./astroid/nodes/node_classes.py | tail -30",
+      "cat <<'EOF' > test_reproduce_issue.py\n#!/usr/bin/env python3\n\"\"\"Script to reproduce the Unknown node as_string() issue.\"",
+      "python test_reproduce_issue.py"
+     ]
+    }
+   ]
+  }
+ }
+}

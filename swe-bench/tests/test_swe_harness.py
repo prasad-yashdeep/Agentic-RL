@@ -19,9 +19,9 @@ SRC = "def f(x):\n    return x\n"
 FIX = "def f(x):\n    return x + 1\n"
 
 
-@pytest.mark.parametrize("protocol", ["tool_call", "backticks"])
-def test_scripted_episode_is_token_exact(qwen_tok, protocol):
-    fmt = ChatFormat(qwen_tok, tools_for(protocol))
+@pytest.mark.parametrize("protocol,tkw", [("tool_call", None), ("backticks", None), ("mswea", {"enable_thinking": True})])
+def test_scripted_episode_is_token_exact(qwen_tok, protocol, tkw):
+    fmt = ChatFormat(qwen_tok, tools_for(protocol), tkw)
     replies = [action_text("cat pkg/f.py", "read", protocol),
                action_text(f"cat > pkg/f.py <<'EOF'\n{FIX}EOF", "fix", protocol),
                action_text(f"echo {SUBMIT}", "submit", protocol)]
@@ -31,7 +31,8 @@ def test_scripted_episode_is_token_exact(qwen_tok, protocol):
     assert "+    return x + 1" in tr.patch
     assert len(tr.ids) == len(tr.mask) == len(tr.logprobs)
     # incremental ids == one-shot tokenisation of the rendered conversation (assistant turns as plain text)
-    full = qwen_tok.apply_chat_template(tr.messages, tools=fmt.tools or None, add_generation_prompt=False, tokenize=False)
+    full = qwen_tok.apply_chat_template(tr.messages, tools=fmt.tools or None, add_generation_prompt=False, tokenize=False,
+                                        **fmt.template_kwargs)
     full_ids = qwen_tok(full, add_special_tokens=False)["input_ids"]
     assert full_ids[: len(tr.ids)] == tr.ids
     # mask 1 exactly on the assistant replies (each ends with <|im_end|>)

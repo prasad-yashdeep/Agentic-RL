@@ -1,0 +1,11 @@
+# held-out dev tasks (pvlib, pyvista): repos absent from SWE-smith/mini-coder training data;
+# chosen with select_pool (smallest single-file fixes). Never used for training.
+# 2026-09-24: UNUSABLE as published — gold patch scores 0 on all 7 (experiments/holdout-gate.json): the pvlib images ship
+# NumPy 2 (pvlib 0.8 uses np.Inf -> ImportError), pyvista fails with AttributeError in pyvista/core/dataset.py.
+pvlib__pvlib-python-1239
+pvlib__pvlib-python-1093
+pvlib__pvlib-python-1191
+pvlib__pvlib-python-1273
+pvlib__pvlib-python-1216
+pyvista__pyvista-4417
+pyvista__pyvista-4853

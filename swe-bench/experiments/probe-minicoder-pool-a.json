@@ -1,0 +1,778 @@
+{
+ "model": "ricdomolm/mini-coder-1.7b",
+ "revision": "5b7fbc90b6c4684c546de7f811865cff4414a96c",
+ "tasks": [
+  "pylint-dev__astroid-946",
+  "marshmallow-code__marshmallow-1359",
+  "pydicom__pydicom-811",
+  "pylint-dev__astroid-1614"
+ ],
+ "episodes_per_task": 16,
+ "limits": {
+  "max_turns": 50,
+  "max_context_tokens": 32768,
+  "command_timeout_s": 60,
+  "wall_clock_s": 1800.0
+ },
+ "sampling": {
+  "temperature": 1.0,
+  "top_p": 1.0,
+  "top_k": -1
+ },
+ "template_kwargs": {
+  "enable_thinking": true
+ },
+ "protocols": {
+  "mswea": {
+   "episodes": 64,
+   "turns": 2101,
+   "valid_actions": 2090,
+   "valid_action_rate": 0.995,
+   "turn1_submit_rate": 0.0,
+   "mean_turns": 32.83,
+   "exits": {
+    "max_turns": 11,
+    "submitted": 53
+   },
+   "nonempty_patches": 63,
+   "loop_rate": 0.312,
+   "tokens": {
+    "median": 11104,
+    "max": 23973
+   },
+   "resolved": 22,
+   "per_task": {
+    "pylint-dev__astroid-946": {
+     "resolved": 0,
+     "episodes": 16,
+     "nonempty": 15
+    },
+    "marshmallow-code__marshmallow-1359": {
+     "resolved": 0,
+     "episodes": 16,
+     "nonempty": 16
+    },
+    "pydicom__pydicom-811": {
+     "resolved": 16,
+     "episodes": 16,
+     "nonempty": 16
+    },
+    "pylint-dev__astroid-1614": {
+     "resolved": 6,
+     "episodes": 16,
+     "nonempty": 16
+    }
+   },
+   "mixed_tasks": [
+    "pylint-dev__astroid-1614"
+   ],
+   "top_commands": {
+    "sed": 351,
+    "grep": 331,
+    "python": 282,
+    "#": 257,
+    "cat": 205,
+    "cd": 181,
+    "git": 101,
+    "find": 97,
+    "echo": 74,
+    "python3": 73,
+    "nl": 54,
+    "ls": 21
+   },
+   "wall_s": 1656.7,
+   "episodes_detail": [
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 19611,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 460.6
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 20473,
+     "patch": false,
+     "resolved": false,
+     "f2p": null,
+     "wall_s": 381.45
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 32,
+     "tokens": 18333,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 366.28
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 37,
+     "tokens": 17127,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 371.43
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 45,
+     "tokens": 21391,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 441.13
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 42,
+     "tokens": 17213,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 453.02
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 39,
+     "tokens": 13914,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 217.04
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 18175,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 421.27
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 47,
+     "tokens": 18760,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 456.38
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 49,
+     "tokens": 20276,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 327.26
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 46,
+     "tokens": 19013,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 341.57
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 45,
+     "tokens": 14600,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 221.31
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 21547,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 487.63
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 43,
+     "tokens": 21182,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 315.76
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": 32,
+     "tokens": 13842,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 264.71
+    },
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 23973,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 390.58
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 30,
+     "tokens": 11104,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 209.19
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 24,
+     "tokens": 7759,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 106.88
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 34,
+     "tokens": 13808,
+     "patch": true,
+     "resolved": false,
+     "f2p": "1/1",
+     "wall_s": 154.69
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 32,
+     "tokens": 8823,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 108.07
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 25,
+     "tokens": 10668,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 183.0
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 47,
+     "tokens": 13441,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 164.82
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 34,
+     "tokens": 9752,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 154.12
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 29,
+     "tokens": 13302,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 121.3
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 36,
+     "tokens": 14469,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 108.13
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 36,
+     "tokens": 11039,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 134.02
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 42,
+     "tokens": 10087,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 118.62
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 13735,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 132.38
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 21,
+     "tokens": 5463,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 64.33
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 11181,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 144.6
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": 33,
+     "tokens": 7758,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 88.75
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 12341,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 138.33
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 14,
+     "tokens": 5130,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 49.87
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 33,
+     "tokens": 9019,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 102.61
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 14,
+     "tokens": 5965,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 70.76
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 15,
+     "tokens": 5319,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 47.78
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 24,
+     "tokens": 6586,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 66.65
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 9,
+     "tokens": 4924,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 39.52
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 12,
+     "tokens": 4710,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 43.76
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 16,
+     "tokens": 5343,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 50.63
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 10,
+     "tokens": 4985,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 42.86
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 15,
+     "tokens": 5275,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 38.53
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 12,
+     "tokens": 5113,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 33.06
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 14,
+     "tokens": 5372,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 42.12
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 19,
+     "tokens": 5978,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 41.2
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 11,
+     "tokens": 4667,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 30.52
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 17,
+     "tokens": 5991,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 45.27
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": 15,
+     "tokens": 5696,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 48.79
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 50,
+     "tokens": 23168,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 434.05
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 27,
+     "tokens": 8411,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 81.85
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 22678,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 420.91
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 32,
+     "tokens": 14492,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 104.75
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 21,
+     "tokens": 8660,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 98.16
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 27,
+     "tokens": 8899,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 121.36
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 31,
+     "tokens": 10896,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 146.37
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 33,
+     "tokens": 10230,
+     "patch": true,
+     "resolved": false,
+     "f2p": "1/1",
+     "wall_s": 126.83
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 16760,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 261.18
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 25,
+     "tokens": 10639,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 133.35
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "max_turns",
+     "turns": 50,
+     "tokens": 21981,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 346.38
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 44,
+     "tokens": 21205,
+     "patch": true,
+     "resolved": false,
+     "f2p": "1/1",
+     "wall_s": 367.29
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 37,
+     "tokens": 16808,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 339.77
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 22,
+     "tokens": 9545,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 151.31
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 41,
+     "tokens": 15923,
+     "patch": true,
+     "resolved": false,
+     "f2p": "0/1",
+     "wall_s": 275.84
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": 31,
+     "tokens": 10787,
+     "patch": true,
+     "resolved": true,
+     "f2p": "1/1",
+     "wall_s": 172.0
+    }
+   ],
+   "examples": [
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "max_turns",
+     "turns": [
+      "find . -name \"*.py\" | grep -E \"(astroid|infer)\" | head -20",
+      "find ./astroid -name \"*.py\" | grep -E \"(infer|node|attribute)\" | head -10",
+      "cat <<'EOF' > test_issue_reproduction.py\n#!/usr/bin/env python3\n\"\"\"Test script to reproduce the delayed attribute assign",
+      "python test_issue_reproduction.py",
+      "cat <<'EOF' > test_issue_reproduction.py\n#!/usr/bin/env python3\n\"\"\"Test script to reproduce the delayed attribute assign",
+      "python test_issue_reproduction.py"
+     ]
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": [
+      "ls -la",
+      "ls -la src/",
+      "ls -la src/marshmallow/",
+      "cat <<'EOF' > test_reproduce_issue.py\nfrom marshmallow import fields, Schema\n\nclass MySchema(Schema):\n    times = fields",
+      "cd src && python ../test_reproduce_issue.py",
+      "grep -n \"schema.opts\" src/marshmallow/fields.py"
+     ]
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "submitted",
+     "turns": [
+      "find . -name \"filereader.py\" -type f",
+      "sed -n '685,700p' ./pydicom/filereader.py",
+      "grep -n \"def read_partial\" ./pydicom/filereader.py",
+      "sed -n '647,720p' ./pydicom/filereader.py",
+      "cat <<'EOF' > test_reproduce_issue.py\n#!/usr/bin/env python3\n\"\"\"Script to reproduce the 0-byte file issue with dcmreader",
+      "python test_reproduce_issue.py"
+     ]
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": [
+      "find . -name \"*.py\" -path \"*/brain/*\" | head -10",
+      "grep -n \"_infer_str_format_call\" ./astroid/brain/brain_builtin_inference.py",
+      "sed -n '920,960p' ./astroid/brain/brain_builtin_inference.py",
+      "cat <<'EOF' > test_reproduce.py\nclass A:\n    def render(self, audit_log_entry):\n        return \"joined team {team_slug}\"",
+      "python -m pylint test_reproduce.py --disable=all",
+      "python -c \"\nimport astroid\nwith open('test_reproduce.py', 'r') as f:\n    code = f.read()\ntry:\n    module = astroid.parse"
+     ]
+    }
+   ]
+  }
+ }
+}

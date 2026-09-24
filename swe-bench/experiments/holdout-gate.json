@@ -1,0 +1,242 @@
+[
+ {
+  "instance_id": "pvlib__pvlib-python-1239",
+  "ok": false,
+  "gold_reward": 0.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   0,
+   2
+  ],
+  "p2p": [
+   0,
+   102
+  ],
+  "empty_f2p": [
+   0,
+   2
+  ],
+  "empty_p2p": [
+   0,
+   102
+  ],
+  "network": false,
+  "failing_tests": [],
+  "gold_workdir": ""
+ },
+ {
+  "instance_id": "pvlib__pvlib-python-1093",
+  "ok": false,
+  "gold_reward": 0.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   0,
+   1
+  ],
+  "p2p": [
+   0,
+   85
+  ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   0,
+   85
+  ],
+  "network": false,
+  "failing_tests": [],
+  "gold_workdir": ""
+ },
+ {
+  "instance_id": "pvlib__pvlib-python-1191",
+  "ok": false,
+  "gold_reward": 0.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   0,
+   1
+  ],
+  "p2p": [
+   0,
+   98
+  ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   0,
+   98
+  ],
+  "network": false,
+  "failing_tests": [],
+  "gold_workdir": ""
+ },
+ {
+  "instance_id": "pvlib__pvlib-python-1273",
+  "ok": false,
+  "gold_reward": 0.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   0,
+   1
+  ],
+  "p2p": [
+   0,
+   19
+  ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   0,
+   19
+  ],
+  "network": false,
+  "failing_tests": [],
+  "gold_workdir": ""
+ },
+ {
+  "instance_id": "pvlib__pvlib-python-1216",
+  "ok": false,
+  "gold_reward": 0.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   0,
+   1
+  ],
+  "p2p": [
+   0,
+   242
+  ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   0,
+   242
+  ],
+  "network": false,
+  "failing_tests": [],
+  "gold_workdir": ""
+ },
+ {
+  "instance_id": "pyvista__pyvista-4417",
+  "ok": false,
+  "gold_reward": 0.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   0,
+   1
+  ],
+  "p2p": [
+   11,
+   49
+  ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   11,
+   49
+  ],
+  "network": false,
+  "failing_tests": [
+   "tests/test_composite.py::test_to_polydata",
+   "tests/test_composite.py::test_multi_block_append",
+   "tests/test_composite.py::test_multi_block_set_get_ers",
+   "tests/test_composite.py::test_replace",
+   "tests/test_composite.py::test_pop",
+   "tests/test_composite.py::test_slicing_multiple_in_setitem",
+   "tests/test_composite.py::test_reverse",
+   "tests/test_composite.py::test_insert",
+   "tests/test_composite.py::test_multi_block_eq",
+   "tests/test_composite.py::test_multi_block_io[True-.vtm-True]",
+   "tests/test_composite.py::test_multi_block_io[True-.vtm-False]",
+   "tests/test_composite.py::test_multi_block_io[True-.vtmb-True]",
+   "tests/test_composite.py::test_multi_block_io[True-.vtmb-False]",
+   "tests/test_composite.py::test_multi_block_io[False-.vtm-True]",
+   "tests/test_composite.py::test_multi_block_io[False-.vtm-False]",
+   "tests/test_composite.py::test_multi_block_io[False-.vtmb-True]",
+   "tests/test_composite.py::test_multi_block_io[False-.vtmb-False]",
+   "tests/test_composite.py::test_ensight_multi_block_io[vtm-True]",
+   "tests/test_composite.py::test_ensight_multi_block_io[vtm-False]",
+   "tests/test_composite.py::test_ensight_multi_block_io[vtmb-True]",
+   "tests/test_composite.py::test_ensight_multi_block_io[vtmb-False]",
+   "tests/test_composite.py::test_extract_geometry",
+   "tests/test_composite.py::test_combine_filter",
+   "tests/test_composite.py::test_multi_block_copy",
+   "tests/test_composite.py::test_multi_block_negative_index",
+   "tests/test_composite.py::test_multi_slice_index",
+   "tests/test_composite.py::test_slice_defaults",
+   "tests/test_composite.py::test_slice_negatives",
+   "tests/test_composite.py::test_multi_block_volume",
+   "tests/test_composite.py::test_multi_block_save_lines",
+   "tests/test_composite.py::test_multi_block_data_range",
+   "tests/test_composite.py::test_multiblock_ref",
+   "tests/test_composite.py::test_set_active_scalars",
+   "tests/test_composite.py::test_set_active_scalars_multi",
+   "tests/test_composite.py::test_set_active_scalars_components",
+   "tests/test_composite.py::test_set_active_multi_multi",
+   "tests/test_composite.py::test_set_active_scalars_mixed",
+   "tests/test_composite.py::test_compute_normals",
+   "tests/test_composite.py::test_activate_plotting_scalars"
+  ],
+  "gold_workdir": ""
+ },
+ {
+  "instance_id": "pyvista__pyvista-4853",
+  "ok": false,
+  "gold_reward": 0.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   0,
+   1
+  ],
+  "p2p": [
+   0,
+   23
+  ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   0,
+   23
+  ],
+  "network": false,
+  "failing_tests": [
+   "tests/core/test_parametric_geometry.py::test_direction",
+   "tests/core/test_parametric_geometry.py::test_spline",
+   "tests/core/test_parametric_geometry.py::test_kochanek_spline",
+   "tests/core/test_parametric_geometry.py::test_ParametricBohemianDome",
+   "tests/core/test_parametric_geometry.py::test_ParametricBour",
+   "tests/core/test_parametric_geometry.py::test_ParametricBoy",
+   "tests/core/test_parametric_geometry.py::test_ParametricCatalanMinimal",
+   "tests/core/test_parametric_geometry.py::test_ParametricConicSpiral",
+   "tests/core/test_parametric_geometry.py::test_ParametricCrossCap",
+   "tests/core/test_parametric_geometry.py::test_ParametricDini",
+   "tests/core/test_parametric_geometry.py::test_ParametricEllipsoid",
+   "tests/core/test_parametric_geometry.py::test_ParametricEnneper",
+   "tests/core/test_parametric_geometry.py::test_ParametricFigure8Klein",
+   "tests/core/test_parametric_geometry.py::test_ParametricHenneberg",
+   "tests/core/test_parametric_geometry.py::test_ParametricKlein",
+   "tests/core/test_parametric_geometry.py::test_ParametricKuen",
+   "tests/core/test_parametric_geometry.py::test_ParametricMobius",
+   "tests/core/test_parametric_geometry.py::test_ParametricPluckerConoid",
+   "tests/core/test_parametric_geometry.py::test_ParametricPseudosphere",
+   "tests/core/test_parametric_geometry.py::test_ParametricRandomHills",
+   "tests/core/test_parametric_geometry.py::test_ParametricRoman",
+   "tests/core/test_parametric_geometry.py::test_ParametricSuperEllipsoid",
+   "tests/core/test_parametric_geometry.py::test_ParametricSuperToroid",
+   "tests/core/test_parametric_geometry.py::test_ParametricTorus"
+  ],
+  "gold_workdir": ""
+ }
+]

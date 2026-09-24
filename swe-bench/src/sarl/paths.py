@@ -41,7 +41,15 @@ MODELS = {
     # Qwen3 (2025-04, non-thinking mode): native hermes <tool_call> JSON, weak at SWE -> headroom for RL
     "qwen3-1.7b": ("Qwen/Qwen3-1.7B", "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"),
     "qwen3-4b-awq": ("Qwen/Qwen3-4B-AWQ", "74d4bd2bd4bff9cafc9345221320bffb08b406a3"),
+    # Qwen3-1.7B after SFT on ~400k Qwen3-Coder-30B-A3B mini-swe-agent trajectories (SWE-smith tasks; MIT). Same
+    # tokenizer as Qwen3-1.7B; card: 18.6 % pass@1 on SWE-bench Verified (bash-only). Use protocol "mswea" and render
+    # with enable_thinking=True (its SFT turns carry no <think> block). Trained on SWE-smith bugs from all four pool
+    # repos (astroid, sqlfluff, pydicom, marshmallow) -> measure generalisation on configs/holdout_dev.txt.
+    "mini-coder-1.7b": ("ricdomolm/mini-coder-1.7b", "5b7fbc90b6c4684c546de7f811865cff4414a96c"),
 }
+
+# chat-template kwargs per model (ChatFormat defaults to enable_thinking=False)
+TEMPLATE_KWARGS = {"mini-coder-1.7b": {"enable_thinking": True}}
 
 
 def model_snapshot(key: str) -> Path:
