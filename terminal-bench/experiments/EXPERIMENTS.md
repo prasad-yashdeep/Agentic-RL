@@ -287,3 +287,17 @@ ready for loop-back (full A0) + module extraction + B1/B2 scale-up.
   - The result lines read `summary.*` from `tarl eval --json` (they would have printed `None`).
 - `viz.save_svg` strips matplotlib's trailing spaces, so regenerated figures pass `git diff --check`.
 - Tests: 83 pass, 1 skip on node08 (GPU1 only; the serve holds GPU0).
+
+## 2026-09-24 03:50 PDT — terminal-bench paused (user decision: focus on swe-bench first)
+
+- **Stopped at the user's request.** The driver, babysitter and gemma server on node08 are stopped (tmux `exp`, `watch`, `serve`), along with the Endless Terminals image builds and their orphaned fakeroot daemons. node08 is idle.
+- **Where it stopped.** It was in phase `et_prep`, relaunched 03:33 by the other session with commit 232fae5.
+  - Done: splits, pools (train 160 / dev 60), conversion, and the leakage guard (160/160 keep, max cosine 0.54).
+  - Images: 57 SIFs built and kept in node08 `/var/tmp/tarl/et-sif`. Partial `.sif.tmp.*` files were deleted.
+- **Phase markers in `runs/driver/`:** health, serve, smoke, gpu_cells, and a0_resume (skipped on purpose; see above).
+- **Resume:**
+  ```
+  make -C /home/yashp/Agentic-RL/terminal-bench exp
+  ```
+  Then `et_prep` reruns idempotently (existing SIFs are skipped), followed by a0_etdev, b1, a0_tb21, b1_eval, and b2 (still gated on `.allow-judge-spend`).
+- **Uncommitted output:** the regenerated figures from the 03:33 gpu_cells run (`docs/blog/figures/*`) are still uncommitted in the working tree.
