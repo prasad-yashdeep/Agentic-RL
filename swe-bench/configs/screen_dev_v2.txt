@@ -1,0 +1,43 @@
+# Screening list for the GRPO v2 pool (2026-09-24): the 40 smallest single-file fixes (gold patch <= 2000 chars,
+# 1-5 fail-to-pass tests) from the dev repos whose images work (astroid, pydicom, sqlfluff, marshmallow),
+# excluding the 8 tasks of configs/pool_dev.txt (already probed). Screened with scripts/rolling_probe.py.
+pydicom__pydicom-1031
+sqlfluff__sqlfluff-3170
+sqlfluff__sqlfluff-2386
+pydicom__pydicom-1069
+pydicom__pydicom-1416
+pylint-dev__astroid-927
+pydicom__pydicom-1539
+pylint-dev__astroid-934
+marshmallow-code__marshmallow-1252
+sqlfluff__sqlfluff-1733
+pylint-dev__astroid-1719
+sqlfluff__sqlfluff-4151
+pylint-dev__astroid-1903
+pylint-dev__astroid-1164
+pydicom__pydicom-839
+pydicom__pydicom-1192
+pylint-dev__astroid-1866
+pydicom__pydicom-1050
+sqlfluff__sqlfluff-3220
+pydicom__pydicom-900
+pydicom__pydicom-1633
+pydicom__pydicom-1194
+marshmallow-code__marshmallow-1343
+sqlfluff__sqlfluff-1577
+sqlfluff__sqlfluff-2998
+sqlfluff__sqlfluff-1517
+pylint-dev__astroid-1333
+pydicom__pydicom-1139
+sqlfluff__sqlfluff-3435
+pylint-dev__astroid-1959
+pylint-dev__astroid-1962
+pylint-dev__astroid-1262
+pylint-dev__astroid-2023
+pydicom__pydicom-938
+pydicom__pydicom-1413
+pylint-dev__astroid-1616
+sqlfluff__sqlfluff-1763
+pydicom__pydicom-866
+pydicom__pydicom-816
+marshmallow-code__marshmallow-1524

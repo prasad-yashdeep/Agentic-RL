@@ -17,8 +17,10 @@ import fcntl
 import os
 import re
 import shlex
+import shutil
 import socket
 import subprocess
+import threading
 import time
 import uuid
 from contextlib import contextmanager
@@ -65,8 +67,10 @@ def _lock(path: Path):
             fcntl.flock(fh, fcntl.LOCK_UN)
 
 
-def ensure_sif(docker_ref: str, sif_path: Path, *, timeout_s: int = 1800) -> Path:
-    """`apptainer pull` once per image (locked, atomic). Caches and the SIF stay node-local."""
+def ensure_sif(docker_ref: str, sif_path: Path, *, timeout_s: int = 1800, cache: bool = True) -> Path:
+    """`apptainer pull` once per image (locked, atomic). Caches and the SIF stay node-local. cache=False pulls with
+    --disable-cache (layers go to a temp dir under APPTAINER_TMPDIR and are removed): rolling pulls of many images
+    otherwise leave ~1 GB of layer blobs per image in APPTAINER_CACHEDIR (18 GB after ~15 pulls on node08)."""
     sif_path = Path(sif_path)
     if sif_path.exists():
         return sif_path
@@ -79,12 +83,21 @@ def ensure_sif(docker_ref: str, sif_path: Path, *, timeout_s: int = 1800) -> Pat
         if sif_path.exists():
             return sif_path
         tmp = sif_path.with_name(sif_path.name + f".tmp.{os.getpid()}")
-        r = subprocess.run([str(APPTAINER), "pull", "--force", str(tmp), docker_ref], capture_output=True, text=True,
-                           timeout=timeout_s, env=apptainer_env())
-        if r.returncode != 0 or not tmp.exists():
+        cmd = [str(APPTAINER), "pull", "--force"] + ([] if cache else ["--disable-cache"]) + [str(tmp), docker_ref]
+        env = apptainer_env()
+        # a private temp dir per pull, removed afterwards even on timeout (a killed apptainer cannot clean up its
+        # multi-GB rootfs/layer temp dirs, and concurrent pulls must not share one)
+        pull_tmp = Path(APPTAINER_TMPDIR) / f"pull-{os.getpid()}-{threading.get_ident()}"
+        pull_tmp.mkdir(parents=True, exist_ok=True)
+        env["APPTAINER_TMPDIR"] = str(pull_tmp)
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s, env=env)
+            if r.returncode != 0 or not tmp.exists():
+                raise RuntimeError(f"apptainer pull {docker_ref} failed ({r.returncode}): {r.stderr[-600:]}")
+            tmp.rename(sif_path)
+        finally:
             tmp.unlink(missing_ok=True)
-            raise RuntimeError(f"apptainer pull {docker_ref} failed ({r.returncode}): {r.stderr[-600:]}")
-        tmp.rename(sif_path)
+            shutil.rmtree(pull_tmp, ignore_errors=True)
     return sif_path
 
 

@@ -23,6 +23,9 @@ class Sampling:
     top_p: float = 1.0
     top_k: int = -1
     repetition_penalty: float = 1.0
+    # A seed makes an episode reproducible. VLLMPolicy derives a distinct seed per call (turn): vLLM seeds a fresh
+    # generator per request, so one seed for every turn would reuse the same random draw for token j of every turn
+    # and correlate the turns of an episode (review finding 2026-09-24; runs before this fix used one seed per episode).
     seed: int | None = None
 
 
@@ -46,6 +49,7 @@ class VLLMPolicy:
         self.sampling = sampling or Sampling()
         self.timeout_s = timeout_s
         self.stop_token_ids = list(stop_token_ids)
+        self.n_calls = 0  # per-turn seed offset (see Sampling.seed)
 
     def healthy(self) -> bool:
         import httpx
@@ -66,7 +70,8 @@ class VLLMPolicy:
             "skip_special_tokens": False, "stop_token_ids": self.stop_token_ids,
         }
         if s.seed is not None:
-            body["seed"] = int(s.seed)
+            body["seed"] = (int(s.seed) + 1_000_003 * self.n_calls) % (2**63 - 1)
+        self.n_calls += 1
         r = httpx.post(self.base_url + "/v1/completions", json=body, timeout=self.timeout_s)
         r.raise_for_status()
         c = r.json()["choices"][0]
