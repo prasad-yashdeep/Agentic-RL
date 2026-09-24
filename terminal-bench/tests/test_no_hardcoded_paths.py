@@ -1,6 +1,6 @@
 """Guard for the 2026-09-24 monorepo cut-over: live code must not reference the old checkout path.
 
-There is no compatibility symlink, so a script that still says ~/terminal-agent-rl either fails or, after the
+There is no compatibility symlink, so a script that still names the old checkout either fails or, after the
 read-only placeholder is removed, silently recreates a stray tree (Harbor `mkdir -p`s its --jobs-dir).
 """
 

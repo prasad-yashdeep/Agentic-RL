@@ -1,0 +1,12 @@
+# swe-bench training pool v1 (2026-09-24): 8 SWE-bench *dev* tasks (repos disjoint from Verified; structural guard
+# clean). Chosen by sarl.tasks.select_pool (single-file gold patch <= 700 chars, 1 fail-to-pass test, >= 1
+# pass-to-pass test), then the ~1 GB images so all eight fit node08 /tmp (16 GB). Gold=1 / empty=0 checked by
+# `sarl grade` before training (gate S5); tasks whose gold patch fails under apptainer are removed here.
+pylint-dev__astroid-946            # 0.98 GB image, 385-char fix
+marshmallow-code__marshmallow-1359 # 0.99 GB
+pydicom__pydicom-811               # 1.13 GB
+pylint-dev__astroid-1614           # 0.98 GB
+sqlfluff__sqlfluff-1625            # 1.02 GB
+pydicom__pydicom-1256              # 1.14 GB
+pydicom__pydicom-1694              # 1.15 GB
+pylint-dev__astroid-1268           # 0.98 GB

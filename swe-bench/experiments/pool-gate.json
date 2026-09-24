@@ -1,0 +1,130 @@
+[
+ {
+  "instance_id": "pylint-dev__astroid-946",
+  "ok": true,
+  "gold_reward": 1.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   1,
+   1
+  ],
+  "p2p": [
+   155,
+   155
+  ],
+  "failing_tests": [],
+  "gold_workdir": "/var/tmp/swe/grade/pylint-dev__astroid-946-e41335f6"
+ },
+ {
+  "instance_id": "marshmallow-code__marshmallow-1359",
+  "ok": true,
+  "gold_reward": 1.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   1,
+   1
+  ],
+  "p2p": [
+   76,
+   76
+  ],
+  "failing_tests": [],
+  "gold_workdir": "/var/tmp/swe/grade/marshmallow-code__marshmallow-1359-d2dbc3fe"
+ },
+ {
+  "instance_id": "pydicom__pydicom-811",
+  "ok": true,
+  "gold_reward": 1.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   1,
+   1
+  ],
+  "p2p": [
+   85,
+   85
+  ],
+  "failing_tests": [],
+  "gold_workdir": "/var/tmp/swe/grade/pydicom__pydicom-811-52098d5d"
+ },
+ {
+  "instance_id": "pylint-dev__astroid-1614",
+  "ok": true,
+  "gold_reward": 1.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   1,
+   1
+  ],
+  "p2p": [
+   9,
+   9
+  ],
+  "failing_tests": [],
+  "gold_workdir": "/var/tmp/swe/grade/pylint-dev__astroid-1614-947a3923"
+ },
+ {
+  "instance_id": "sqlfluff__sqlfluff-1625",
+  "ok": true,
+  "gold_reward": 1.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   1,
+   1
+  ],
+  "p2p": [
+   64,
+   64
+  ],
+  "failing_tests": [],
+  "gold_workdir": "/var/tmp/swe/grade/sqlfluff__sqlfluff-1625-ec416c82"
+ },
+ {
+  "instance_id": "pydicom__pydicom-1256",
+  "ok": true,
+  "gold_reward": 1.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   1,
+   1
+  ],
+  "p2p": [
+   22,
+   22
+  ],
+  "failing_tests": [],
+  "gold_workdir": "/var/tmp/swe/grade/pydicom__pydicom-1256-4221a1cd"
+ },
+ {
+  "instance_id": "pydicom__pydicom-1694",
+  "ok": true,
+  "gold_reward": 1.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   1,
+   1
+  ],
+  "p2p": [
+   26,
+   26
+  ],
+  "failing_tests": [],
+  "gold_workdir": "/var/tmp/swe/grade/pydicom__pydicom-1694-ff2d4b25"
+ },
+ {
+  "instance_id": "pylint-dev__astroid-1268",
+  "ok": true,
+  "gold_reward": 1.0,
+  "empty_reward": 0.0,
+  "f2p": [
+   1,
+   1
+  ],
+  "p2p": [
+   91,
+   91
+  ],
+  "failing_tests": [],
+  "gold_workdir": "/var/tmp/swe/grade/pylint-dev__astroid-1268-0e17d515"
+ }
+]
