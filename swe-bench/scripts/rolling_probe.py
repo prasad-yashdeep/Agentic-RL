@@ -103,6 +103,8 @@ def main(argv=None) -> int:
     p.add_argument("--keep-mixed", action="store_true")
     p.add_argument("--keep-all", action="store_true", help="never delete images (debugging)")
     p.add_argument("--allow-meta-change", action="store_true")
+    p.add_argument("--stop-after-usable", type=int, default=None,
+                   help="stop once this many tasks of the list passed the gate (image available, gold=1, empty=0)")
     p.add_argument("--out", required=True)
     a = p.parse_args(argv)
 
@@ -260,31 +262,37 @@ def main(argv=None) -> int:
         t, arm, i = job
         s = acquire()
         r = {"i": i, "server": s}
+        tr = None
         try:
-            try:
-                with ApptainerEnv(sif_for(t, sif_dir), prefix=prefix, command_timeout=lim.command_timeout_s) as env:
-                    tr = run_episode(VLLMPolicy(a.servers[s], arms[arm], Sampling(temperature=a.temperature, seed=1000 + i)),
-                                     env, t, fmt, lim, protocol=a.protocol)
-            except (httpx.TransportError, httpx.HTTPStatusError) as e:
+            with ApptainerEnv(sif_for(t, sif_dir), prefix=prefix, command_timeout=lim.command_timeout_s) as env:
+                tr = run_episode(VLLMPolicy(a.servers[s], arms[arm], Sampling(temperature=a.temperature, seed=1000 + i)),
+                                 env, t, fmt, lim, protocol=a.protocol)
+        except (httpx.TransportError, httpx.HTTPStatusError) as e:
+            if isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500 and e.response.status_code != 404:
+                r["error"] = f"http {e.response.status_code}: {str(e)[:300]}"  # the request's fault, not the server's
+            else:
                 with cv:
                     bad[s] = True
                     cv.notify_all()
                 with lock:
                     faults.append(f"{a.servers[s]}: {type(e).__name__}: {str(e)[:200]}")
-                return None  # not recorded: a resume (or the retry round) runs it again
-            g = grade(t, tr.patch, sif=sif_for(t, sif_dir)) if tr.patch.strip() else None
-            r.update(exit=tr.exit_reason, turns=len(tr.turns), tokens=tr.n_tokens, wall_s=tr.wall_s,
-                     patch=bool(tr.patch.strip()), resolved=bool(g and g.resolved),
-                     f2p=f"{g.f2p_passed}/{g.f2p_total}" if g else None,
-                     valid_rate=round(sum(1 for x in tr.turns if "command" in x) / max(1, len(tr.turns)), 3))
-            key = "errors" if (g is not None and g.infra_failure) else "episodes"
-            if key == "errors":
-                r["error"] = "grading infra failure"
+                return None  # not recorded: a retry round (or a resume) runs it again
         except Exception as e:
             r["error"] = f"{type(e).__name__}: {e}"[:400]
-            key = "errors"
         finally:
-            release(s)
+            release(s)  # grading below does not hold a server slot
+        if tr is not None:
+            try:
+                g = grade(t, tr.patch, sif=sif_for(t, sif_dir)) if tr.patch.strip() else None
+                r.update(exit=tr.exit_reason, turns=len(tr.turns), tokens=tr.n_tokens, wall_s=tr.wall_s,
+                         patch=bool(tr.patch.strip()), resolved=bool(g and g.resolved),
+                         f2p=f"{g.f2p_passed}/{g.f2p_total}" if g else None,
+                         valid_rate=round(sum(1 for x in tr.turns if "command" in x) / max(1, len(tr.turns)), 3))
+                if g is not None and g.infra_failure:
+                    r["error"] = "grading infra failure"
+            except Exception as e:
+                r["error"] = f"grade {type(e).__name__}: {e}"[:400]
+        key = "errors" if "error" in r else "episodes"
         with lock:
             a_ = rec(t.instance_id)["arms"].setdefault(arm, {"episodes": [], "errors": []})
             a_.setdefault("errors", [])
@@ -312,12 +320,21 @@ def main(argv=None) -> int:
 
     batches = [todo[i:i + a.batch] for i in range(0, len(todo), a.batch)]
     pull_ex = ThreadPoolExecutor(2)
-    run_ex = ThreadPoolExecutor(len(a.servers) * a.per_server)
+    run_ex = ThreadPoolExecutor(len(a.servers) * a.per_server + 8)  # extra threads grade while new episodes start
     grade_ex = ThreadPoolExecutor(8)
     pending = {t.instance_id: pull_ex.submit(pull, t) for t in batches[0]} if batches else {}
     rc = 0
+    stopped_at_target = False
+
+    def usable() -> int:
+        return sum(1 for t in tasks if (rec(t.instance_id).get("gate") or {}).get("ok") is True)
+
     try:
         for b, batch in enumerate(batches):
+            if a.stop_after_usable is not None and usable() >= a.stop_after_usable:
+                stopped_at_target = True
+                print(f"{usable()} usable tasks >= --stop-after-usable {a.stop_after_usable}: stopping", flush=True)
+                break
             t0 = time.time()
             errs = {t.instance_id: pending[t.instance_id].result() for t in batch}
             if b + 1 < len(batches):  # prefetch the next batch while this one runs
@@ -365,7 +382,14 @@ def main(argv=None) -> int:
         rc = 3
     finally:
         stop_all(prefix)
-        pull_ex.shutdown(wait=False, cancel_futures=True)
+        # at the target, wait for prefetches in flight and delete what was pulled but never screened
+        pull_ex.shutdown(wait=stopped_at_target, cancel_futures=True)
+        if stopped_at_target:
+            for t in tasks:
+                r = rec(t.instance_id)
+                if r.get("pulled") and not complete(r) and not r.get("image_deleted"):
+                    drop(t)
+                    r["unscreened"] = True
         with lock:
             save()
 

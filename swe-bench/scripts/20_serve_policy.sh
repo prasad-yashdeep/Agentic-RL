@@ -10,13 +10,21 @@ SNAP=$("$ARL/.venv/bin/python" -c "from sarl.paths import model_snapshot; print(
 [ -f "$SNAP/config.json" ] || { echo "model snapshot missing: $SNAP (download the pinned revision first)"; exit 1; }
 export HF_HUB_OFFLINE=1 VLLM_ALLOW_RUNTIME_LORA_UPDATING=True VLLM_USE_FLASHINFER_SAMPLER=0 NCCL_P2P_DISABLE=1
 mkdir -p "$SWE/runs"
-echo "serving $KEY from $SNAP"
+# SARL_MAX_NUM_SEQS=16: capture only small CUDA graphs. vLLM 0.25.1's V2 runner does not count its graph pool (1.2 GiB at
+# the default 256) in --gpu-memory-utilization, which on a shared GPU leaves no room for the trainer's CUDA context.
+# SARL_SLEEP_MODE=1: a server that shares its GPU with the trainer; POST /sleep?level=1 offloads its weights to CPU and
+# frees the KV cache while the trainer steps, POST /wake_up restores it (the endpoints need VLLM_SERVER_DEV_MODE=1)
+SLEEP_ARGS=()
+if [ "${SARL_SLEEP_MODE:-0}" = 1 ]; then export VLLM_SERVER_DEV_MODE=1; SLEEP_ARGS=(--enable-sleep-mode); fi
+echo "serving $KEY from $SNAP (sleep mode ${SARL_SLEEP_MODE:-0})"
 CUDA_VISIBLE_DEVICES="${SARL_SERVE_GPU:-0}" exec "$ARL/.venv/bin/vllm" serve "$SNAP" \
     --served-model-name policy \
     --host 0.0.0.0 --port "${SARL_SERVE_PORT:-8001}" \
     --max-model-len "${SARL_MAX_MODEL_LEN:-32768}" \
+    --max-num-seqs "${SARL_MAX_NUM_SEQS:-256}" \
     --gpu-memory-utilization "${SARL_SERVE_MEM:-0.85}" \
     --enable-lora --max-lora-rank 16 --max-loras 2 \
     --generation-config vllm \
     --enable-prefix-caching \
+    "${SLEEP_ARGS[@]}" \
     2>&1 | tee -a "$SWE/runs/serve.log"

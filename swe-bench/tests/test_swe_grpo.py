@@ -99,3 +99,66 @@ def test_tis_and_token_mean(tiny_qwen):
     tm = LoRATrainer("tiny", model=tiny_qwen, cfg=TrainConfig(lr=1e-2, loss_agg="token_mean"), device="cpu")
     out3 = tm.step([(i, m, a) for (i, m), a in zip(b, adv)])
     assert out3["stepped"] and np.isfinite(out3["loss"])
+
+
+def test_offload_roundtrip_keeps_training(tiny_qwen):
+    """offload()/onload() move the model and the AdamW moments; training continues identically afterwards (CPU run:
+    the moves are no-ops, but the code path and the offloaded guard are exercised)."""
+    tr = LoRATrainer("tiny", model=tiny_qwen, cfg=TrainConfig(lr=1e-2, lora_r=4, lora_alpha=8), device="cpu")
+    b = _batch(2, seed=5)
+    tr.step([(i, m, a) for (i, m), a in zip(b, [1.0, -1.0])])
+    tr.offload()
+    tr.onload()
+    out = tr.step([(i, m, a) for (i, m), a in zip(b, [1.0, -1.0])])
+    assert out["stepped"]
+    tr.offloaded = True  # as if on the CPU on a GPU box
+    with pytest.raises(RuntimeError, match="onload"):
+        tr.token_logprobs(b[0][0], b[0][1])
+
+
+def test_router_least_loaded_and_fencing():
+    import threading
+
+    from sarl.train import Router
+
+    r = Router([{"url": "http://a", "slots": 2}, {"url": "http://b/", "slots": 1}])
+    assert r.capacity == 3 and r.urls == ["http://a", "http://b"]
+    picks = [r.acquire() for _ in range(3)]
+    assert sorted(picks) == [0, 0, 1]  # filled by load/slots
+    got = []
+    th = threading.Thread(target=lambda: got.append(r.acquire()))
+    th.start()
+    r.release(1)
+    th.join(5)
+    assert got == [1]
+    r.fence(0)
+    r.fence(1)  # never fences the last healthy server: that rollout just errors
+    assert r.bad == [True, False]
+    r.release(1)
+    assert r.acquire() == 1  # server 0 is fenced although it has free slots after a release
+    r.reset()
+    r.release(0)
+    assert r.acquire() == 0
+    from sarl.train import ABORT
+
+    ABORT.set()
+    try:
+        with pytest.raises(RuntimeError, match="aborted"):
+            r.acquire()
+    finally:
+        ABORT.clear()
+
+
+def test_server_fault_classification():
+    import httpx
+
+    from sarl.train import server_fault
+
+    req = httpx.Request("POST", "http://x/v1/completions")
+
+    def status(code):
+        return httpx.HTTPStatusError("e", request=req, response=httpx.Response(code, request=req))
+
+    assert server_fault(httpx.ConnectError("down", request=req))
+    assert server_fault(status(500)) and server_fault(status(404))
+    assert not server_fault(status(400)) and not server_fault(ValueError("x"))

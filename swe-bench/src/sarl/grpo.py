@@ -53,7 +53,9 @@ class TrainConfig:
 
 class LoRATrainer:
     def __init__(self, model_id: str, revision: str | None = None, cfg: TrainConfig | None = None, device: str | None = None,
-                 dtype: str = "bfloat16", model=None):
+                 dtype: str = "bfloat16", model=None, offloaded: bool = False):
+        """offloaded=True keeps the model (and later the optimizer state) on the CPU until onload(): for a trainer
+        that shares its GPU with a sleeping vLLM server."""
         import torch
         from peft import LoraConfig, get_peft_model
 
@@ -64,7 +66,8 @@ class LoRATrainer:
 
             dt = getattr(torch, dtype) if self.device != "cpu" else torch.float32
             model = AutoModelForCausalLM.from_pretrained(model_id, revision=revision, dtype=dt, attn_implementation="sdpa")
-        model.to(self.device)
+        self.offloaded = bool(offloaded) and self.device != "cpu"
+        model.to("cpu" if self.offloaded else self.device)
         if self.cfg.grad_checkpointing:
             model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
             model.enable_input_require_grads()
@@ -73,6 +76,30 @@ class LoRATrainer:
         self.params = [p for p in self.model.parameters() if p.requires_grad]
         self.opt = torch.optim.AdamW(self.params, lr=self.cfg.lr)
         self.n_trainable = sum(p.numel() for p in self.params)
+
+    # placement ----------------------------------------------------------------------------------------------
+    def _move(self, dev: str) -> None:
+        import torch
+
+        self.model.to(dev)
+        for st in self.opt.state.values():  # AdamW moments live next to their parameters
+            for k, v in list(st.items()):
+                if torch.is_tensor(v) and v.dim() > 0:
+                    st[k] = v.to(dev)
+
+    def onload(self) -> None:
+        if self.offloaded:
+            self._move(self.device)
+            self.offloaded = False
+
+    def offload(self) -> None:
+        """Model and optimizer state to the CPU and the CUDA cache released, so a vLLM server on this GPU can wake."""
+        import torch
+
+        if not self.offloaded and self.device != "cpu":
+            self._move("cpu")
+            self.offloaded = True
+            torch.cuda.empty_cache()
 
     # log-probs ------------------------------------------------------------------------------------------------
     def _core(self):
@@ -84,6 +111,8 @@ class LoRATrainer:
         import torch
         from torch.utils.checkpoint import checkpoint
 
+        if self.offloaded:
+            raise RuntimeError("trainer is offloaded to the CPU; call onload() first")
         body, head = self._core()
         x = torch.tensor([list(ids)], device=self.device)
         m = torch.tensor(list(mask), device=self.device, dtype=torch.bool)

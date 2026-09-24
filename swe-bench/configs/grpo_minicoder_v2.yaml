@@ -1,0 +1,45 @@
+# GRPO v2 on mini-coder-1.7b: a larger mixed pool, more tasks per step, a higher learning rate, and rollouts on both
+# GPUs. v1 (configs/grpo_minicoder_check.yaml, 30 steps x 2 tasks, lr 2e-5, 3-task pool) ran cleanly but left the
+# success rate flat (153/480 = 32 % vs 31 % before training).
+#
+# Serving (node08):
+#   GPU0  SARL_MODEL=mini-coder-1.7b SARL_SERVE_GPU=0 SARL_SERVE_PORT=8001 SARL_SERVE_MEM=0.88 SARL_MAX_NUM_SEQS=16
+#   GPU1  SARL_MODEL=mini-coder-1.7b SARL_SERVE_GPU=1 SARL_SERVE_PORT=8002 SARL_SERVE_MEM=0.84 SARL_MAX_NUM_SEQS=16 SARL_SLEEP_MODE=1
+#   trainer on GPU1 (scripts/21_train.sh): built on the CPU, moved onto GPU1 only while the GPU1 server sleeps.
+# SARL_MAX_NUM_SEQS=16 keeps vLLM's CUDA-graph pool (outside --gpu-memory-utilization) small; 0.84 leaves room for the
+# trainer's CUDA context when the GPU1 server wakes (review 2026-09-24: 0.88 left 221 MiB free).
+name: grpo-minicoder-v2
+model: ricdomolm/mini-coder-1.7b
+revision: 5b7fbc90b6c4684c546de7f811865cff4414a96c
+chat_template_kwargs: {enable_thinking: true}
+serve_url: http://localhost:8001          # probes and served-logprob checks (never sleeps)
+servers:
+  - {url: http://localhost:8001, slots: 8}
+  - {url: http://localhost:8002, slots: 8, sleep: true}
+served_model: policy
+pool: configs/pool_minicoder_v2.txt       # written from experiments/screen-dev-v2.json (mixed tasks) + v1's 3 mixed tasks
+split: dev
+steps: 30
+tasks_per_step: 4                         # v1: 2
+group_size: 8
+oracle_per_group: 0
+protocol: mswea
+seed: 0
+sampling: {temperature: 1.0, top_p: 1.0, top_k: -1, repetition_penalty: 1.0}
+limits: {max_turns: 50, max_context_tokens: 24576, max_new_tokens: 1024, wall_clock_s: 1200, command_timeout_s: 60, max_obs_chars: 10000, max_format_errors: 3}
+train:
+  lr: 5.0e-5                              # v1: 2e-5 moved the served policy only ~0.04 nats/token
+  lora_r: 16
+  lora_alpha: 32
+  targets: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  clip: 1.0
+  max_train_tokens: 24576
+  truncate_overlong: true
+  chunk: 1024
+  loss_agg: token_mean
+  tis_cap: 2.0
+diagnostics: {mismatch: batch}
+advantage: {eps: 1.0e-4, skip_degenerate: true}
+concurrency: {rollouts: 16, grading: 8}   # rollouts: the servers' slots decide; kept for single-server configs
+grading: {timeout_s: 1800, network: false}
+env: {network: false}

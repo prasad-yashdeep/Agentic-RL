@@ -30,6 +30,9 @@ from sarl.env.base import CommandResult
 from sarl.paths import APPTAINER, APPTAINER_CACHEDIR, APPTAINER_TMPDIR, FAKEROOT_COMPAT, SIF_DIR, refuse_on_home
 
 ACTIVATE = "source /opt/miniconda3/bin/activate testbed"
+# Address-space cap per sandbox process (ulimit -v). A policy patch once made an astroid test suite grow to 61.7 GB RSS
+# during grading and nearly OOM'd node08 (2026-09-24); with the cap the runaway test fails inside its own sandbox.
+SANDBOX_VMEM_KB = int(float(os.environ.get("SARL_SANDBOX_VMEM_GB", "12")) * 1024 * 1024)
 
 
 def apptainer_env(offline: bool = False) -> dict[str, str]:
@@ -185,6 +188,7 @@ class ApptainerEnv:
         self.calls.append(command)
         t = float(timeout or self.command_timeout)
         script = (f"{self.activate} >/dev/null 2>&1; cd {shlex.quote(self.workdir)}; "
+                  f"ulimit -v {SANDBOX_VMEM_KB} 2>/dev/null; "
                   f"timeout -k 5 {int(t)} bash -c {shlex.quote(command)} > /tmp/.sarl_out 2>&1 < /dev/null; "
                   "rc=$?; cat /tmp/.sarl_out; exit $rc")
         t0 = time.time()
