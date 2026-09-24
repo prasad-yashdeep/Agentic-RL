@@ -41,6 +41,11 @@ The target is the repo's diagram (`reference/_upstream/swe_agent_env_interface.p
 - **Qwen2.5-Coder-0.5B does not follow the diagram's JSON tool calls.** It produced 0 valid calls in 48 turns, even with an example in the prompt. With the reference's fenced-bash protocol (`protocol: backticks`) 92% of its actions were valid, but it mostly submits immediately.
   - This matches the lecture's 2:50 advice: warm up with SFT, or use a larger model, before RL on the tool-call protocol.
   - The oracle-in-group trick (one scripted gold-patch rollout per group) is what gives the 0.5B run non-degenerate groups.
+- **Model choice after S9:**
+  - Qwen2.5-Coder never emits `<tool_call>` tags at 0.5B, 1.5B or 7B-AWQ; every size writes the JSON inside a ```json markdown fence.
+  - Qwen3-1.7B (non-thinking, `MODELS["qwen3-1.7b"]`) does: 97 % valid calls. But it resolved 0/140 in `s9-qwen3-1.7b-v1`, looping on `grep`.
+  - The user wants a model that follows the protocol yet leaves room for RL to show a gain, so the target is a low but non-zero pool pass@8 (about 5–30 %), measured with `scripts/s9_probe.py --grade` before training.
+- **Qwen3's chat template is not append-only.** It adds an empty `<think>\n\n</think>\n\n` to the last assistant turn. `ChatFormat` passes `enable_thinking=False` and cuts the delta at the reply's `<|im_end|>`; a test covers this.
 - **vLLM 0.25.1 serves exactly what the harness needs.**
   - `/v1/completions` with token-ID prompts returns `token_ids`, including the `<|im_end|>` stop token, plus `token_logprobs`.
   - Runtime LoRA loading goes through `POST /v1/load_lora_adapter`. Adapter names must be unique per server lifetime, so names are run-tagged and leftovers are unloaded at run start.
@@ -55,7 +60,7 @@ The target is the repo's diagram (`reference/_upstream/swe_agent_env_interface.p
 
 ```bash
 make -C swe-bench help
-make -C swe-bench test NODE=node08            # 26 tests (sandbox/grader/qwen markers skip cleanly elsewhere)
-make -C swe-bench fetch | assets | sifs | grader | serve | train | notebook | status
+make -C swe-bench test NODE=node08            # 27 tests (sandbox/grader/qwen markers skip cleanly elsewhere)
+make -C swe-bench fetch | assets | sifs | grader | serve [MODEL=qwen3-1.7b] | train [CONFIG=…] | notebook | status
 .venv/bin/sarl task <id> | pool | grade <id> --gold | episode <id> --policy vllm --grade | summarize runs/<run>
 ```

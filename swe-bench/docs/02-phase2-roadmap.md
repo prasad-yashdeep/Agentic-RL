@@ -43,7 +43,7 @@ It produced **no learning signal from the policy itself**. Qwen2.5-Coder-0.5B re
 
 | P | Item | Why at this priority | GPU |
 |---|---|---|---|
-| P0 | S9: the policy follows the tool-call protocol (SFT warm start or a larger model) | Without it, the policy never earns reward | yes |
+| P0 | S9: the policy follows the tool-call protocol **and earns some reward** | Format part done: Qwen3-1.7B, 97 % valid calls. Reward part open: 0/140 resolved in `s9-qwen3-1.7b-v1`, so the next step is a pass@8 probe for a model or setting in the 5–30 % band. | yes |
 | P0 | S10: Verified eval on a fixed hashed subset | Nothing is measurable without it. The gold-control half is CPU-only and can run while the GPUs are busy. | partly |
 | P1 | Bigger, cleaner training pools with a leakage guard | 8 tasks is too few for RL | no (disk) |
 | P1 | Token-level clipped surrogate with importance ratios | Needed before mixing in SFT or oracle data, async rollouts, or a quantized server | small |
@@ -60,6 +60,13 @@ It produced **no learning signal from the policy itself**. Qwen2.5-Coder-0.5B re
 - ≥ 90 % valid calls (S6: 0/48);
 - ≤ 25 % of episodes submitting on turn 1 (S6 with backticks: 14/16; final S8 run with backticks: 27/140);
 - then a 10-step run with `protocol: tool_call` in which ≥ 1 non-oracle rollout earns reward.
+
+**Result (2026-09-24, `experiments/EXPERIMENTS.md` entry `s9-qwen3-1.7b-v1`):**
+- **Qwen2.5-Coder at 0.5B, 1.5B and 7B-AWQ:** 0 valid calls at every size. Each writes the JSON inside a ```json markdown fence instead of `<tool_call>` tags.
+- **Qwen3-1.7B, non-thinking:** 97 % valid calls and 0 % turn-1 submits, so the format part **passes**.
+- **The 10-step run:** 0/140 policy rollouts resolved, so the reward part **fails**. The policy loops on `grep` (1,717 of 2,142 commands) and rarely edits. 35 of 140 trajectories overflow the 16k context and are dropped from the update.
+
+The goal for the model choice is therefore a **band**, not a maximum, per the user's constraint that RL must still have room to show a gain: a pool pass@8 of about 5–30 %. At 0 % no group is mixed and GRPO learns only from the oracle. Near 100 % there is nothing left to improve. Measure pass@8 with `scripts/s9_probe.py --grade --episodes 8` before committing to a training run.
 
 ### Option A: SFT warm start (keeps a small model)
 
@@ -87,10 +94,22 @@ The 0.5B figures were measured at S6. Every other row is an estimate from the mo
 - Nothing is published for 0.5B or 1.5B on SWE-bench Verified.
 - Qwen2.5-Coder-7B scores 1.8 % base (OpenHands scaffold). After SFT or RL it reaches 10.6 % (SWE-Gym), 19.0 % (R2E-Gym) and 23.4 % (SWE-Dev).
 
-**Order.**
-1. Qwen2.5-Coder-1.5B-Instruct in bf16 first. It has the same tokenizer and stop ids and the same exact-bf16 code path. The model id and revision are pinned in three places, `paths.py`, `basic_run.yaml` and `20_serve_policy.sh`; pin the new revision there, as at S0.
-2. Add SFT (Option A) if its valid-call rate is below 90 %.
-3. 7B-AWQ as the stretch.
+Qwen3 rows added after S9. KV sizes come from the configs: 8 KV heads × head_dim 128.
+
+| Model | Weights | KV bytes/token | Serve on GPU0 | Train on GPU1 |
+|---|---|---|---|---|
+| Qwen3-1.7B bf16 | about 3.4 GB | 114,688 (28 × 8 × 128 × 2 × 2) | done (S9) | LoRA bf16 at 16k tokens: done (S9) |
+| Qwen3-4B bf16 | about 8.0 GB | 147,456 (36 × 8 × 128 × 2 × 2) | about 4.5 GiB KV ≈ 33k tokens (est.); 16 concurrent rollouts will queue | LoRA bf16 with checkpointing, 8k tokens plausible, 16k tight (est.) |
+| Qwen3-4B-AWQ | about 2.5 GB (snapshot kept) | 147,456 | fits easily | needs a bf16 or nf4 training base, i.e. a different quantization from the served one; see the 7B catch |
+
+**Order (revised after S9).** Pick the next model by pool pass@8, not by the format gate alone:
+1. Probe pass@8 on the pool with three candidates: Qwen3-4B in bf16 (needs about 8 GB in `~/hf-cache`), Qwen3-1.7B with thinking on, and Qwen3-1.7B with the harness changes below. Keep the candidates whose pass rate is non-zero but low.
+2. Harness changes that help any model:
+   - accept the bare sentinel (13 turns in S9 omitted `echo`);
+   - nudge the model after repeated identical commands;
+   - truncate-and-train overlong trajectories instead of dropping them (25 % were dropped in S9).
+3. If nothing lands in the band, fall back to SFT (Option A) on exploring trajectories from tasks outside the pool. Easier pools are the other fallback (see below).
+4. Qwen2.5-Coder is ruled out for the tool-call protocol without SFT.
 
 ## S10 — Verified eval on a fixed hashed subset
 
@@ -171,6 +190,6 @@ The shared pieces are group advantages, degenerate handling, masked and chunked 
 
 ## Housekeeping
 
-- `sarl episode` has no `--protocol` flag; it always uses `tool_call`. Add one before the S9 probe.
+- `sarl episode` has no `--protocol` flag and always uses `tool_call`. For protocol comparisons use `scripts/s9_probe.py --protocols …` instead. `sarl episode` also always uses the default (0.5B) tokenizer.
 - Grading workdirs are now always deleted unless `keep=True`. Consider keeping those of resolved and infra-failed grades for inspection.
 - Seeds are set, but no run has been repeated to check how reproducible it is under concurrent vLLM batching.

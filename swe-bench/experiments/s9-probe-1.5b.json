@@ -1,0 +1,145 @@
+{
+ "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+ "revision": "2e1fd397ee46e1388853d2af2c993145b0f1098a",
+ "tasks": [
+  "pylint-dev__astroid-946",
+  "marshmallow-code__marshmallow-1359",
+  "pydicom__pydicom-811",
+  "pylint-dev__astroid-1614"
+ ],
+ "episodes_per_task": 4,
+ "limits": {
+  "max_turns": 20,
+  "command_timeout_s": 60,
+  "wall_clock_s": 600
+ },
+ "protocols": {
+  "tool_call": {
+   "episodes": 16,
+   "turns": 48,
+   "valid_actions": 0,
+   "valid_action_rate": 0.0,
+   "turn1_submit_rate": 0.0,
+   "mean_turns": 3.0,
+   "exits": {
+    "format_errors": 16
+   },
+   "nonempty_patches": 0,
+   "resolved": 0,
+   "top_commands": {
+    "FORMAT_ERROR": 48
+   },
+   "wall_s": 19.6,
+   "examples": [
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "format_errors",
+     "turns": [
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", ",
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", ",
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", "
+     ]
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "format_errors",
+     "turns": [
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", ",
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", ",
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", "
+     ]
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "format_errors",
+     "turns": [
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", ",
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", ",
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", "
+     ]
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "format_errors",
+     "turns": [
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", ",
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", ",
+      "Format error: your reply contained no tool call. Reply with a short thought and exactly one <tool_call>{\"name\": \"bash\", "
+     ]
+    }
+   ]
+  },
+  "backticks": {
+   "episodes": 16,
+   "turns": 176,
+   "valid_actions": 166,
+   "valid_action_rate": 0.943,
+   "turn1_submit_rate": 0.0,
+   "mean_turns": 11.0,
+   "exits": {
+    "submitted": 6,
+    "max_turns": 7,
+    "format_errors": 3
+   },
+   "nonempty_patches": 2,
+   "resolved": 0,
+   "top_commands": {
+    "echo": 26,
+    "sed": 25,
+    "sudo": 20,
+    "mv": 20,
+    "exit": 20,
+    "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT": 19,
+    "bash:": 18,
+    "FORMAT_ERROR": 10,
+    "cd": 3,
+    "brew": 3,
+    "git": 2,
+    "touch": 2
+   },
+   "wall_s": 24.2,
+   "examples": [
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "submitted",
+     "turns": [
+      "cd /testbed\ngit checkout 78d5537",
+      "echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
+     ]
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": [
+      "sed -i 's/holder in schema.schema_properties\\s*:\\s*holder in fieldsfield_schema_opts/d' /testbed/marshmallow/common.py",
+      "sed -i 's/holder in schema.schema_properties\\s*:\\s*holder in fieldsfield_schema_opts/d' /testbed/marshmallow/common.py",
+      "brew upgrade sed",
+      "brew --version\n\n# If Homebrew is not installed, install it\nif [ $? -eq 1 ]; then\n    /bin/bash -c \"$(curl -fsSL https://",
+      "echo 'eval \"$(/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"')\" >> ~/.b",
+      "curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o install.sh\n   chmod +x install.sh\n   su"
+     ]
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "max_turns",
+     "turns": [
+      "sudo apt-get install python-dev libssl-dev zlib1g-dev\npython3 -m pip install --upgrade numpy\npython3 -m pytest /testbed/",
+      "echo ERROR_INDEPENDENT_TASK",
+      "echo ERROR_INDEPENDENT_TASK",
+      "echo ERROR_INDEPENDENT_TASK",
+      "echo ERROR_INDEPENDENT_TASK",
+      "echo ERROR_INDEPENDENT_TASK"
+     ]
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": [
+      "cat /testbed/src/AuditLogEntry.py | grep format",
+      "echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
+     ]
+    }
+   ]
+  }
+ }
+}

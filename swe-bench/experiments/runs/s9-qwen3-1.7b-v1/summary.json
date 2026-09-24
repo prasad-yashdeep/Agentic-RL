@@ -1,0 +1,7 @@
+{
+ "run": "s9-qwen3-1.7b-v1",
+ "steps": 10,
+ "final_adapter": "policy-be68b8-s10",
+ "trajectories": "/var/tmp/swe/trajectories/s9-qwen3-1.7b-v1",
+ "adapters": "/var/tmp/swe/adapters/s9-qwen3-1.7b-v1"
+}

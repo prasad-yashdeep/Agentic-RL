@@ -1,0 +1,166 @@
+{
+ "model": "Qwen/Qwen3-1.7B",
+ "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+ "tasks": [
+  "pylint-dev__astroid-946",
+  "marshmallow-code__marshmallow-1359",
+  "pydicom__pydicom-811",
+  "pylint-dev__astroid-1614"
+ ],
+ "episodes_per_task": 4,
+ "limits": {
+  "max_turns": 20,
+  "command_timeout_s": 60,
+  "wall_clock_s": 600
+ },
+ "protocols": {
+  "tool_call": {
+   "episodes": 16,
+   "turns": 258,
+   "valid_actions": 251,
+   "valid_action_rate": 0.973,
+   "turn1_submit_rate": 0.0,
+   "mean_turns": 16.12,
+   "exits": {
+    "max_turns": 10,
+    "context": 3,
+    "submitted": 2,
+    "format_errors": 1
+   },
+   "nonempty_patches": 3,
+   "resolved": 0,
+   "top_commands": {
+    "grep": 200,
+    "ls": 16,
+    "sed": 15,
+    "cat": 8,
+    "FORMAT_ERROR": 7,
+    "awk": 6,
+    "echo": 3,
+    "python3": 3
+   },
+   "wall_s": 48.0,
+   "examples": [
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "max_turns",
+     "turns": [
+      "ls",
+      "grep -rn 'Example' /testbed/astroid",
+      "grep -rn 'Example' /testbed/astroid/builder.py",
+      "cat /testbed/astroid/builder.py/369",
+      "grep -rn 'Example' /testbed/astroid",
+      "grep -rn 'Example' /testbed/astroid/modutils.py"
+     ]
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "max_turns",
+     "turns": [
+      "ls",
+      "grep -rn 'src'",
+      "grep -rn 'schema.py'",
+      "grep -rn 'schema.py'",
+      "grep -rn 'schema.py'",
+      "grep -rn 'fields' 'src/marshmallow/schema.py'"
+     ]
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "max_turns",
+     "turns": [
+      "ls",
+      "grep -rn 'filereader.py' /testbed",
+      "grep -rn 'filereader.py' /testbed",
+      "grep -rn '692' /testbed/pydicom/filereader.py",
+      "grep -rn 'read_partial' /testbed/pydicom/filereader.py",
+      "grep -rn 'seek' /testbed/pydicom/filereader.py"
+     ]
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "max_turns",
+     "turns": [
+      "ls",
+      "grep -rn 'str.format' /testbed",
+      "grep -rn 'def _infer_str_format_call' /testbed/astroid/brain/brain_builtin_inference.py",
+      "grep -rn 'def _infer_str_format_call' /testbed/astroid/brain/brain_builtin_inference.py",
+      "grep -rn 'def _infer_str_format_call' /testbed/astroid/brain/brain_builtin_inference.py",
+      "grep -rn 'def _infer_str_format_call' /testbed/astroid/brain/brain_builtin_inference.py"
+     ]
+    }
+   ]
+  },
+  "backticks": {
+   "episodes": 16,
+   "turns": 179,
+   "valid_actions": 160,
+   "valid_action_rate": 0.894,
+   "turn1_submit_rate": 0.0,
+   "mean_turns": 11.19,
+   "exits": {
+    "max_turns": 7,
+    "submitted": 9
+   },
+   "nonempty_patches": 0,
+   "resolved": 0,
+   "top_commands": {
+    "sed": 85,
+    "ls": 31,
+    "grep": 27,
+    "FORMAT_ERROR": 19,
+    "echo": 9,
+    "cd": 5,
+    "python": 2,
+    "find": 1
+   },
+   "wall_s": 28.2,
+   "examples": [
+    {
+     "task": "pylint-dev__astroid-946",
+     "exit": "max_turns",
+     "turns": [
+      "sed -i 's/78d5537/20a7ae5/' src/astroid/issue927.py",
+      "sed -i 's/78d5537/20a7ae5/' src/astroid/issue927.py",
+      "sed -i 's/78d5537/20a7ae5/' src/astroid/issue927.py",
+      "sed -i 's/78d5537/20a7ae5/' src/astroid/issue927.py",
+      "sed -i 's/78d5537/20a7ae5/' src/astroid/issue927.py",
+      "sed -i 's/78d5537/20a7ae5/' src/astroid/issue927.py"
+     ]
+    },
+    {
+     "task": "marshmallow-code__marshmallow-1359",
+     "exit": "submitted",
+     "turns": [
+      "sed -i 's/fields.List(fields.DateTime())/fields.List(fields.DateTime())/' src/marshmallow/fields.py",
+      "No command found. Reply with exactly one ```bash block.",
+      "echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
+     ]
+    },
+    {
+     "task": "pydicom__pydicom-811",
+     "exit": "max_turns",
+     "turns": [
+      "sed -i 's/old text/new text/' src/pydicom/filereader.py",
+      "sed -i 's/old text/new text/' src/pydicom/filereader.py",
+      "sed -i 's/old text/new text/' src/pydicom/filereader.py",
+      "sed -i 's/old text/new text/' src/pydicom/filereader.py",
+      "sed -i 's/old text/new text/' src/pydicom/filereader.py",
+      "sed -i 's/old text/new text/' src/pydicom/filereader.py"
+     ]
+    },
+    {
+     "task": "pylint-dev__astroid-1614",
+     "exit": "submitted",
+     "turns": [
+      "sed -i 's/old text/new text/' src/A.py",
+      "grep -rn \"audit_log_entry: AuditLogEntry\" src/",
+      "ls",
+      "python -m pytest tests/test_file.py -x -q",
+      "echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
+     ]
+    }
+   ]
+  }
+ }
+}

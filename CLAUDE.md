@@ -226,8 +226,13 @@ artifact of the tool's formula, not a measurement.
 - `hetero-minigpt` — nanoGPT across mixed NVIDIA+AMD GPUs;
   `hmg/topology/topology.yaml` is a checked-in cluster map from June 2026
   (its "node05 IB is single-node" note is outdated).
-- `cardreamer` + `CARLA_0.9.15` — DreamerV3/CARLA on node07.
-- `worldmodels/le-wm` — LeWM reproduction (reference for latent-sched).
+- `cardreamer` — DreamerV3/CARLA on node07 (checkpoints + data kept).
+- `worldmodels/le-wm` — LeWM reproduction (reference for latent-sched; checkpoints kept).
+- **Deleted 2026-09-24 to free NFS (user-approved, 93 % → 79 %)**: `CARLA_0.9.15` (re-download the 0.9.15
+  tarball), `cardreamer/.venv`, `worldmodels/le-wm/.venv`, `~/.stable-wm/datasets/tworoom.h5`, dlm-core
+  `venv-rocm` + `.venvs/llm-serving-rocm` (rebuild: `jobs/amd/setup_rocm_flow_env.sh`,
+  `…/jobs/extended/setup_llm_rocm_venv.sh`), user pip packages in `~/.local/lib/python3.12` (uv tools
+  `harbor`/`hf` untouched), and `~/.cache/huggingface` Qwen2.5-7B/1.5B-Instruct.
 - Services owned by yashp: `~/prometheus`, `~/grafana`, `~/exporters`,
   `~/cassandra` (legacy monolith DB, port 9045 on dlmdb01).
 - Other users' jobs: bhumikad and yashn run dlm-core workloads; the `deeplm`

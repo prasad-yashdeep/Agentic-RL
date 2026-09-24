@@ -20,6 +20,91 @@ Template:
 
 ---
 
+## 2026-09-24 s9-qwen3-1.7b-v1 — S9: the diagram's tool-call protocol with a model that follows it
+
+- Gate: S9 (`docs/02-phase2-roadmap.md`). Format part **passes**; reward part (≥ 1 non-oracle rollout earns reward) **fails**.
+- Config: `configs/s9_qwen3_1.7b.yaml`. Qwen3-1.7B @70d244cc runs in non-thinking mode with `protocol: tool_call`. Everything else matches `basic_run.yaml`, except `max_train_tokens` rises to 16,384.
+- Node/GPU: node08. vLLM is on GPU0 (`make serve MODEL=qwen3-1.7b`, tmux `swe-serve`), the trainer on GPU1 (log `runs/train-20260924-041556.log`).
+- Records: `experiments/runs/s9-qwen3-1.7b-v1/`. Trajectories and adapters are node-local under `/var/tmp/swe/{trajectories,adapters}/s9-qwen3-1.7b-v1`.
+
+### Model probe first (`scripts/s9_probe.py`: 4 pool tasks × 4 episodes, 20 turns, no training)
+
+| Model | Protocol | Valid actions | Turn-1 submit | Mean turns | Non-empty patches | Resolved | Record |
+|---|---|---|---|---|---|---|---|
+| Qwen2.5-Coder-0.5B | tool_call | 0 % (0/48 turns) | — | — | 0 | 0 | S6 entry below |
+| Qwen2.5-Coder-1.5B | tool_call | **0 %** (16/16 exit on format errors) | 0 % | 3.0 | 0 | 0/16 | `s9-probe-1.5b.json` |
+| Qwen2.5-Coder-1.5B | backticks | 94 % | 0 % | 11.0 | 2 | 0/16 | same |
+| Qwen2.5-Coder-7B-AWQ | tool_call | 0 valid calls (no JSON kept) | | | | | |
+| **Qwen3-1.7B** | tool_call | **97 %** | 0 % | 16.1 | 3 | 0/16 | `s9-probe-qwen3-1.7b.json` |
+| Qwen3-1.7B | backticks | 89 % | 0 % | 11.2 | 0 | 0/16 | same |
+
+Every Qwen2.5-Coder size writes the JSON inside a ```json markdown fence instead of `<tool_call>` tags, so the harness counts a format error. Qwen3 emits native `<tool_call>` tags. The 1.5B and 7B-AWQ snapshots were deleted after the probe; `sarl.paths.MODELS` keeps their revisions.
+
+Code this needed (this commit):
+- `sarl.paths.MODELS` + `model_snapshot()`; `20_serve_policy.sh` takes `SARL_MODEL=<key>`.
+- `ChatFormat(template_kwargs=…)` defaults `enable_thinking=False`.
+- The Qwen3 template is not append-only: it adds `<think>\n\n</think>\n\n` to the last assistant turn. The delta probe therefore cuts at the reply's `<|im_end|>`, and the tool-delta suffix ends with the empty think block. The new test `test_qwen3_nonthinking_deltas_and_episode` covers this.
+
+### Run: 10 steps × 2 tasks × G = 8 (7 policy + 1 oracle), lr 1e-5, LoRA r 8, seed 0
+
+| Step | Tasks | Policy resolved | Oracle | Degenerate | Trained (dropped > 16k) | Tokens | Loss | Grad norm | J gain | Served Δlogp | Mismatch mean / p99 / max | Valid actions | Non-empty patches | Seconds (roll / grade / total) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | pydicom-1694, astroid-1268 | 0/14 | 2/2 | 0 | 11 (5) | 9,363 | 1.598 | 3.61 | -6.4e-03 | 0.0809 | 0.0037 / 0.124 / 1.423 | 99% | 2 | 40.9 / 5.8 / 91.8 |
+| 2 | pydicom-1694, astroid-946 | 0/14 | 2/2 | 0 | 14 (2) | 12,404 | 1.274 | 2.85 | 5.8e-03 | 0.0933 | 0.0017 / 0.029 / 1.138 | 98% | 1 | 51.7 / 5.6 / 114.0 |
+| 3 | sqlfluff-1625, astroid-1268 | 0/14 | 2/2 | 0 | 12 (4) | 7,695 | 1.581 | 3.60 | 8.6e-03 | 0.0914 | 0.0035 / 0.101 / 0.949 | 89% | 1 | 35.2 / 10.6 / 83.4 |
+| 4 | astroid-1268, astroid-1614 | 0/14 | 2/2 | 0 | 9 (7) | 5,951 | 1.909 | 4.94 | -3.3e-04 | 0.1174 | 0.0035 / 0.102 / 2.121 | 99% | 1 | 38.1 / 5.6 / 71.0 |
+| 5 | sqlfluff-1625, astroid-1614 | 0/14 | 2/2 | 0 | 13 (3) | 11,060 | 1.355 | 3.46 | 1.2e-02 | 0.0851 | 0.0015 / 0.024 / 0.697 | 99% | 0 | 40.7 / 10.4 / 85.5 |
+| 6 | pydicom-1256, sqlfluff-1625 | 0/14 | 2/2 | 0 | 15 (1) | 13,162 | 1.292 | 3.06 | -1.9e-03 | 0.0887 | 0.0031 / 0.092 / 0.948 | 95% | 1 | 39.6 / 10.6 / 89.3 |
+| 7 | astroid-1614, sqlfluff-1625 | 0/14 | 2/2 | 0 | 12 (4) | 9,941 | 1.454 | 3.82 | 7.8e-03 | 0.0996 | 0.0025 / 0.076 / 1.182 | 93% | 0 | 43.7 / 10.3 / 94.8 |
+| 8 | pydicom-811, astroid-1268 | 0/14 | 2/2 | 0 | 13 (3) | 10,475 | 1.274 | 3.02 | 1.0e-02 | 0.0923 | 0.0039 / 0.117 / 0.970 | 92% | 5 | 40.8 / 6.0 / 84.5 |
+| 9 | pydicom-811, pydicom-1694 | 0/14 | 2/2 | 0 | 14 (2) | 11,777 | 1.093 | 2.66 | -2.0e-05 | 0.1063 | 0.0050 / 0.161 / 1.112 | 91% | 3 | 42.0 / 5.0 / 83.6 |
+| 10 | marshmallow-1359, sqlfluff-1625 | 0/14 | 2/2 | 0 | 12 (4) | 8,670 | 1.416 | 3.33 | -5.4e-04 | 0.0974 | 0.0026 / 0.074 / 0.848 | 98% | 0 | 38.4 / 10.4 / 82.0 |
+
+**Reward.**
+- Policy: **0 of 140** rollouts resolved. 11 patches were non-empty and 10 applied, but no fail-to-pass test passed.
+- Oracle: 20 of 20 resolved, with 0 degenerate groups (the LANG fix holds).
+
+**Behaviour: the policy explores and loops; it rarely edits.**
+- Commands: 1,717 of 2,142 turns were `grep`. Only 109 commands look like edits (`sed -i`, heredocs, `python -c`).
+- Repetition: a rollout repeats an identical command 11 times on average, and 100 of 140 rollouts repeat one at least 5 times.
+- Exits: 87 `max_turns`, 35 `context`, 10 `format_errors`, 8 `submitted`.
+- Sentinel: 13 turns ran the bare sentinel without `echo`; the harness does not count those as submits.
+
+**Dropped trajectories.** All 35 `context` exits exceeded `max_train_tokens` (16,384) and were left out of the update, so 25 % of the policy's samples never reached the trainer. The longest was 21,493 tokens and the median 4,680.
+
+**Update.**
+- All positive advantage again came from the off-policy oracle, as in S8.
+- At step 1 the oracle's mean per-token logp under π was −3.1 / −3.5, against ≈ −0.02 for π's own samples: π is near-deterministic and far from the gold trajectory.
+- The update moved things only a little: J gain was positive on 5 of 10 steps (−6.4e-03 to 1.2e-02), and the oracle's logp rose on 14 of 20.
+- Loss was 1.09–1.91. Grad norm was 2.7–4.9, so every step was clipped to 1.0.
+
+**Plumbing health.**
+- Weight sync: `served_dlogp_vs_base` 0.081–0.117, about 4× S8 (larger clipped steps on a bigger model).
+- Train–inference mismatch: the pooled mean stays at 0.0015–0.0050 (p99 0.024–0.161). The tail is new, though: max 0.70–2.12, and 0.02–0.12 % of tokens above 0.5 (S8: 0). This matters once the update uses importance ratios.
+- Timing: 71–114 s per step, about 15 min for the run, with no stragglers under the 60 s / 600 s limits.
+
+**Verdict.** Qwen3-1.7B is the smallest model tried that follows the diagram's protocol, but it solves none of the 8 pool tasks. Every policy group is therefore all-zero apart from the oracle, and GRPO has nothing on-policy to reinforce. The failure is too little capability for any signal, not too little headroom. The next model or setting has to land in the band the user asked for: a non-zero but low pass rate on the pool, so that groups contain mixed rewards and RL still has room to show a gain.
+
+### Reproduce
+
+```bash
+make -C swe-bench serve MODEL=qwen3-1.7b     # tmux swe-serve, GPU0 :8001
+ssh node08 'cd /home/yashp/Agentic-RL/swe-bench && ../.venv/bin/python scripts/s9_probe.py --model-key qwen3-1.7b --grade --out experiments/s9-probe-qwen3-1.7b.json'
+ssh node08 "tmux new -d -s swe-train 'bash /home/yashp/Agentic-RL/swe-bench/scripts/21_train.sh configs/s9_qwen3_1.7b.yaml --run-name s9-qwen3-1.7b-v1'"
+make -C swe-bench test NODE=node08           # 27 tests
+```
+
+### Open after this entry
+
+- Measure pass@8 on the pool before the next training run, for Qwen3-4B (bf16) and for Qwen3-1.7B with thinking on. Pick the setting whose pass rate falls in about 5–30 %.
+- Harness changes worth trying with any model:
+  - accept the bare sentinel as a submit;
+  - nudge the model after repeated identical commands;
+  - truncate-and-train overlong trajectories instead of dropping them.
+- S10 (Verified eval, `configs/eval_verified_v1.txt`) waits until a model/setting is chosen.
+
+---
+
 ## 2026-09-24 — Adversarial review of sarl, fixes (`0801504`), S8 re-runs, straggler finding
 
 Later the same day as the phase-1 entry below, on node08. The final S8 run is **`s8-basic-v3b`**; it supersedes the S8 numbers below.
