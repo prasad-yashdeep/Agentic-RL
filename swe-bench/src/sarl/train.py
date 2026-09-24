@@ -13,6 +13,8 @@ per step:
 
 from __future__ import annotations
 
+import atexit
+import gzip
 import json
 import random
 import time
@@ -23,7 +25,7 @@ from pathlib import Path
 
 import numpy as np
 
-from sarl.env.apptainer import ApptainerEnv, sif_for
+from sarl.env.apptainer import ApptainerEnv, sif_for, stop_all
 from sarl.grpo import LoRATrainer, TrainConfig, group_advantages, is_degenerate, mismatch_stats
 from sarl.harness import ChatFormat, Limits, oracle_replies, run_episode
 from sarl.metrics import JsonlWriter
@@ -107,15 +109,16 @@ class Rollout:
     error: str | None = None
 
 
-def _run_rollout(ro: Rollout, cfg: dict, fmt: ChatFormat, policy_model: str, tok) -> Rollout:
+def _run_rollout(ro: Rollout, cfg: dict, fmt: ChatFormat, policy_model: str, tok, prefix: str = "sarl-", seed: int | None = None) -> Rollout:
     try:
         lim = Limits(**cfg["limits"])
-        with ApptainerEnv(sif_for(ro.task), command_timeout=lim.command_timeout_s, network=cfg.get("env", {}).get("network", True)) as env:
+        with ApptainerEnv(sif_for(ro.task), prefix=prefix, command_timeout=lim.command_timeout_s,
+                          network=cfg.get("env", {}).get("network", False)) as env:
             protocol = cfg.get("protocol", "tool_call")
             if ro.kind == "oracle":
                 pol = ScriptedPolicy(tok, oracle_replies(ro.task, protocol))
             else:
-                pol = VLLMPolicy(cfg["serve_url"], policy_model, Sampling(**cfg["sampling"]))
+                pol = VLLMPolicy(cfg["serve_url"], policy_model, Sampling(**{**cfg["sampling"], "seed": seed}))
             ro.traj = run_episode(pol, env, ro.task, fmt, lim, policy_name="oracle" if ro.kind == "oracle" else policy_model,
                                   protocol=protocol)
     except Exception as e:  # a crashed rollout must not kill the batch (the lecturer's trial_10 lesson)
@@ -128,7 +131,7 @@ def _grade(ro: Rollout, cfg: dict) -> Rollout:
         return ro
     try:
         g = cfg.get("grading", {})
-        ro.grade = grade(ro.task, ro.traj.patch, sif=sif_for(ro.task), timeout_s=g.get("timeout_s", 1800), network=g.get("network", True))
+        ro.grade = grade(ro.task, ro.traj.patch, sif=sif_for(ro.task), timeout_s=g.get("timeout_s", 1800), network=g.get("network", False))
     except Exception as e:
         ro.error = (ro.error or "") + f" | grade {type(e).__name__}: {e}"[:400]
     return ro
@@ -142,7 +145,7 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
         cfg["steps"] = steps
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = RUNS / (run_name or f"{ts}-{cfg['name']}")
-    (run_dir / "trajectories").mkdir(parents=True, exist_ok=True)
+    run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "config.json").write_text(json.dumps(cfg, indent=1))
     metrics, rollouts_w = JsonlWriter(run_dir / "metrics.jsonl"), JsonlWriter(run_dir / "rollouts.jsonl")
     logf = open(run_dir / "log.txt", "a")
@@ -154,6 +157,9 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
         logf.flush()
 
     rng = random.Random(cfg.get("seed", 0))
+    import torch
+
+    torch.manual_seed(cfg.get("seed", 0))  # LoRA init
     tok = AutoTokenizer.from_pretrained(cfg["model"], revision=cfg.get("revision"))
     fmt = ChatFormat(tok, tools_for(cfg.get("protocol", "tool_call")))
     pool = read_pool(REPO / cfg["pool"], cfg.get("split", "dev"))
@@ -164,7 +170,13 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     if not base_policy.healthy():
         raise RuntimeError(f"vLLM serve not healthy at {cfg['serve_url']} (make -C swe-bench serve)")
     sync = LoraSync(cfg["serve_url"], cfg["served_model"])
-    run_tag = f"{abs(hash(run_dir.name)) % 16**6:06x}"  # adapter names must be unique across runs on one server
+    import hashlib
+
+    run_tag = hashlib.sha256(run_dir.name.encode()).hexdigest()[:6]  # unique adapter/sandbox names per run
+    prefix = f"sarl-{run_tag}-"
+    stop_all(prefix)
+    atexit.register(stop_all, prefix)  # a crashed trainer must not leave sandboxes behind
+    traj_root = SCRATCH / "trajectories" / run_dir.name  # per-token dumps stay node-local (NFS is ~92% full)
     if (gone := sync.unload_leftovers()):
         print(f"unloaded leftover adapters: {gone}", flush=True)
     tr = cfg["train"]
@@ -183,7 +195,8 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
         tasks = rng.sample(pool, min(cfg["tasks_per_step"], len(pool)))
         ros = [Rollout(t, "oracle" if i >= G - n_or else "policy", i) for t in tasks for i in range(G)]
         with ThreadPoolExecutor(cfg["concurrency"]["rollouts"]) as ex:
-            ros = list(ex.map(lambda r: _run_rollout(r, cfg, fmt, sync.current, tok), ros))
+            ros = list(ex.map(lambda r: _run_rollout(r, cfg, fmt, sync.current, tok, prefix,
+                                                     cfg.get("seed", 0) * 1_000_003 + step * 1009 + r.idx), ros))
         t_roll = time.time() - t0
         with ThreadPoolExecutor(cfg["concurrency"]["grading"]) as ex:
             ros = list(ex.map(lambda r: _grade(r, cfg), ros))
@@ -191,8 +204,15 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
 
         batch, groups, n_degenerate, dropped, oracle_idx = [], [], 0, 0, []
         for t in tasks:
-            grp = [r for r in ros if r.task is t]
-            rewards = [r.grade.reward if r.grade else 0.0 for r in grp]
+            # a crashed rollout, a failed grade or an infra failure is not a "reward 0" sample: leave it out of the
+            # group (review finding) and skip the group if fewer than 2 valid members remain
+            grp = [r for r in ros if r.task is t and r.traj is not None and r.grade is not None and not r.error
+                   and not r.grade.infra_failure]
+            if len(grp) < 2:
+                groups.append({"task": t.instance_id, "rewards": [], "adv": [], "degenerate": True, "invalid": True})
+                n_degenerate += 1
+                continue
+            rewards = [r.grade.reward for r in grp]
             adv = group_advantages(rewards, cfg["advantage"]["eps"])
             degen = is_degenerate(rewards)
             n_degenerate += int(degen)
@@ -211,12 +231,12 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
                 batch.append((r.traj.ids, r.traj.mask, float(a)))
 
         # train-inference mismatch on policy rollouts (before the update: same weights vLLM sampled with)
-        mm = []
+        t_all, s_all = [], []
         for r in ros:
             if r.kind == "policy" and r.traj is not None and r.traj.n_tokens <= tr["max_train_tokens"] and sum(r.traj.mask):
-                t_lp = trainer.logprobs_nograd(r.traj.ids, r.traj.mask)
-                s_lp = [r.traj.logprobs[i] for i in range(1, len(r.traj.ids)) if r.traj.mask[i]]
-                mm.append(mismatch_stats(t_lp, s_lp))
+                t_all.append(trainer.logprobs_nograd(r.traj.ids, r.traj.mask))
+                s_all += [r.traj.logprobs[i] for i in range(1, len(r.traj.ids)) if r.traj.mask[i]]
+        mm_pooled = mismatch_stats(np.concatenate(t_all), s_all) if t_all else {"n": 0}
         before = [trainer.logprobs_nograd(b[0], b[1]).mean() for b in batch]
         upd = trainer.step(batch) if batch else {"skipped": "no_informative_groups"}
         after = [trainer.logprobs_nograd(b[0], b[1]).mean() for b in batch]
@@ -245,18 +265,19 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
             "objective_gain": objective_gain,
             "oracle_dlogp": [float(after[i] - before[i]) for i in oracle_idx],
             "policy_dlogp_mean": float(np.mean([after[i] - before[i] for i in range(len(batch)) if i not in set(oracle_idx)])) if len(batch) > len(oracle_idx) else None,
-            "mismatch": {k: float(np.mean([m[k] for m in mm if m.get("n")])) for k in ("mean", "p99", "max", "frac_gt_0.5")} if any(m.get("n") for m in mm) else None,
+            "mismatch": mm_pooled if mm_pooled.get("n") else None,  # pooled over every sampled policy token this step
             "exit_reasons": {k: sum(1 for r in pol if r.traj and r.traj.exit_reason == k) for k in {r.traj.exit_reason for r in pol if r.traj}},
             "seconds": {"rollouts": round(t_roll, 1), "grading": round(t_grade, 1), "total": round(time.time() - t0, 1)},
         }
-        sdir = run_dir / "trajectories" / f"step-{step:03d}"
+        sdir = traj_root / f"step-{step:03d}"
         sdir.mkdir(parents=True, exist_ok=True)
         for r in ros:
             rec = {"step": step, "task": r.task.instance_id, "kind": r.kind, "idx": r.idx, "adv": getattr(r, "adv", None),
                    "error": r.error, "grade": r.grade.to_json() if r.grade else None}
             if r.traj is not None:
                 rec.update({k: v for k, v in r.traj.to_json(with_tokens=False).items() if k not in ("messages",)})
-                (sdir / f"{r.task.instance_id}__{r.kind}{r.idx}.json").write_text(json.dumps(r.traj.to_json(), default=str))
+                with gzip.open(sdir / f"{r.task.instance_id}__{r.kind}{r.idx}.json.gz", "wt") as fz:
+                    json.dump(r.traj.to_json(), fz, default=str)
             if rec.get("grade"):
                 rec["grade"].pop("report", None)
             rollouts_w.write(rec)
@@ -269,7 +290,9 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
             f"oracle {summary['oracle_resolved']}, degenerate {n_degenerate}/{len(tasks)}, train {len(batch)}, "
             f"loss {upd.get('loss')}, gn {upd.get('grad_norm')}, J gain {summary['objective_gain']}, sync {sync_rec}, oracle Δlogp {summary['oracle_dlogp']}, "
             f"mismatch {summary['mismatch']}, {summary['seconds']}")
-    (run_dir / "summary.json").write_text(json.dumps({"run": run_dir.name, "steps": cfg["steps"], "final_adapter": sync.current}, indent=1))
+    (run_dir / "summary.json").write_text(json.dumps({"run": run_dir.name, "steps": cfg["steps"], "final_adapter": sync.current,
+                                                      "trajectories": str(traj_root), "adapters": str(adapter_root)}, indent=1))
+    stop_all(prefix)
     log(f"done -> {run_dir}")
     logf.close()
     return run_dir

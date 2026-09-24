@@ -15,12 +15,18 @@ from typing import Sequence
 
 @dataclass
 class Sampling:
-    # Mirrors the reference: temperature 1.0, top_p 0.95, plus Qwen2.5-Coder's generation_config (top_k 20,
-    # repetition_penalty 1.05), which HF generate applied implicitly in the reference notebook.
+    # Default = plain sampling from π (temperature 1, no top-p/top-k/repetition penalty): the update treats rollouts
+    # as samples of π, and the trainer-vs-vLLM mismatch metric compares raw log-probs, so any sampling distortion would
+    # be invisible to it (review finding 2026-09-24). REFERENCE below mirrors the phase-1 notebook (top_p 0.95 plus
+    # Qwen2.5-Coder's generation_config top_k 20 / repetition_penalty 1.05, which HF generate applied implicitly).
     temperature: float = 1.0
-    top_p: float = 0.95
-    top_k: int = 20
-    repetition_penalty: float = 1.05
+    top_p: float = 1.0
+    top_k: int = -1
+    repetition_penalty: float = 1.0
+    seed: int | None = None
+
+
+REFERENCE_SAMPLING = Sampling(temperature=1.0, top_p=0.95, top_k=20, repetition_penalty=1.05)
 
 
 @dataclass
@@ -59,6 +65,8 @@ class VLLMPolicy:
             "logprobs": 1, "return_token_ids": True, "return_tokens_as_token_ids": True,
             "skip_special_tokens": False, "stop_token_ids": self.stop_token_ids,
         }
+        if s.seed is not None:
+            body["seed"] = int(s.seed)
         r = httpx.post(self.base_url + "/v1/completions", json=body, timeout=self.timeout_s)
         r.raise_for_status()
         c = r.json()["choices"][0]
@@ -85,7 +93,7 @@ class HFPolicy:
         with torch.no_grad():
             out = self.model.generate(
                 input_ids=ip, attention_mask=torch.ones_like(ip), max_new_tokens=int(max_tokens),
-                do_sample=s.temperature > 0, temperature=max(s.temperature, 1e-5), top_p=s.top_p, top_k=s.top_k,
+                do_sample=s.temperature > 0, temperature=max(s.temperature, 1e-5), top_p=s.top_p, top_k=s.top_k if s.top_k > 0 else 0,
                 repetition_penalty=s.repetition_penalty, eos_token_id=self.stop_token_ids,
                 pad_token_id=self.tok.pad_token_id if self.tok.pad_token_id is not None else self.stop_token_ids[-1],
                 output_logits=True, return_dict_in_generate=True,
@@ -113,5 +121,11 @@ class ScriptedPolicy:
     def generate(self, prompt_ids: Sequence[int], max_tokens: int) -> Generation:
         text = self.replies[self.i] if self.i < len(self.replies) else (self.fallback or self.replies[-1])
         self.i += 1
-        ids = self.tok(text, add_special_tokens=False)["input_ids"][: max(0, max_tokens - 1)] + [self.im_end_id]
-        return Generation(ids, [None] * len(ids), text, "stop", meta={"scripted": True})
+        ids = self.tok(text, add_special_tokens=False)["input_ids"]
+        finish = "stop"
+        if len(ids) > max(0, max_tokens - 1):  # keep what is executed identical to what is trained on
+            ids = ids[: max(0, max_tokens - 1)]
+            text = self.tok.decode(ids)
+            finish = "length"
+        ids = ids + [self.im_end_id]
+        return Generation(ids, [None] * len(ids), text, finish, meta={"scripted": True})

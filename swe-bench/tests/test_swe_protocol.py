@@ -26,3 +26,14 @@ def test_submit_and_observation():
     big = format_observation(1, "x" * 25_000, max_chars=10_000)
     assert "<warning>" in big and "<output_head>" in big and "<output_tail>" in big and len(big) < 11_000
     assert format_observation(None, "", timed_out=True).startswith("<returncode>timeout</returncode>")
+
+
+def test_harness_filter_drops_test_files_only():
+    from sarl.reward.grade import filter_patch
+
+    src = "diff --git a/pkg/mod.py b/pkg/mod.py\n--- a/pkg/mod.py\n+++ b/pkg/mod.py\n@@ -1 +1 @@\n-x = 1\n+x = 2\n"
+    conf = "diff --git a/conftest.py b/conftest.py\nnew file mode 100644\n--- /dev/null\n+++ b/conftest.py\n@@ -0,0 +1 @@\n+import os\n"
+    tst = "diff --git a/tests/test_mod.py b/tests/test_mod.py\n--- a/tests/test_mod.py\n+++ b/tests/test_mod.py\n@@ -1 +1 @@\n-assert f()\n+assert True\n"
+    kept, dropped = filter_patch(src + conf + tst)
+    assert kept == src and dropped == ["conftest.py", "tests/test_mod.py"]
+    assert filter_patch("") == ("", [])

@@ -12,8 +12,17 @@
    155,
    155
   ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   155,
+   155
+  ],
+  "network": false,
   "failing_tests": [],
-  "gold_workdir": "/var/tmp/swe/grade/pylint-dev__astroid-946-e41335f6"
+  "gold_workdir": ""
  },
  {
   "instance_id": "marshmallow-code__marshmallow-1359",
@@ -28,8 +37,17 @@
    76,
    76
   ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   76,
+   76
+  ],
+  "network": false,
   "failing_tests": [],
-  "gold_workdir": "/var/tmp/swe/grade/marshmallow-code__marshmallow-1359-d2dbc3fe"
+  "gold_workdir": ""
  },
  {
   "instance_id": "pydicom__pydicom-811",
@@ -44,8 +62,17 @@
    85,
    85
   ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   85,
+   85
+  ],
+  "network": false,
   "failing_tests": [],
-  "gold_workdir": "/var/tmp/swe/grade/pydicom__pydicom-811-52098d5d"
+  "gold_workdir": ""
  },
  {
   "instance_id": "pylint-dev__astroid-1614",
@@ -60,8 +87,17 @@
    9,
    9
   ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   9,
+   9
+  ],
+  "network": false,
   "failing_tests": [],
-  "gold_workdir": "/var/tmp/swe/grade/pylint-dev__astroid-1614-947a3923"
+  "gold_workdir": ""
  },
  {
   "instance_id": "sqlfluff__sqlfluff-1625",
@@ -76,8 +112,17 @@
    64,
    64
   ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   64,
+   64
+  ],
+  "network": false,
   "failing_tests": [],
-  "gold_workdir": "/var/tmp/swe/grade/sqlfluff__sqlfluff-1625-ec416c82"
+  "gold_workdir": ""
  },
  {
   "instance_id": "pydicom__pydicom-1256",
@@ -92,8 +137,17 @@
    22,
    22
   ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   22,
+   22
+  ],
+  "network": false,
   "failing_tests": [],
-  "gold_workdir": "/var/tmp/swe/grade/pydicom__pydicom-1256-4221a1cd"
+  "gold_workdir": ""
  },
  {
   "instance_id": "pydicom__pydicom-1694",
@@ -108,8 +162,17 @@
    26,
    26
   ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   26,
+   26
+  ],
+  "network": false,
   "failing_tests": [],
-  "gold_workdir": "/var/tmp/swe/grade/pydicom__pydicom-1694-ff2d4b25"
+  "gold_workdir": ""
  },
  {
   "instance_id": "pylint-dev__astroid-1268",
@@ -124,7 +187,16 @@
    91,
    91
   ],
+  "empty_f2p": [
+   0,
+   1
+  ],
+  "empty_p2p": [
+   91,
+   91
+  ],
+  "network": false,
   "failing_tests": [],
-  "gold_workdir": "/var/tmp/swe/grade/pylint-dev__astroid-1268-0e17d515"
+  "gold_workdir": ""
  }
 ]

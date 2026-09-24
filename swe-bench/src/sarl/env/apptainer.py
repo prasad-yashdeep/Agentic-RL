@@ -30,8 +30,14 @@ from sarl.paths import APPTAINER, APPTAINER_CACHEDIR, APPTAINER_TMPDIR, FAKEROOT
 ACTIVATE = "source /opt/miniconda3/bin/activate testbed"
 
 
-def apptainer_env() -> dict[str, str]:
+def apptainer_env(offline: bool = False) -> dict[str, str]:
     env = dict(os.environ)
+    if offline:
+        # with --network none, pip/conda retry for minutes before giving up (a 0.5B policy loops on `pip install`,
+        # which stalled a whole GRPO step on 2026-09-24): make them fail fast instead
+        env["APPTAINERENV_PIP_NO_INDEX"] = "1"
+        env["APPTAINERENV_PIP_DISABLE_PIP_VERSION_CHECK"] = "1"
+        env["APPTAINERENV_CONDA_OFFLINE"] = "true"
     env["PATH"] = f"{FAKEROOT_COMPAT}:{APPTAINER.parent}:" + env.get("PATH", "")
     env["APPTAINER_CACHEDIR"] = str(APPTAINER_CACHEDIR)
     env["APPTAINER_TMPDIR"] = str(APPTAINER_TMPDIR)
@@ -93,18 +99,22 @@ def _safe_name(s: str) -> str:
 class ApptainerEnv:
     """One persistent sandbox. Use as a context manager: `with ApptainerEnv(sif) as env: env.run("ls")`."""
 
-    def __init__(self, sif: str | Path, *, name: str | None = None, workdir: str = "/testbed",
-                 command_timeout: float = 120, network: bool = True, max_output_chars: int = 200_000,
+    def __init__(self, sif: str | Path, *, name: str | None = None, prefix: str = "sarl-", workdir: str = "/testbed",
+                 command_timeout: float = 120, network: bool = False, max_output_chars: int = 200_000,
                  activate: str = ACTIVATE):
+        # network=False by default: a sandbox that shares the host network can reach the vLLM LoRA admin API on
+        # localhost, the cluster, and the internet (upstream fix commits = a solution lookup). --network none gives
+        # it a private loopback only (unprivileged-capable).
         self.sif = Path(sif)
-        self.name = name or f"sarl-{_safe_name(self.sif.stem)}-{uuid.uuid4().hex[:8]}"
+        self.name = name or f"{prefix}{_safe_name(self.sif.stem)}-{uuid.uuid4().hex[:8]}"
+        self.base_sha: str | None = None
         self.workdir = workdir
         self.command_timeout = command_timeout
         self.network = network
         self.max_output_chars = max_output_chars
         self.activate = activate
         self.calls: list[str] = []
-        self._env = apptainer_env()
+        self._env = apptainer_env(offline=not network)
         self._started = False
 
     # lifecycle -------------------------------------------------------------------------------------------
@@ -114,14 +124,31 @@ class ApptainerEnv:
             raise FileNotFoundError(f"image not pulled: {self.sif}")
         net = [] if self.network else ["--net", "--network", "none"]
         cmd = [str(APPTAINER), "instance", "start", "--fakeroot", "--containall", "--writable-tmpfs", *net, str(self.sif), self.name]
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=self._env)
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=self._env)
+        except subprocess.TimeoutExpired:
+            self._force_stop()
+            raise RuntimeError(f"apptainer instance start timed out ({self.name})")
         if r.returncode != 0 or "started successfully" not in (r.stdout + r.stderr):
+            self._force_stop()  # a half-started instance must not leak
             raise RuntimeError(f"apptainer instance start failed ({r.returncode}): {(r.stderr or r.stdout)[-600:]}")
         self._started = True
+        # pin the diff base now: an agent that commits would otherwise move HEAD and hide its own changes
+        p = self._exec("git rev-parse HEAD", host_timeout=60)
+        self.base_sha = p.stdout.decode().strip() if p.returncode == 0 else None
+        if not self.base_sha:
+            self.stop()
+            raise RuntimeError(f"could not read the repository HEAD in {self.name}")
+
+    def _force_stop(self) -> None:
+        subprocess.run([str(APPTAINER), "instance", "stop", self.name], capture_output=True, text=True, timeout=120, env=self._env)
 
     def stop(self) -> None:
         if self._started:
-            subprocess.run([str(APPTAINER), "instance", "stop", self.name], capture_output=True, text=True, timeout=120, env=self._env)
+            try:
+                self._force_stop()
+            except subprocess.TimeoutExpired:
+                pass  # train.run() sweeps leftovers by prefix at start and end
             self._started = False
 
     def __enter__(self):
@@ -159,9 +186,17 @@ class ApptainerEnv:
         return CommandResult(p.returncode, out, timed_out, time.time() - t0)
 
     def patch(self) -> str:
-        """The candidate patch: every change (incl. new files) relative to the image's HEAD."""
-        r = self.run("git -c core.fileMode=false add -A >/dev/null 2>&1 && git -c core.fileMode=false diff --cached --binary HEAD", timeout=60)
-        return r.output if r.returncode == 0 else ""
+        """The candidate patch: every change (incl. new and committed files) relative to the HEAD recorded at start.
+        Read through its own exec: stdout only (stderr discarded), never truncated. Raises if git fails, so a lost
+        patch is an error, not a silent empty patch (= reward 0)."""
+        if not self._started:
+            raise RuntimeError("sandbox not started")
+        script = (f"cd {shlex.quote(self.workdir)} && git -c core.fileMode=false add -A >/dev/null 2>&1 && "
+                  f"git -c core.fileMode=false diff --cached --binary {self.base_sha} 2>/dev/null")
+        p = self._exec(script, host_timeout=120)
+        if p.returncode != 0:
+            raise RuntimeError(f"git diff failed in {self.name} (rc {p.returncode})")
+        return p.stdout.decode("utf-8", errors="replace")
 
 
 def list_instances(prefix: str = "sarl-") -> list[str]:

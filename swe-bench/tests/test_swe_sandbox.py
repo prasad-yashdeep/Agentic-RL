@@ -22,6 +22,12 @@ def test_state_persists_timeout_kills_and_patch():
         r = env.run("sleep 600", timeout=3)
         assert r.timed_out and r.seconds < 30
         assert "+probe" in env.patch()
+        # an agent that commits must not hide its changes (patch is diffed against the HEAD pinned at start)
+        env.run("git -c user.email=a@b -c user.name=a commit -qam wip && echo 'x = 1' > committed_probe.py && git add -A && git -c user.email=a@b -c user.name=a commit -qm more")
+        assert "committed_probe.py" in env.patch()
+        # no network by default: the host's vLLM on :8001 and the internet are unreachable
+        r = env.run("python -c \"import urllib.request as u; u.urlopen('http://127.0.0.1:8001/v1/models', timeout=3)\"", timeout=15)
+        assert r.returncode != 0
 
 
 @pytest.mark.grader

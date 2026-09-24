@@ -73,6 +73,8 @@ class ChatFormat:
     def __init__(self, tokenizer, tools: list[dict] | None = None):
         self.tok = tokenizer
         self.tools = [BASH_TOOL] if tools is None else list(tools)  # [] = no tools block (backticks protocol)
+        self._special = sorted({t for t in getattr(tokenizer, "all_special_tokens", []) if t.startswith("<|")} |
+                               {t for t in getattr(tokenizer, "added_tokens_encoder", {}) if t.startswith("<|")}, key=len, reverse=True)
         self.im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
         self.eot_id = tokenizer.convert_tokens_to_ids("<|endoftext|>")
         self.tool_prefix, self.tool_suffix = self._delta("tool")
@@ -96,18 +98,29 @@ class ChatFormat:
     def encode(self, text: str) -> list[int]:
         return self.tok(text, add_special_tokens=False)["input_ids"]
 
+    def sanitize(self, text: str) -> str:
+        """Untrusted text (issue, command output) must not contain literal special tokens: '<|im_end|>' printed by a
+        command would otherwise tokenize as the real turn delimiter and forge a turn boundary (review finding). A word
+        joiner after '<|' keeps it readable but plain text."""
+        if "<|" not in text:
+            return text
+        for t in self._special:
+            if t in text:
+                text = text.replace(t, t[:2] + "\u2060" + t[2:])
+        return text
+
     def prompt_ids(self, messages: list[dict]) -> list[int]:
         return self.encode(self._render(messages, gen=True))
 
     def tool_turn(self, observation: str) -> list[int]:
-        return self.encode(self.tool_prefix + observation + self.tool_suffix)
+        return self.encode(self.tool_prefix + self.sanitize(observation) + self.tool_suffix)
 
     def user_turn(self, text: str) -> list[int]:
-        return self.encode(self.user_prefix + text + self.user_suffix)
+        return self.encode(self.user_prefix + self.sanitize(text) + self.user_suffix)
 
 
-def initial_messages(task, limits: Limits, protocol: str = "tool_call") -> list[dict]:
-    issue = task.problem_statement
+def initial_messages(task, limits: Limits, protocol: str = "tool_call", fmt: "ChatFormat | None" = None) -> list[dict]:
+    issue = fmt.sanitize(task.problem_statement) if fmt is not None else task.problem_statement
     if len(issue) > limits.max_issue_chars:
         issue = issue[: limits.max_issue_chars] + "\n[... issue truncated ...]"
     return [{"role": "system", "content": system_prompt(protocol)},
@@ -120,7 +133,7 @@ def run_episode(policy, env, task, fmt: ChatFormat, limits: Limits | None = None
     tools_for(protocol) so the prompt advertises the same action format the parser accepts."""
     lim = limits or Limits()
     t0 = time.time()
-    messages = initial_messages(task, lim, protocol)
+    messages = initial_messages(task, lim, protocol, fmt)
     ids = fmt.prompt_ids(messages)
     mask, lps = [0] * len(ids), [None] * len(ids)
     turns: list[dict] = []
@@ -170,7 +183,7 @@ def run_episode(policy, env, task, fmt: ChatFormat, limits: Limits | None = None
             if is_submit(cmd):
                 exit_reason = "submitted"
                 break
-            obs = format_observation(res.returncode, res.output, max_chars=lim.max_obs_chars, timed_out=res.timed_out)
+            obs = fmt.sanitize(format_observation(res.returncode, res.output, max_chars=lim.max_obs_chars, timed_out=res.timed_out))
             if protocol == "tool_call":
                 messages.append({"role": "tool", "content": obs})
                 d = fmt.tool_turn(obs)

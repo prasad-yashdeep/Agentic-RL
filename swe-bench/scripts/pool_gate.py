@@ -18,11 +18,12 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser()
     p.add_argument("pool", nargs="?", default="configs/pool_dev.txt")
     p.add_argument("--json", default=None)
+    p.add_argument("--network", action="store_true", help="grade with host network (default: --network none)")
     a = p.parse_args(argv)
     pool = read_pool(a.pool)
 
     def g(t):
-        return t, grade(t, t.patch, sif=sif_for(t)), grade(t, "", sif=sif_for(t), run_empty=True)
+        return t, grade(t, t.patch, sif=sif_for(t), network=a.network), grade(t, "", sif=sif_for(t), run_empty=True, network=a.network)
 
     with ThreadPoolExecutor(8) as ex:
         res = list(ex.map(g, pool))
@@ -33,11 +34,12 @@ def main(argv=None) -> int:
         p2p_fail = gold.report.get("tests_status", {}).get("PASS_TO_PASS", {}).get("failure", [])
         f2p_fail = gold.report.get("tests_status", {}).get("FAIL_TO_PASS", {}).get("failure", [])
         print(f"{'ok  ' if ok else 'FAIL'} {t.instance_id:38} gold={gold.reward} f2p {gold.f2p_passed}/{gold.f2p_total} "
-              f"p2p {gold.p2p_passed}/{gold.p2p_total} ({gold.seconds:.0f}s) | empty={empty.reward}")
+              f"p2p {gold.p2p_passed}/{gold.p2p_total} ({gold.seconds:.0f}s) | empty={empty.reward} (tests ran: f2p {empty.f2p_passed}/{empty.f2p_total}, p2p {empty.p2p_passed}/{empty.p2p_total})")
         for name in f2p_fail + p2p_fail:
             print(f"       failing under apptainer: {name}")
         out.append({"instance_id": t.instance_id, "ok": ok, "gold_reward": gold.reward, "empty_reward": empty.reward,
                     "f2p": [gold.f2p_passed, gold.f2p_total], "p2p": [gold.p2p_passed, gold.p2p_total],
+                    "empty_f2p": [empty.f2p_passed, empty.f2p_total], "empty_p2p": [empty.p2p_passed, empty.p2p_total], "network": a.network,
                     "failing_tests": f2p_fail + p2p_fail, "gold_workdir": gold.workdir})
     if a.json:
         open(a.json, "w").write(json.dumps(out, indent=1))
