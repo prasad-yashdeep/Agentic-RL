@@ -1,0 +1,5 @@
+{
+ "run": "s8-basic-v2",
+ "steps": 10,
+ "final_adapter": "policy-4d1298-s10"
+}

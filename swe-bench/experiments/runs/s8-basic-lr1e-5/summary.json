@@ -1,0 +1,5 @@
+{
+ "run": "s8-basic-lr1e-5",
+ "steps": 10,
+ "final_adapter": "policy-637ae7-s10"
+}

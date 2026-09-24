@@ -15,7 +15,7 @@ oracle_per_group: 1              # scripted gold-patch rollouts inside each grou
 protocol: backticks              # the reference's fenced-bash actions; the 0.5B model does not follow JSON tool calls (0/48)
 seed: 0
 sampling: {temperature: 1.0, top_p: 1.0, top_k: -1, repetition_penalty: 1.0}   # plain sampling from π (the reference used top_p 0.95/top_k 20/rep 1.05)
-limits: {max_turns: 20, max_context_tokens: 16384, max_new_tokens: 1024, wall_clock_s: 1800, command_timeout_s: 120, max_obs_chars: 10000, max_format_errors: 3}
+limits: {max_turns: 20, max_context_tokens: 16384, max_new_tokens: 1024, wall_clock_s: 600, command_timeout_s: 60, max_obs_chars: 10000, max_format_errors: 3}   # diagram: 30 min; s8-basic-v3b step 1 waited 30 min on one rollout re-running a >120 s test suite
 train: {lr: 1.0e-5, lora_r: 8, lora_alpha: 16, targets: [q_proj, k_proj, v_proj, o_proj], clip: 1.0, max_train_tokens: 8192, chunk: 1024}
 advantage: {eps: 1.0e-4, skip_degenerate: true}
 concurrency: {rollouts: 16, grading: 8}

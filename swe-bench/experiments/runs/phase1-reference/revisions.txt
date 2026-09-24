@@ -1,0 +1,2 @@
+revision ok  models--Qwen--Qwen2.5-Coder-0.5B-Instruct main=ea3f2471cf1b1f0db85067f1ef93848e38e88c25
+revision ok  datasets--princeton-nlp--SWE-bench_Verified main=c104f840cc67f8b6eec6f759ebc8b2693d585d4a

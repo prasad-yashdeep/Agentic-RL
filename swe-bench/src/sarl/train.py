@@ -29,7 +29,7 @@ from sarl.env.apptainer import ApptainerEnv, sif_for, stop_all
 from sarl.grpo import LoRATrainer, TrainConfig, group_advantages, is_degenerate, mismatch_stats
 from sarl.harness import ChatFormat, Limits, oracle_replies, run_episode
 from sarl.metrics import JsonlWriter
-from sarl.paths import REPO, RUNS, SCRATCH
+from sarl.paths import REPO, RUNS, SCRATCH, refuse_on_home
 from sarl.policy import Sampling, ScriptedPolicy, VLLMPolicy
 from sarl.protocol import tools_for
 from sarl.reward import grade
@@ -176,7 +176,7 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     prefix = f"sarl-{run_tag}-"
     stop_all(prefix)
     atexit.register(stop_all, prefix)  # a crashed trainer must not leave sandboxes behind
-    traj_root = SCRATCH / "trajectories" / run_dir.name  # per-token dumps stay node-local (NFS is ~92% full)
+    traj_root = refuse_on_home(SCRATCH / "trajectories" / run_dir.name, "per-token trajectories")  # node-local (NFS ~92% full)
     if (gone := sync.unload_leftovers()):
         print(f"unloaded leftover adapters: {gone}", flush=True)
     tr = cfg["train"]
@@ -189,7 +189,7 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     probe_ids = fmt.prompt_ids([{"role": "user", "content": "Fix the failing test in /testbed."}]) + fmt.encode("```bash\nls\n```<|im_end|>")
     base_lp = np.array(served_logprobs(cfg["serve_url"], cfg["served_model"], probe_ids))
     G, n_or = cfg["group_size"], cfg["oracle_per_group"]
-    adapter_root = SCRATCH / "adapters" / run_dir.name
+    adapter_root = refuse_on_home(SCRATCH / "adapters" / run_dir.name, "LoRA adapters")
     for step in range(1, cfg["steps"] + 1):
         t0 = time.time()
         tasks = rng.sample(pool, min(cfg["tasks_per_step"], len(pool)))

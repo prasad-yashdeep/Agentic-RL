@@ -44,13 +44,18 @@ The target is the repo's diagram (`reference/_upstream/swe_agent_env_interface.p
 - **vLLM 0.25.1 serves exactly what the harness needs.**
   - `/v1/completions` with token-ID prompts returns `token_ids`, including the `<|im_end|>` stop token, plus `token_logprobs`.
   - Runtime LoRA loading goes through `POST /v1/load_lora_adapter`. Adapter names must be unique per server lifetime, so names are run-tagged and leftovers are unloaded at run start.
+- **Isolation defaults (after the adversarial review).**
+  - Sandboxes and grading run with `--network none`, so they cannot reach the vLLM admin API, the cluster or the internet. pip and conda are set to fail fast offline (`PIP_NO_INDEX`, `CONDA_OFFLINE`).
+  - Grading binds only a read-only input folder. The spec, log and report stay on the host, and patch sections touching the test harness are dropped.
+  - Crashed or ungraded rollouts leave their group rather than counting as reward 0.
+- **Stragglers.** The loop is synchronous, so one rollout that re-runs a slow test suite holds the whole step. A single rollout rerunning `pytest /testbed` 15 times cost 30 min in `s8-basic-v3b`. `basic_run.yaml` now uses 60 s commands and a 600 s episode clock.
 - **Offline dataset loading:** `load_dataset(revision=…)` still calls the Hub, and huggingface_hub rejects partial snapshots offline. `sarl.tasks` therefore reads the pinned parquet files straight from the HF cache.
 
 ## Commands
 
 ```bash
 make -C swe-bench help
-make -C swe-bench test NODE=node08            # 23 tests (sandbox/grader/qwen markers skip cleanly elsewhere)
+make -C swe-bench test NODE=node08            # 26 tests (sandbox/grader/qwen markers skip cleanly elsewhere)
 make -C swe-bench fetch | assets | sifs | grader | serve | train | notebook | status
 .venv/bin/sarl task <id> | pool | grade <id> --gold | episode <id> --policy vllm --grade | summarize runs/<run>
 ```

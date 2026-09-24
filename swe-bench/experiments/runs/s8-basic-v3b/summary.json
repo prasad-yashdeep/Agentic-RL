@@ -1,0 +1,7 @@
+{
+ "run": "s8-basic-v3b",
+ "steps": 10,
+ "final_adapter": "policy-b36df2-s10",
+ "trajectories": "/var/tmp/swe/trajectories/s8-basic-v3b",
+ "adapters": "/var/tmp/swe/adapters/s8-basic-v3b"
+}

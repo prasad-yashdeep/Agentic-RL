@@ -1,5 +1,7 @@
-reference/_upstream/
-runs/
+/runs/
 notebooks/_out/
+reference/_upstream/
 *.egg-info/
 .cache/
+# run-record copies under experiments/runs/ are versioned, including their logs (the root .gitignore drops *.log)
+!experiments/runs/**/*.log

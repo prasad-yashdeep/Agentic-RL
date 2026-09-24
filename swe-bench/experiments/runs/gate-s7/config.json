@@ -1,0 +1,60 @@
+{
+ "name": "basic",
+ "model": "Qwen/Qwen2.5-Coder-0.5B-Instruct",
+ "revision": "ea3f2471cf1b1f0db85067f1ef93848e38e88c25",
+ "serve_url": "http://localhost:8001",
+ "served_model": "policy",
+ "pool": "configs/pool_dev.txt",
+ "split": "dev",
+ "steps": 2,
+ "tasks_per_step": 2,
+ "group_size": 8,
+ "oracle_per_group": 1,
+ "protocol": "backticks",
+ "seed": 0,
+ "sampling": {
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "top_k": 20,
+  "repetition_penalty": 1.05
+ },
+ "limits": {
+  "max_turns": 20,
+  "max_context_tokens": 16384,
+  "max_new_tokens": 1024,
+  "wall_clock_s": 1800,
+  "command_timeout_s": 120,
+  "max_obs_chars": 10000,
+  "max_format_errors": 3
+ },
+ "train": {
+  "lr": 1e-05,
+  "lora_r": 8,
+  "lora_alpha": 16,
+  "targets": [
+   "q_proj",
+   "k_proj",
+   "v_proj",
+   "o_proj"
+  ],
+  "clip": 1.0,
+  "max_train_tokens": 8192,
+  "chunk": 1024
+ },
+ "advantage": {
+  "eps": 0.0001,
+  "skip_degenerate": true
+ },
+ "concurrency": {
+  "rollouts": 16,
+  "grading": 8
+ },
+ "grading": {
+  "timeout_s": 1800,
+  "network": true
+ },
+ "env": {
+  "network": true
+ },
+ "_path": "/home/yashp/Agentic-RL/swe-bench/configs/basic_run.yaml"
+}

@@ -1,0 +1,27 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Generating test split:   0%|          | 0/500 [00:00<?, ? examples/s]Generating test split: 100%|██████████| 500/500 [00:00<00:00, 6124.61 examples/s]
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 5815.15it/s]
+	Command being timed: "/home/yashp/Agentic-RL/.venv/bin/python swe_grpo_one_step.py"
+	User time (seconds): 29.99
+	System time (seconds): 2.51
+	Percent of CPU this job got: 85%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:37.86
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3023424
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 132
+	Minor (reclaiming a frame) page faults: 715267
+	Voluntary context switches: 49025
+	Involuntary context switches: 756
+	Swaps: 0
+	File system inputs: 74560
+	File system outputs: 15256
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

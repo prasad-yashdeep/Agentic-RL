@@ -1,0 +1,211 @@
+# swe-bench run registry: the single source for results tables (README, docs).
+# status: done | failed | pending | superseded. Run dirs live under the gitignored runs/ on NFS; copies of each run's
+# records (config, metrics, log, rollouts, summary) are in experiments/runs/<run>/. The metrics below are copied from
+# their metrics.jsonl / rollouts.jsonl / log.txt (and experiments/*.json) on 2026-09-24. Details: EXPERIMENTS.md.
+host: node08
+common:
+  model: {id: Qwen/Qwen2.5-Coder-0.5B-Instruct, revision: ea3f2471cf1b1f0db85067f1ef93848e38e88c25}
+  serve: {engine: vllm 0.25.1, gpu: 0, port: 8001, served_model: policy, max_model_len: 32768, gpu_memory_utilization: 0.85,
+          max_loras: 2, max_lora_rank: 16, kv_cache_tokens: 1047440}
+  train_gpu: 1
+  pool: {file: configs/pool_dev.txt, split: dev, tasks: 8, guard: clean, gate: experiments/pool-gate.json}
+  tests: {count: 26, command: make -C swe-bench test NODE=node08, status: pass}   # 23 before the review fixes
+
+# Adversarial review of sarl (2026-09-24): 15 findings. 14 confirmed: 13 fixed in commit 0801504, 1 kept by design
+# (overlong trajectories dropped after advantages). 1 refuted ("the empty-patch gate never runs the tests").
+review:
+  commit: 0801504
+  findings: 15
+  confirmed: 14
+  fixed: 13
+  refuted: [6-empty-patch-gate-never-runs-tests]
+  kept_by_design: [3-overlong-dropped-after-advantages]
+  details: EXPERIMENTS.md (2026-09-24, adversarial review entry)
+
+runs:
+  pool-gate-v1:
+    gate: S5
+    status: done
+    date: 2026-09-24
+    command: scripts/pool_gate.py configs/pool_dev.txt --json experiments/pool-gate.json
+    summary: experiments/pool-gate.json
+    network: none                       # --network none (the default since 0801504); the first gate at 01:21 ran with the network on
+    metrics: {tasks_ok: 8, tasks_total: 8, gold_reward: 1.0, empty_reward: 0.0, p2p_all_green: true,
+              empty_patch_tests_run: true, empty_f2p: "0/1 on every task", empty_p2p: "all green (e.g. astroid-946 155/155)",
+              seconds_per_grade: "~5-13 (first gate)"}
+    note: run after the LANG=C.UTF-8 fix; before it pydicom__pydicom-811 failed its gold patch (testUTF8FileName, P2P 84/85).
+          Re-run offline at 02:05 after the review fixes, same 8/8; pool-gate.json holds the offline re-run.
+
+  phase1-reference:
+    gate: S1
+    status: done
+    date: 2026-09-24
+    run_dir: runs/phase1/20260924-012324
+    records: experiments/runs/phase1-reference/   # run.log, script-time.log, revisions.txt (no upstream code)
+    summary: experiments/phase1-reference.json
+    contaminates_eval: true            # trains on Verified astropy__astropy-12907, as the lecture does (0:15); never reused
+    config:
+      upstream_sha: 8cddfb60c93cc6b2c7d9dc047939084858f30f76
+      script: {group_size: 6, oracle: false, max_turns: 4, max_new_tokens: 200, lr: 1.0e-5, reward: reward_random}
+      notebook: {group_size: 8, oracle: 1, code_cells: 22, edits: [drop two "!pip" lines, kernel sarl]}
+      gpu: 1
+      network: online as published       # upstream loads model and dataset without a revision
+    metrics:
+      script: {rollouts: 6, rollouts_with_patch: "2/6", rewards: [0, 0, 0.637, 0, 0.27, 0], mean_reward: 0.151, std_reward: 0.239,
+               loss: -0.04545, grad_norm: 0.78, trainable_params: 1081344, degenerate: false, wall_clock_s: 37.9}
+      notebook: {rollouts: 8, rollouts_with_patch: "2/7 + oracle", rewards: [0, 0.637, 0, 0.27, 0, 0, 0, 0.041],
+                 oracle_reward: 0.041, oracle_advantage: -0.361, mean_reward: 0.119, std_reward: 0.214, loss: -0.05207,
+                 grad_norm: 0.6067, degenerate: false, cells_with_errors: 0}
+      revisions: {model_main_matches_pin: true, dataset_main_matches_pin: true, file: experiments/runs/phase1-reference/revisions.txt}
+    attempts:
+      - {run_dir: runs/phase1/20260924-012129 (removed), status: failed,
+         why: "load_dataset(princeton-nlp/SWE-bench_Verified) -> ConnectionError (OfflineModeIsEnabled); upstream loads without a revision",
+         fix: phase1_reference.sh unsets HF_*_OFFLINE for this run and checks refs/main against the pins}
+
+  gate-s7:
+    gate: S7
+    status: done
+    date: 2026-09-24
+    run_dir: runs/gate-s7
+    records: experiments/runs/gate-s7/
+    config: {file: configs/basic_run.yaml, overrides: {steps: 2}, protocol: backticks, group_size: 8, oracle_per_group: 1,
+             tasks_per_step: 2, lr: 1.0e-5, lora: {r: 8, alpha: 16, targets: [q_proj, k_proj, v_proj, o_proj]}}
+    metrics:
+      steps: 2
+      policy_resolved: "0/28"
+      oracle_resolved: "4/4"
+      degenerate_groups: 0
+      trainable_params: 1081344
+      served_dlogp_vs_base: [0.0172, 0.0223]
+      mismatch_mean: [0.0055, 0.0051]     # means of per-rollout stats (before pooling)
+      mismatch_max: [0.086, 0.140]
+      valid_action_rate: 1.0
+      step_seconds: [23.7, 41.0]
+      final_adapter: policy-c9f765-s2
+    attempts:
+      - {log: runs/train-20260924-010232.log, status: superseded, why: "1 step, passed; sync evidence was only the greedy text probe (unchanged)"}
+      - {log: runs/train-20260924-010342.log, status: failed,
+         why: "vLLM 400: lora adapter 'policy-s1' has already been loaded",
+         fix: "run-tagged adapter names policy-<tag>-s<step>; LoraSync.unload_leftovers() at start; served_dlogp_vs_base added"}
+
+  s8-basic-lr1e-5:
+    gate: S8
+    status: superseded                  # by s8-basic-v3b; ran before the LANG fix and the review fixes
+    superseded_by: s8-basic-v3b
+    date: 2026-09-24
+    run_dir: runs/s8-basic-lr1e-5
+    records: experiments/runs/s8-basic-lr1e-5/
+    log: runs/train-20260924-010826.log
+    config: {file: configs/basic_run.yaml, steps: 10, tasks_per_step: 2, group_size: 8, oracle_per_group: 1, protocol: backticks,
+             lr: 1.0e-5, lora: {r: 8, alpha: 16, targets: [q_proj, k_proj, v_proj, o_proj]}, max_turns: 20,
+             max_context_tokens: 16384, max_train_tokens: 8192, skip_degenerate: true, seed: 0,
+             sampling: "reference: top_p 0.95, top_k 20, rep 1.05", network: "on", wall_clock_s: 1800, command_timeout_s: 120}
+    metrics:
+      policy_reward_mean: 0.0             # every step
+      policy_resolved: "0/140"
+      policy_nonempty_patches: 3          # 2 applied
+      policy_exits: {submitted: 70, submitted_on_turn_1: 19, max_turns: 41, format_errors: 21, context: 8}
+      policy_valid_turns: "1020/1141"
+      oracle_resolved: "18/20"
+      degenerate_groups: {count: 2, steps: [8, 9], cause: pydicom-811 gold patch failing under LANG=C (fixed after the run)}
+      trained_trajectories: 136
+      dropped_overlong: 8
+      objective_gain_positive_steps: "10/10"
+      objective_gain_range: [4.9e-05, 2.4e-03]
+      oracle_dlogp_positive: "14/18"
+      served_dlogp_vs_base_range: [0.0175, 0.0285]
+      mismatch: {statistic: mean of per-rollout stats, mean_range: [0.0047, 0.0100], p99_range: [0.059, 0.098], max: 0.142, frac_gt_0_5: 0.0}
+      step_seconds: {total: [26.1, 101.3], rollouts: [15.4, 86.5], grading: [4.6, 10.4]}
+      wall_clock_min: 10
+      final_adapter: policy-637ae7-s10
+    verdict: plumbing proven (serve -> rollout -> test reward -> update -> sync); no policy learning signal (all positive advantage from the oracle)
+
+  s8-basic-v2:
+    gate: S8
+    status: superseded                  # by s8-basic-v3b; after the LANG fix, before the review fixes
+    superseded_by: s8-basic-v3b
+    date: 2026-09-24
+    run_dir: runs/s8-basic-v2
+    records: experiments/runs/s8-basic-v2/
+    log: runs/train-20260924-012507.log
+    config: {file: configs/basic_run.yaml, steps: 10, tasks_per_step: 2, group_size: 8, oracle_per_group: 1, protocol: backticks,
+             lr: 1.0e-5, lora: {r: 8, alpha: 16, targets: [q_proj, k_proj, v_proj, o_proj]}, max_turns: 20,
+             max_context_tokens: 16384, max_train_tokens: 8192, skip_degenerate: true, seed: 0,
+             sampling: "reference: top_p 0.95, top_k 20, rep 1.05", network: "on", wall_clock_s: 1800, command_timeout_s: 120}
+    metrics:
+      policy_reward_mean: 0.0             # every step
+      policy_resolved: "0/140"
+      policy_nonempty_patches: 7          # 6 applied
+      policy_exits: {submitted: 86, submitted_on_turn_1: 26, max_turns: 40, format_errors: 8, context: 6}
+      policy_valid_turns: "1024/1071"
+      policy_valid_action_rate_per_step: [0.83, 1.0]
+      oracle_resolved: "20/20"
+      degenerate_groups: 0
+      errors: 0
+      trained_trajectories: 152
+      dropped_overlong: 8
+      objective_gain_positive_steps: "7/10"
+      objective_gain_range: [-1.32e-03, 1.96e-03]
+      objective_gain_mean: 5.7e-04
+      oracle_dlogp_positive: "14/20"
+      served_dlogp_vs_base_range: [0.0212, 0.0274]
+      mismatch: {statistic: mean of per-rollout stats, mean_range: [0.0045, 0.0094], p99_range: [0.056, 0.091], max: 0.137, frac_gt_0_5: 0.0}
+      commands_timed_out: 1
+      step_seconds: {total: [17.8, 154.6], rollouts: [9.2, 143.4], grading: [4.5, 10.7]}
+      wall_clock_min: 8
+      final_adapter: policy-4d1298-s10
+    verdict: LANG fix confirmed (oracle 20/20, 0 degenerate groups); still plumbing only
+
+  s8-basic-v3b:
+    gate: S8
+    status: done                        # the final S8 run
+    date: 2026-09-24
+    code: commit 0801504 (all review fixes)
+    run_dir: runs/s8-basic-v3b
+    records: experiments/runs/s8-basic-v3b/
+    log: runs/train-20260924-020547.log
+    trajectories: node08:/var/tmp/swe/trajectories/s8-basic-v3b   # gzip'd, node-local
+    adapters: node08:/var/tmp/swe/adapters/s8-basic-v3b
+    config: {file: configs/basic_run.yaml, steps: 10, tasks_per_step: 2, group_size: 8, oracle_per_group: 1, protocol: backticks,
+             lr: 1.0e-5, lora: {r: 8, alpha: 16, targets: [q_proj, k_proj, v_proj, o_proj]}, max_turns: 20,
+             max_context_tokens: 16384, max_train_tokens: 8192, skip_degenerate: true, seed: 0,
+             sampling: "plain: T 1.0, top_p 1.0, top_k -1, rep 1.0", network: "none (rollouts and grading)",
+             wall_clock_s: 1800, command_timeout_s: 120}   # basic_run.yaml now uses 600 / 60 (straggler finding)
+    metrics:
+      policy_reward_mean: 0.0             # every step
+      policy_resolved: "0/140"
+      policy_nonempty_patches: 3          # 2 applied; 1 became empty after the harness filter
+      harness_filtered_patches: 2         # tests/test_error.py (step 1); setup.cfg + tox.ini (step 4)
+      policy_exits: {submitted: 70, submitted_on_turn_1: 27, max_turns: 52, format_errors: 17, context: 0, wall_clock: 1}
+      policy_valid_turns: "1186/1282"
+      policy_valid_action_rate_per_step: [0.74, 0.99]
+      oracle_resolved: "20/20"
+      degenerate_groups: 0
+      errors: 0
+      trained_trajectories: 156
+      dropped_overlong: 4
+      longest_policy_trajectory_tokens: 14657
+      objective_gain_positive_steps: "7/10"
+      objective_gain_range: [-6.67e-04, 2.04e-03]
+      objective_gain_mean: 5.5e-04
+      oracle_dlogp_positive: "12/20"
+      served_dlogp_vs_base_range: [0.0196, 0.0276]
+      mismatch: {statistic: pooled over all sampled policy tokens, n_range: [1525, 6546], mean_range: [0.0018, 0.0077],
+                 p99_range: [0.058, 0.114], max: 0.401, frac_gt_0_5: 0.0}
+      commands_timed_out: 15              # all in the straggler rollout
+      step_seconds: {total: [18.3, 1818.0], total_steps_2_to_10: [18.3, 45.8], rollouts: [8.5, 1807.0], grading: [4.3, 10.5]}
+      straggler: {step: 1, task: pydicom__pydicom-1694, idx: 5, turns: 15, exit: wall_clock, wall_s: 1806,
+                  command: "pip install --upgrade pydicom -r /testbed/requirements.txt; pytest /testbed (full suite > 120 s)",
+                  median_policy_episode_s: 2.3}
+      wall_clock_min: 35
+      final_adapter: policy-b36df2-s10
+    attempts:
+      - {run: s8-basic-v3, log: runs/train-20260924-020131.log, status: "failed (aborted, run dir deleted)",
+         why: "stalled on 120 s offline pip retries with --network none",
+         fix: "pip/conda fail fast offline (APPTAINERENV_PIP_NO_INDEX=1, PIP_DISABLE_PIP_VERSION_CHECK=1, CONDA_OFFLINE=true)"}
+    verdict: plumbing proven with trustworthy reward and an offline sandbox; no policy learning signal (all positive advantage from the oracle)
+
+pending:
+  s9-tool-call-protocol: {gate: S9, status: pending, plan: docs/02-phase2-roadmap.md}
+  s10-verified-eval: {gate: S10, status: pending, plan: docs/02-phase2-roadmap.md, subset: sha256-hashed, excludes: [astropy__astropy-12907]}
+  async-rollouts: {status: pending, why: "synchronous steps wait for the slowest rollout (s8-basic-v3b step 1: 1,818 s)", plan: docs/02-phase2-roadmap.md}
