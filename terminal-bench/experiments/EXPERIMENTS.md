@@ -248,3 +248,19 @@ ready for loop-back (full A0) + module extraction + B1/B2 scale-up.
 - TB 2.1 source cloned to `~/datasets/terminal-bench-2-1` (90 tasks, 106 MB) so `/tmp/tb2` can be restored if
   the reprovision wiped node08's `/tmp` (the driver's health phase does it).
 - Tests: 77 pass on node03 (13 new: corpus module, per-step sampling, config flags, real-snapshot layout).
+
+## 2026-09-24 — monorepo move; node08 back (reprovisioned); A0 task-version mismatch; driver launched
+
+- The repo is now `terminal-bench/` inside the Agentic-RL monorepo. It was a full cut-over with no symlink: venv, kernels and 576 Harbor/run JSON records were rewritten, and `make doctor` checks all of it.
+- node08 was reprovisioned, so every node-local cache is gone. The driver's health phase restored `/tmp/tb2` from `~/datasets/terminal-bench-2-1` (@7131e43).
+- **A0 task-version mismatch.**
+  - Harbor's content hash (`Packager.compute_content_hash`) of all **89/89** tasks in today's `/tmp/tb2` differs from the digests in the July A0 job's `lock.json`. The July clone was a different snapshot or release of the benchmark.
+  - `harbor jobs resume` would delete the errored trials and then refuse or re-plan against changed tasks, mixing two task versions in one baseline.
+  - **The `a0_resume` phase was skipped** (marker `runs/driver/a0_resume.done` with the reason). The July interim A0 (5/150 = 3.3 %) stays a historical record on the old task version.
+  - A fresh full A0 on the current tasks (5 × 89, estimated ~26 h) is needed before any B1/B2 vs A0 comparison. Until then, the `tarl compare` output that `arm_eval` writes compares across task versions and must not be used.
+- Driver launched 03:12 PDT (`make exp`, doctor first). Phases so far:
+  - health: done.
+  - serve: done, with the gemma FP8 server healthy on the new paths.
+  - smoke: done. A live fix-git episode ran from the local task, new paths in every record, no exception, reward 0.
+  - gpu_cells: running.
+  - Order after that: et_prep, a0_etdev, b1, b1_eval. B2 stays gated on `experiments/.allow-judge-spend`.
