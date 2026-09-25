@@ -22,8 +22,13 @@ mkdir -p "$SWE/runs"
 # frees the KV cache while the trainer steps, POST /wake_up restores it (the endpoints need VLLM_SERVER_DEV_MODE=1)
 SLEEP_ARGS=()
 if [ "${SARL_SLEEP_MODE:-0}" = 1 ]; then export VLLM_SERVER_DEV_MODE=1; SLEEP_ARGS=(--enable-sleep-mode); fi
-echo "serving $KEY from $SNAP (sleep mode ${SARL_SLEEP_MODE:-0})"
-CUDA_VISIBLE_DEVICES="${SARL_SERVE_GPU:-0}" exec "$ARL/.venv/bin/vllm" serve "$SNAP" \
+# SARL_PLE_OFFLOAD=1 (Gemma 4): keep the 5.25 GiB per-layer embedding table in pinned CPU memory, read in place over
+# PCIe (scripts/vllm_ple_offload.py); what lets E4B fit node04's 8 GB GPU. SARL_SERVE_OOM_SCORE_ADJ=1000 makes the
+# server, not the sandboxes, the OOM killer's first choice on a host that also runs rollouts.
+VLLM=("$ARL/.venv/bin/vllm")
+[ "${SARL_PLE_OFFLOAD:-0}" = 1 ] && VLLM=("$ARL/.venv/bin/python" "$SWE/scripts/vllm_ple_offload.py")
+echo "serving $KEY from $SNAP (sleep mode ${SARL_SLEEP_MODE:-0}, PLE offload ${SARL_PLE_OFFLOAD:-0})"
+CUDA_VISIBLE_DEVICES="${SARL_SERVE_GPU:-0}" exec "${VLLM[@]}" serve "$SNAP" \
     --served-model-name policy \
     --host 0.0.0.0 --port "${SARL_SERVE_PORT:-8001}" \
     --max-model-len "${SARL_MAX_MODEL_LEN:-32768}" \

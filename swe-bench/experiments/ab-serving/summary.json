@@ -1,0 +1,198 @@
+{
+ "R1": {
+  "servers": {
+   "http://node08:8001": 8,
+   "http://node08:8002": 8,
+   "http://node04:8003": 8
+  },
+  "slots": 24,
+  "episodes": 88,
+  "errors": 0,
+  "gate_s": 26.2,
+  "episodes_s": 580.9,
+  "episodes_per_h": 545.4,
+  "turns": 742,
+  "turns_per_min": 76.6,
+  "gen_tokens": 306827,
+  "gen_tok_s": 528.2,
+  "resolved": 7,
+  "valid_rate": 0.868,
+  "max_episode_s": 325.2,
+  "host": {
+   "min_avail_gb": 3.55,
+   "mean_load1": 2.0,
+   "max_instances": 26
+  },
+  "per_server": {
+   "http://node08:8001": {
+    "slots": 8,
+    "episodes": 28,
+    "turns": 228,
+    "gen_tokens": 100534,
+    "gen_tok_s": 173.1,
+    "median_episode_s": 135.6,
+    "s_per_turn": 16.05
+   },
+   "http://node08:8002": {
+    "slots": 8,
+    "episodes": 32,
+    "turns": 263,
+    "gen_tokens": 103985,
+    "gen_tok_s": 179.0,
+    "median_episode_s": 114.2,
+    "s_per_turn": 14.47
+   },
+   "http://node04:8003": {
+    "slots": 8,
+    "episodes": 28,
+    "turns": 251,
+    "gen_tokens": 102308,
+    "gen_tok_s": 176.1,
+    "median_episode_s": 124.8,
+    "s_per_turn": 15.17
+   }
+  }
+ },
+ "R2": {
+  "servers": {
+   "http://node08:8001": 8,
+   "http://node08:8002": 8
+  },
+  "slots": 16,
+  "episodes": 88,
+  "errors": 0,
+  "gate_s": 25.3,
+  "episodes_s": 742.6,
+  "episodes_per_h": 426.6,
+  "turns": 706,
+  "turns_per_min": 57.0,
+  "gen_tokens": 294152,
+  "gen_tok_s": 396.1,
+  "resolved": 7,
+  "valid_rate": 0.853,
+  "max_episode_s": 303.37,
+  "host": {
+   "min_avail_gb": 3.91,
+   "mean_load1": 1.8,
+   "max_instances": 18
+  },
+  "per_server": {
+   "http://node08:8001": {
+    "slots": 8,
+    "episodes": 44,
+    "turns": 353,
+    "gen_tokens": 143797,
+    "gen_tok_s": 193.6,
+    "median_episode_s": 115.3,
+    "s_per_turn": 14.77
+   },
+   "http://node08:8002": {
+    "slots": 8,
+    "episodes": 44,
+    "turns": 353,
+    "gen_tokens": 150355,
+    "gen_tok_s": 202.5,
+    "median_episode_s": 115.5,
+    "s_per_turn": 15.24
+   }
+  }
+ },
+ "R3": {
+  "servers": {
+   "http://node08:8001": 12,
+   "http://node08:8002": 12
+  },
+  "slots": 24,
+  "episodes": 88,
+  "errors": 0,
+  "gate_s": 25.0,
+  "episodes_s": 599.3,
+  "episodes_per_h": 528.6,
+  "turns": 707,
+  "turns_per_min": 70.8,
+  "gen_tokens": 298823,
+  "gen_tok_s": 498.6,
+  "resolved": 5,
+  "valid_rate": 0.851,
+  "max_episode_s": 276.86,
+  "host": {
+   "min_avail_gb": 3.79,
+   "mean_load1": 1.7,
+   "max_instances": 26
+  },
+  "per_server": {
+   "http://node08:8001": {
+    "slots": 12,
+    "episodes": 46,
+    "turns": 374,
+    "gen_tokens": 151046,
+    "gen_tok_s": 252.0,
+    "median_episode_s": 114.3,
+    "s_per_turn": 15.52
+   },
+   "http://node08:8002": {
+    "slots": 12,
+    "episodes": 42,
+    "turns": 333,
+    "gen_tokens": 147777,
+    "gen_tok_s": 246.6,
+    "median_episode_s": 134.5,
+    "s_per_turn": 18.05
+   }
+  }
+ },
+ "R4": {
+  "servers": {
+   "http://node08:8001": 12,
+   "http://node08:8002": 12,
+   "http://node04:8003": 8
+  },
+  "slots": 32,
+  "episodes": 88,
+  "errors": 0,
+  "gate_s": 25.3,
+  "episodes_s": 453.1,
+  "episodes_per_h": 699.2,
+  "turns": 765,
+  "turns_per_min": 101.3,
+  "gen_tokens": 313317,
+  "gen_tok_s": 691.5,
+  "resolved": 6,
+  "valid_rate": 0.852,
+  "max_episode_s": 260.39,
+  "host": {
+   "min_avail_gb": 3.9,
+   "mean_load1": 3.3,
+   "max_instances": 34
+  },
+  "per_server": {
+   "http://node08:8001": {
+    "slots": 12,
+    "episodes": 33,
+    "turns": 263,
+    "gen_tokens": 115123,
+    "gen_tok_s": 254.1,
+    "median_episode_s": 126.8,
+    "s_per_turn": 16.63
+   },
+   "http://node08:8002": {
+    "slots": 12,
+    "episodes": 33,
+    "turns": 302,
+    "gen_tokens": 123311,
+    "gen_tok_s": 272.1,
+    "median_episode_s": 137.3,
+    "s_per_turn": 15.43
+   },
+   "http://node04:8003": {
+    "slots": 8,
+    "episodes": 22,
+    "turns": 200,
+    "gen_tokens": 74883,
+    "gen_tok_s": 165.3,
+    "median_episode_s": 122.8,
+    "s_per_turn": 15.07
+   }
+  }
+ }
+}

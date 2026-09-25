@@ -29,6 +29,11 @@ The target is the repo's diagram (`reference/_upstream/swe_agent_env_interface.p
   - GPU0: vLLM policy server, tmux `swe-serve`, port 8001, runtime LoRA loading on;
   - GPU1: trainer, tmux `swe-train`.
   - The terminal-bench driver needs both GPUs, so the two projects take turns.
+- **node04 (RTX 4060 Laptop, 8 GB) is the third Gemma server** (2026-09-25): tmux `swe-serve4`, port 8003,
+  `SARL_PLE_OFFLOAD=1` keeps the 5.25 GiB per-layer embedding table in pinned CPU memory (`scripts/vllm_ple_offload.py`).
+  node04 also holds the probe images (`/var/tmp/swe/sif-dev`) and runs the probe harness, sandboxes and grading, which
+  keeps that CPU and RAM load off node08. Measured layout for probes: `--servers node08:8001 node08:8002 node04:8003
+  --per-server 12 12 8` = ×1.78 rollout throughput over node08 alone at 8+8 (`experiments/ab-serving/`).
 
 ## Facts learned the hard way (2026-09-24)
 

@@ -210,6 +210,79 @@ So GRPO v2 did not measurably raise the success rate even on the tasks it traine
 
 ---
 
+## 2026-09-25 — node04 as a third Gemma server: ×1.78 rollout throughput (A/B on the real pipeline)
+
+Question: can node04 (RTX 4060 Laptop, 8 GB, sm_89) serve Gemma 4 E4B next to node08's two A4000s, and is it a real
+speed-up for the pipeline? Records: `experiments/ab-serving/` (`R1..R4.json/.log`, `metrics.log`, `mon.log`,
+`summary.json`); report with `python scripts/ab_serving_report.py experiments/ab-serving --baseline R2`.
+
+**Fitting E4B on 8 GB** (`scripts/vllm_ple_offload.py`; `SARL_PLE_OFFLOAD=1` in `20_serve_policy.sh` / `22_serve_gemma4.sh`):
+- The FP8 checkpoint loads 10.76 GiB on node08. 5.25 GiB of that is the per-layer embedding table (262,144 × 42 × 256,
+  bf16), of which each token reads one 21.5 KB row.
+- vLLM 0.25.1's `--cpu-offload-params` reaches only the decoder layers (`make_layers`); the PLE is built outside them.
+  The launcher wraps `VocabParallelEmbedding.__init__`: the table is built on CPU, pinned in place with
+  `cudaHostRegister`, and handed to the model as a UVA CUDA view (vLLM's own `UVAOffloader` mechanism). Lookups gather
+  rows over PCIe; everything else stays on the GPU. Model load: **5.46 GiB**.
+  - torch's `pin_memory=True` rounds 5.25 GiB up to 8 GiB of locked RAM and left the 15 GB host with 1.3 GB
+    available; exact-size registration leaves 5.5 GB pinned.
+- Compiled mode still fails: Inductor copies the table back to the GPU (5.25 GiB OOM). CUDA graphs without Inductor
+  work: `-cc.mode=none -cc.cudagraph_mode=FULL_DECODE_ONLY` captured in 2 s and 0.13 GiB (`SARL_EAGER=0`).
+- Final server: `SARL_PLE_OFFLOAD=1 SARL_EAGER=0 SARL_SERVE_MORE="-cc.mode=none -cc.cudagraph_mode=FULL_DECODE_ONLY"
+  SARL_MAX_NUM_SEQS=8 SARL_MAX_BATCHED=2048 bash scripts/22_serve_gemma4.sh 0 8003 0.935` → 72.6k KV tokens; tmux
+  `swe-serve4`; weights from a node-local copy of the snapshot (`/var/tmp/swe/hf-cache`, 13 GB, 116 s from NFS);
+  `oom_score_adj` 1000 so the OOM killer takes the server before a sandbox.
+- Same model: greedy cross-check on 4 real pool prompts against node08 (`xcheck`, 96 tokens): first divergence at
+  token 5–74, max |Δlogp| 0.33, mean 0.008–0.027 on the shared prefix. Different attention kernels (Triton on sm_89), so
+  equivalent at sampling level, not bit-identical.
+
+**Synthetic capacity** (`scripts/bench_servers.py`: 9-turn episodes, 2.5k prompt + 400 generated + 400 observation
+tokens per turn, 1.5 s env, 120 s window after 30 s warm-up):
+
+| server | concurrency | gen tok/s | per-seq tok/s | p50 turn (s) |
+|---|---|---|---|---|
+| node08 GPU0, eager (as served) | 8 | 213 | 29.0 | 13.8 |
+| node08 GPU0, eager | 12 | 320 | 28.3 | 14.0 |
+| node04, eager, 0.93 | 4 / 6 / 8 | 93 / 120 / 160 | 23.8 / 23.4 / 23.0 | 16.8 / 17.0 / 17.4 |
+| node04, decode graphs, 0.90 | 4 / 8 | 107 / 170 | 31.6 / 25.6 | 12.8 / 14.2 |
+| **node04, decode graphs, 0.935** | 6 / **8** | 140 / **210** | 29.4 / 27.5 | 13.6 / 14.2 |
+
+**A/B on the real pipeline** (`scripts/ab_serving.sh`): the 11-task pool probe (88 episodes; the seeds, images, limits
+and T = 1 of probe 2), with sandboxes and grading on node04 for every layout; one run per layout, in the order R1 R2 R3 R4.
+
+| layout | servers × slots | episode phase (s) | turns/min | gen tok/s | resolved | valid | node04 min avail | vs R2 (turns/min) |
+|---|---|---|---|---|---|---|---|---|
+| R1 | node08 8+8, node04 8 | 581 | 76.6 | 528 | 7/88 | 0.868 | 3.55 GB | **×1.34** |
+| **R2** (every probe so far) | node08 8+8 | 743 | 57.0 | 396 | 7/88 | 0.853 | 3.91 GB | ×1.00 |
+| R3 | node08 12+12 | 599 | 70.8 | 499 | 5/88 | 0.851 | 3.79 GB | ×1.24 |
+| **R4** | node08 12+12, node04 8 | **453** | **101.3** | **692** | 6/88 | 0.852 | 3.90 GB | **×1.78** (wall ×1.64) |
+
+Findings:
+- node04 adds about one node08 GPU's worth of rollouts: in R1 it served 28 of 88 episodes at 176 tok/s (node08's two:
+  173 and 179) and 15.2 s per turn (node08: 14.5–16.1).
+- Two independent gains. Adding node04 to the current layout is ×1.34; node08 also had unused KV headroom, and 12 slots
+  per A4000 alone is ×1.24 (the 86k-token GPU1 shows it: 18 s/turn in R3). Both together: ×1.78 turns/min, ×1.75
+  generated tokens/s, ×1.64 wall-clock (R4 had 8 % more turns to do). node04 on top of R3: ×1.43.
+- Quality is unchanged: node04's episodes have valid-action rates of 0.877 (R1) and 0.895 (R4) against 0.834–0.878 on
+  node08, and the same submit rate, patch rate and token counts. Resolved 7 / 7 / 5 / 6 of 88 across the four runs is
+  sampling noise at T = 1 (equal seeds, but batching differs, so trajectories diverge).
+- The host held: up to 32 sandboxes plus grading plus the server on node04 with MemAvailable never below 3.55 GB, load
+  1.7–3.3 on 22 threads, no watchdog kills.
+- Caveats: one run per layout; the wall-clock includes the straggler tail (longest episode 260–325 s); node08's prefix
+  caches were warm for every run. Turns/min and generated tokens/s are the robust comparators.
+
+**Default layout for probes from now on:** `--servers http://node08:8001 http://node08:8002 http://node04:8003
+--per-server 12 12 8` (R4). During training node08 GPU1 sleeps while the trainer steps, so GPU0 and node04 carry the
+rollouts then.
+
+Code: `rolling_probe.py` takes `--per-server` per server, identifies a server's weights by HF snapshot (repo and
+revision) rather than the cache path, and records `timing` per batch; `tests/test_swe_serving.py` covers these and the
+launcher's PLE detection.
+
+Next lever, untested: node08 is still eager. Decode-only CUDA graphs without Inductor (what node04 runs) gave node04
++25–30 % per sequence; the same flags on node08 need a server restart to measure.
+
+---
+
 ## 2026-09-25 — Gemma 4 E4B: exploration and serving probe
 
 **User decisions.**
@@ -257,7 +330,23 @@ So GRPO v2 did not measurably raise the success rate even on the tasks it traine
 
 Probe 2 (the same 88 episodes with the fix, 8 per server) started at 07:04: `experiments/probe-gemma-pool-v2.json`.
 
-GEMMA_PROBE2_PENDING
+**Probe 2** (`experiments/probe-gemma-pool-v2.json`; same pool, settings and seeds, parsing after `<channel|>`; 15 min
+for the batch, gate included):
+
+| Metric | Probe 1 | Probe 2 | Pre-registered "Go" bar |
+|---|---|---|---|
+| Resolved | 6/88 (6.8 %) | **9/88 (10.2 %)** | 5–30 % ✓ |
+| Mixed tasks | 4 | **6**: sqlfluff-884 3/8, astroid-1614 2/8, pydicom-1694, astroid-1719, astroid-1903, marshmallow-1343 1/8 each | ≥ 4 ✓ |
+| Valid actions | 74.1 % | **86.3 %** (102 invalid of 746 turns) | ≥ 90 % ✗ |
+| Exits | 73 submitted, 15 format errors | 81 submitted, 5 format errors, 2 context | |
+| Non-empty patches | 42 | 61 (23 submissions had no patch) | |
+
+- By the pre-registered rule this is **Stop** (valid actions below 90 %), even though the solve rate and mixed-task
+  count are in the band. The decision is the user's.
+- The invalid turns are spread thin: 69 of 88 episodes have at least one, about one per episode, on every task
+  (3/38 to 15/60 turns). The format-error message is fed back and the model usually recovers on the next turn; only 5
+  episodes ended on three in a row. The probe records no per-turn error types, so what the remaining 14 % are is not
+  yet known.
 
 ---
 

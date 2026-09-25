@@ -1,0 +1,1329 @@
+{
+ "meta": {
+  "tasks_file": "configs/pool_minicoder_v2.txt",
+  "split": "dev",
+  "model": "google/gemma-4-E4B-it",
+  "revision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
+  "arms": {
+   "gemma": "policy"
+  },
+  "episodes": 8,
+  "protocol": "mswea",
+  "limits": {
+   "max_turns": 50,
+   "max_context_tokens": 24576,
+   "wall_clock_s": 1200.0,
+   "command_timeout_s": 60
+  },
+  "sampling": {
+   "temperature": 1.0,
+   "top_p": 1.0,
+   "top_k": -1
+  },
+  "seeds": "per turn: 1000 + episode index, then + 1000003 x turn (paired across arms)",
+  "server_weights": {
+   "policy": "models--prithivMLmods--gemma-4-E4B-it-FP8/snapshots/e991fcb6c8b3871071c0ad7f7343dc5e0e7e5639"
+  }
+ },
+ "tasks": {
+  "pylint-dev__astroid-1614": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 4,
+       "tokens": 9893,
+       "wall_s": 66.95,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 9447,
+       "wall_s": 99.83,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 7142,
+       "wall_s": 103.56,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.857
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 7401,
+       "wall_s": 108.11,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 5,
+       "tokens": 8814,
+       "wall_s": 118.46,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.8
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 6,
+       "tokens": 12135,
+       "wall_s": 132.25,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.667
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 10910,
+       "wall_s": 182.16,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.778
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 13776,
+       "wall_s": 189.39,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.625
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "9/9"
+   },
+   "mixed": true,
+   "final": {
+    "gemma": "2/8"
+   }
+  },
+  "pydicom__pydicom-1694": {
+   "repo": "pydicom/pydicom",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 6,
+       "tokens": 15314,
+       "wall_s": 107.23,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 8605,
+       "wall_s": 134.89,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 13495,
+       "wall_s": 154.01,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.75
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 11,
+       "tokens": 11786,
+       "wall_s": 180.6,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.636
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 9405,
+       "wall_s": 191.84,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.778
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 10398,
+       "wall_s": 202.69,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.571
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 10,
+       "tokens": 13646,
+       "wall_s": 212.08,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 0.7
+      },
+      {
+       "i": 5,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 19761,
+       "wall_s": 260.39,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.857
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "26/26"
+   },
+   "mixed": true,
+   "final": {
+    "gemma": "1/8"
+   }
+  },
+  "pydicom__pydicom-1256": {
+   "repo": "pydicom/pydicom",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 5843,
+       "wall_s": 132.37,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.875
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 6031,
+       "wall_s": 143.73,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.875
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 6435,
+       "wall_s": 160.9,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.75
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 7200,
+       "wall_s": 171.69,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.917
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 10,
+       "tokens": 13161,
+       "wall_s": 183.67,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.8
+      },
+      {
+       "i": 5,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 10739,
+       "wall_s": 197.57,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.833
+      },
+      {
+       "i": 2,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 15432,
+       "wall_s": 196.48,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.778
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "format_errors",
+       "turns": 12,
+       "tokens": 9018,
+       "wall_s": 245.56,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.667
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "22/22"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/8"
+   }
+  },
+  "pylint-dev__astroid-1719": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 6,
+       "tokens": 9126,
+       "wall_s": 104.21,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.833
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 6,
+       "tokens": 11807,
+       "wall_s": 112.74,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.667
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 6839,
+       "wall_s": 115.96,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.875
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 10478,
+       "wall_s": 119.86,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 10469,
+       "wall_s": 135.4,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.778
+      },
+      {
+       "i": 5,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 11,
+       "tokens": 11287,
+       "wall_s": 150.79,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.909
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "format_errors",
+       "turns": 8,
+       "tokens": 10508,
+       "wall_s": 155.9,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.625
+      },
+      {
+       "i": 2,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 10,
+       "tokens": 8070,
+       "wall_s": 179.01,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.9
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "10/10"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/8"
+   }
+  },
+  "pylint-dev__astroid-1903": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 6,
+       "tokens": 6179,
+       "wall_s": 95.51,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.833
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 8328,
+       "wall_s": 103.39,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.857
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "format_errors",
+       "turns": 6,
+       "tokens": 12685,
+       "wall_s": 137.27,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.5
+      },
+      {
+       "i": 7,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 9148,
+       "wall_s": 126.82,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.75
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 8855,
+       "wall_s": 136.49,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.857
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 15714,
+       "wall_s": 150.99,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.75
+      },
+      {
+       "i": 3,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 9919,
+       "wall_s": 127.06,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.875
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 4,
+       "tokens": 9230,
+       "wall_s": 54.36,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "10/10"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/8"
+   }
+  },
+  "marshmallow-code__marshmallow-1343": {
+   "repo": "marshmallow-code/marshmallow",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 4974,
+       "wall_s": 62.19,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.857
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 6502,
+       "wall_s": 86.49,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 8272,
+       "wall_s": 143.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.714
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "format_errors",
+       "turns": 8,
+       "tokens": 10022,
+       "wall_s": 153.91,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.625
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 8233,
+       "wall_s": 116.44,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 0.875
+      },
+      {
+       "i": 7,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 11284,
+       "wall_s": 150.8,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.778
+      },
+      {
+       "i": 2,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 10,
+       "tokens": 7502,
+       "wall_s": 201.21,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.9
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 13686,
+       "wall_s": 226.62,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.875
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "24/24"
+   },
+   "mixed": true,
+   "final": {
+    "gemma": "1/8"
+   }
+  },
+  "marshmallow-code__marshmallow-1164": {
+   "repo": "marshmallow-code/marshmallow",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 4306,
+       "wall_s": 80.49,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.857
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 10294,
+       "wall_s": 99.41,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.875
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 6,
+       "tokens": 4998,
+       "wall_s": 97.46,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.667
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 6,
+       "tokens": 7444,
+       "wall_s": 142.14,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.833
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 9856,
+       "wall_s": 140.19,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.857
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 5603,
+       "wall_s": 125.96,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.625
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 6544,
+       "wall_s": 125.62,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.857
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 10,
+       "tokens": 5015,
+       "wall_s": 101.03,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.8
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "101/101"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/8"
+   }
+  },
+  "pydicom__pydicom-1192": {
+   "repo": "pydicom/pydicom",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 4,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 5,
+       "tokens": 11427,
+       "wall_s": 86.54,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 6,
+       "tokens": 10432,
+       "wall_s": 101.33,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 6,
+       "tokens": 5962,
+       "wall_s": 88.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 5,
+       "tokens": 12218,
+       "wall_s": 114.23,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.8
+      },
+      {
+       "i": 7,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 5,
+       "tokens": 9141,
+       "wall_s": 61.98,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 6024,
+       "wall_s": 121.8,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.857
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 17227,
+       "wall_s": 159.41,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.75
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 10,
+       "tokens": 19808,
+       "wall_s": 175.51,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.8
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "46/46"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/8"
+   }
+  },
+  "pylint-dev__astroid-1262": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 6,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 9564,
+       "wall_s": 82.12,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 12786,
+       "wall_s": 104.3,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 10,
+       "tokens": 19966,
+       "wall_s": 154.96,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.9
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 20469,
+       "wall_s": 173.19,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.833
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 12315,
+       "wall_s": 130.68,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.857
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "format_errors",
+       "turns": 11,
+       "tokens": 12352,
+       "wall_s": 157.29,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.636
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 13,
+       "tokens": 10626,
+       "wall_s": 145.48,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 15,
+       "tokens": 17729,
+       "wall_s": 241.91,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.8
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "21/21"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/8"
+   }
+  },
+  "sqlfluff__sqlfluff-884": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 11,
+       "tokens": 6486,
+       "wall_s": 84.08,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 11,
+       "tokens": 7858,
+       "wall_s": 87.15,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 11,
+       "tokens": 11754,
+       "wall_s": 119.85,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 14446,
+       "wall_s": 116.11,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 10,
+       "tokens": 10567,
+       "wall_s": 108.51,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.9
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 12037,
+       "wall_s": 136.34,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.929
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 10470,
+       "wall_s": 109.33,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 22,
+       "tokens": 11680,
+       "wall_s": 202.55,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.909
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "37/37"
+   },
+   "mixed": true,
+   "final": {
+    "gemma": "2/8"
+   }
+  },
+  "pylint-dev__astroid-984": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "gemma": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 6777,
+       "wall_s": 100.92,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 6574,
+       "wall_s": 131.01,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 8,
+       "tokens": 7505,
+       "wall_s": 119.8,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.875
+      },
+      {
+       "i": 5,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 11399,
+       "wall_s": 113.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.857
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 8047,
+       "wall_s": 128.87,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.857
+      },
+      {
+       "i": 6,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 7647,
+       "wall_s": 129.08,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.917
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 7,
+       "tokens": 9642,
+       "wall_s": 146.47,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.857
+      },
+      {
+       "i": 2,
+       "server": 2,
+       "exit": "submitted",
+       "turns": 11,
+       "tokens": 10893,
+       "wall_s": 180.23,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.818
+      }
+     ],
+     "errors": []
+    }
+   },
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "42/42"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/8"
+   }
+  }
+ },
+ "timing": [
+  {
+   "batch": 0,
+   "servers": {
+    "http://node08:8001": 12,
+    "http://node08:8002": 12,
+    "http://node04:8003": 8
+   },
+   "gate_s": 25.3,
+   "episodes_s": 453.1
+  }
+ ]
+}

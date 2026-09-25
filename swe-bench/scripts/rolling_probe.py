@@ -33,6 +33,7 @@ import argparse
 import fcntl
 import hashlib
 import json
+import re
 import shutil
 import signal
 import sys
@@ -62,9 +63,10 @@ class NoServer(RuntimeError):
 
 
 def served(url: str) -> dict[str, str]:
-    """model id -> root (weights path) for every model a vLLM server lists (base and runtime-loaded adapters)."""
+    """model id -> root (weights path) for every model a vLLM server lists (base and runtime-loaded adapters). An HF-cache
+    snapshot is identified by repo and revision, not by where the cache lives (node04 serves a node-local copy)."""
     data = httpx.get(url.rstrip("/") + "/v1/models", timeout=15).json().get("data", [])
-    return {m["id"]: str(m.get("root")) for m in data}
+    return {m["id"]: re.sub(r"^.*/hub/(models--[^/]+/snapshots/[0-9a-f]+)/?$", r"\1", str(m.get("root"))) for m in data}
 
 
 def check_servers(urls: list[str], arms: dict[str, str]) -> dict:
@@ -88,7 +90,8 @@ def main(argv=None) -> int:
     p.add_argument("--sif-dir", required=True)
     p.add_argument("--arm", action="append", required=True, help="name=served_model (repeatable)")
     p.add_argument("--servers", nargs="+", default=["http://localhost:8001"])
-    p.add_argument("--per-server", type=int, default=8, help="episodes in flight per vLLM server (KV-cache bound)")
+    p.add_argument("--per-server", type=int, nargs="+", default=[8],
+                   help="episodes in flight per vLLM server (KV-cache bound): one value for all, or one per server")
     p.add_argument("--episodes", type=int, default=8)
     p.add_argument("--batch", type=int, default=8)
     p.add_argument("--model-key", default="mini-coder-1.7b", choices=sorted(MODELS))
@@ -108,6 +111,9 @@ def main(argv=None) -> int:
                    help="stop once this many tasks of the list passed the gate (image available, gold=1, empty=0)")
     p.add_argument("--out", required=True)
     a = p.parse_args(argv)
+    if len(a.per_server) not in (1, len(a.servers)):
+        p.error("--per-server takes one value or one per server")
+    slots = a.per_server * len(a.servers) if len(a.per_server) == 1 else a.per_server
 
     out = Path(a.out)
     lockf = open(str(out) + ".lock", "w")
@@ -201,7 +207,7 @@ def main(argv=None) -> int:
     save()
     todo = [t for t in tasks if not complete(rec(t.instance_id))]
     print(f"{len(tasks)} tasks, {len(tasks) - len(todo)} complete, {len(todo)} to run; arms {arms}; "
-          f"{len(a.servers)} server(s) x {a.per_server}", flush=True)
+          f"servers {dict(zip(a.servers, slots))} (episodes in flight)", flush=True)
     tag = hashlib.sha256(str(out.resolve()).encode()).hexdigest()[:6]
     prefix = f"rp-{tag}-"
     stop_all(prefix)
@@ -247,8 +253,9 @@ def main(argv=None) -> int:
                 ok = [j for j in range(len(load)) if not bad[j]]
                 if not ok:
                     raise NoServer("no healthy vLLM server")
-                if min(load[j] for j in ok) < a.per_server:
-                    s = min(ok, key=lambda j: load[j])
+                free = [j for j in ok if load[j] < slots[j]]
+                if free:
+                    s = min(free, key=lambda j: load[j] / slots[j])
                     load[s] += 1
                     return s
                 cv.wait(5)
@@ -323,7 +330,7 @@ def main(argv=None) -> int:
 
     batches = [todo[i:i + a.batch] for i in range(0, len(todo), a.batch)]
     pull_ex = ThreadPoolExecutor(2)
-    run_ex = ThreadPoolExecutor(len(a.servers) * a.per_server + 8)  # extra threads grade while new episodes start
+    run_ex = ThreadPoolExecutor(sum(slots) + 8)  # extra threads grade while new episodes start
     grade_ex = ThreadPoolExecutor(a.gate_workers)
     pending = {t.instance_id: pull_ex.submit(pull, t) for t in batches[0]} if batches else {}
     rc = 0
@@ -351,6 +358,7 @@ def main(argv=None) -> int:
             need = [t for t in ready if not isinstance((rec(t.instance_id).get("gate") or {}).get("ok"), bool)]
             for t, g in zip(need, grade_ex.map(gate, need)):
                 rec(t.instance_id)["gate"] = g
+            t_gate = time.time()
             with lock:
                 save()
             live = [t for t in ready if (rec(t.instance_id).get("gate") or {}).get("ok") is True]
@@ -366,6 +374,10 @@ def main(argv=None) -> int:
                         except (SystemExit, Exception):
                             pass
                 list(run_ex.map(episode, jobs))
+            t_eps = time.time()
+            # wall-clock per batch and server layout (outside `meta`, so a resume on other servers is allowed)
+            state.setdefault("timing", []).append({"batch": b, "servers": dict(zip(a.servers, slots)),
+                                                   "gate_s": round(t_gate - t0, 1), "episodes_s": round(t_eps - t_gate, 1)})
             for t in batch:
                 finalize(t)
                 r = rec(t.instance_id)
