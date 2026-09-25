@@ -1,0 +1,15 @@
+# Gemma 4 E4B training pool: tasks solved sometimes (never always) across 4 probe/screen records
+# (probe-gemma-pool, probe-gemma-pool-v2, probe-gemma-pool-v3, screen-gemma-v1); pooled solved/episodes per task in the comment.
+# Built by scripts/gemma_pool.py; 11 tasks; 1 always-solved excluded (sqlfluff__sqlfluff-880); 60 never solved.
+
+marshmallow-code__marshmallow-1164  # 2/32: ppool 1/8, ppool-v2 0/8, ppool-v3 0/8, sv1 1/8
+marshmallow-code__marshmallow-1343  # 4/32: ppool 0/8, ppool-v2 1/8, ppool-v3 1/8, sv1 2/8
+pydicom__pydicom-1192  # 3/32: ppool 1/8, ppool-v2 0/8, ppool-v3 0/8, sv1 2/8
+pydicom__pydicom-1562  # 1/8: sv1 1/8
+pydicom__pydicom-1694  # 1/24: ppool 0/8, ppool-v2 1/8, ppool-v3 0/8
+pydicom__pydicom-965  # 2/8: sv1 2/8
+pylint-dev__astroid-1614  # 4/24: ppool 1/8, ppool-v2 2/8, ppool-v3 1/8
+pylint-dev__astroid-1719  # 1/32: ppool 0/8, ppool-v2 1/8, ppool-v3 0/8, sv1 0/8
+pylint-dev__astroid-1903  # 2/32: ppool 0/8, ppool-v2 1/8, ppool-v3 1/8, sv1 0/8
+sqlfluff__sqlfluff-884  # 9/32: ppool 3/8, ppool-v2 3/8, ppool-v3 1/8, sv1 2/8
+sqlfluff__sqlfluff-905  # 1/8: sv1 1/8

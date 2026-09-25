@@ -382,6 +382,16 @@ node08 12+12 + node04 8; 494 s for the batch):
   `--keep-mixed`, batches of 10 with rolling pulls; servers node08:8001 (12) + node04:8003 (8). node08 GPU1's server
   (`swe-serve1`) was stopped to free the GPU for trainer development.
 - **Trainer port** (below).
+- **Screen result** (14:22–16:52, 9 batches of ~12 min, `experiments/screen-gemma-v1.json`): 69 of 86 tasks gated
+  (the 17 failures are all pydicom, the offline test-data issue); 552 episodes, **19 resolved (3.4 %)**, valid actions
+  93.9 %. Mixed: 7 (pydicom-1192 2/8, marshmallow-1343 2/8, sqlfluff-884 2/8, pydicom-965 2/8, marshmallow-1164 1/8,
+  sqlfluff-905 1/8, pydicom-1562 1/8); always solved: sqlfluff-880 (8/8, excluded). Astroid: 0/8 on every task.
+  (The list builder re-screened the 11 pool-v2 tasks by mistake; their results agree with the probes.)
+- **Pool v1** (`configs/pool_gemma_v1.txt`, built by `scripts/gemma_pool.py` from the three probes and the screen: any
+  task solved sometimes and never always): **11 tasks**, pooled 30/264 episodes solved (11 %): marshmallow-1164,
+  marshmallow-1343, pydicom-1192, pydicom-1562, pydicom-1694, pydicom-965, astroid-1614, astroid-1719, astroid-1903,
+  sqlfluff-884, sqlfluff-905. Images copied to node08 (`/var/tmp/swe/sif-dev`, 14 SIFs). The run: `grpo-gemma-v1`
+  (`configs/grpo_gemma_v1.yaml`, 30 steps × 4 tasks × 8, launched 16:55 in tmux `swe-train` on node08).
 
 ### Trainer port to Gemma 4 E4B (`src/sarl/gemma.py`, `configs/grpo_gemma_v1.yaml`, `tests/test_swe_gemma.py`)
 
@@ -480,6 +490,41 @@ node04:8003 (8), trainer on GPU1.
 
 **All gates pass.** The trainer port is complete; the first Gemma GRPO run waits only for the pool
 (`configs/pool_gemma_v1.txt` from the screen).
+
+### SWE-smith as the next task source: scoping (2026-09-25, read-only; 4 agents over the HF table, Docker Hub, the swesmith code and our loader)
+
+The user's direction: spend effort on more tasks (SWE-smith), not on the sandbox network switch. Findings (all checked
+against the pinned table `SWE-bench/SWE-smith @ ea6d7173`, 59,136 rows, 7 columns: instance_id, patch, FAIL_TO_PASS,
+PASS_TO_PASS, image_name, repo, problem_statement):
+- **Usable.** Dataset and code MIT; images public on Docker Hub under `jyangballin/swesmith.x86_64.<owner>_1776_<repo>.<sha8>`
+  (one image per repo, 1.3–1.6 GB, identical digests under `swebench/`). 222 repos; **none of the 12 Verified repos**
+  has rows (flask and sympy have profiles and images but 0 tasks; keep the repo filter anyway).
+- **Our four dev repos are in it:** astroid 1,770 tasks, pydicom 1,328, sqlfluff 1,293, marshmallow 389 (4,780 behind
+  4 images, 5.7 GB); webargs 321 and apispec 301 are the cheapest extensions. pvlib/pyvista are absent.
+- **Semantics.** `patch` *introduces* the bug into the mirror's clean `main` (one commit); the gold fix is the reversed
+  patch. Official evaluation: check out the instance branch (bug + a commit that deletes the F2P test files), restore the
+  tests, apply the prediction, run the repo's pytest command, parse `PASSED/FAILED` lines; resolved iff all F2P and P2P
+  pass; 90 s test timeout at validation time. 30 % of rows have an empty problem statement (LM-written issues); pool
+  repos: 912 of 4,780 empty.
+- **Contamination.** Instance ids and commits cannot collide with Verified. Against *our dev split*: 7 `pr_<n>` mirror
+  instances (astroid 1959/1962/1978/2015/2307/2309, sqlfluff-5074) have byte-identical problem statements to dev tasks →
+  exclude every `pr_` instance. mini-coder's SFT corpus saw 100 % of these repos' SWE-smith tasks (irrelevant for
+  Gemma; disqualifies any mini-coder comparison on them).
+- **Integration (9–12 h hands-on):** `DATASETS["smith"]`; Task gains `bug_patch`, `hidden_files`, image-keyed
+  `sif_name`; `reverse_unidiff` for the gold; `ApptainerEnv` setup hook (apply the bug patch, delete the F2P test files,
+  commit, then pin HEAD); `grade.py` setup pre-step in the fresh container plus a synthesized `pytest -rA` eval script
+  parsed by swebench's `parse_log_pytest`; `scripts/smith_pool.py` (filter: non-empty issue, non-empty P2P, not `pr_`,
+  single-file patch ≤ 2,000 chars, 1–5 F2P; hashed 50 per repo → `configs/screen_smith_v1.txt`, 200 tasks); screens
+  run with `--keep-all` (four tasks share one image, and `rolling_probe` deletes per task).
+- **Added requirement (not in the agents' plan): no bug in git history.** Committing the bug on top of `main` leaves
+  `git show HEAD` / `git diff main` inside the sandbox showing the exact reversed fix. The setup must leave a
+  single-commit history of the buggy state (orphan branch, delete `main`, expire reflogs, `git gc --prune=now`) and
+  the grader must rebuild the same state. The official SWE-agent setup has this leak (origin/main and the bug commit
+  are present); ours must not.
+- **Gates:** G0 image state (HEAD = mirror main, bug patches apply); G1 grading gate on 200 tasks (gold = 1, empty = 0,
+  ≥ 80 % per repo, CPU only, 2–3 h); G2 unit tests + one episode; G3 Gemma screen (200 × 8 episodes, 15–25 h of the two
+  serving GPUs: run after the dev-pool GRPO run or at reduced slots); G4 two-step training smoke.
+- **Plan:** implement and gate G0–G2 while `grpo-gemma-v1` trains on the dev pool (CPU work on node04); screen after.
 
 ---
 
