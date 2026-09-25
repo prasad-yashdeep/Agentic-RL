@@ -43,7 +43,11 @@ class Generation:
 
 class VLLMPolicy:
     def __init__(self, base_url: str = "http://localhost:8001", model: str = "policy", sampling: Sampling | None = None,
-                 timeout_s: float = 900.0, stop_token_ids: Sequence[int] = (151645, 151643)):
+                 timeout_s: float = 900.0, stop_token_ids: Sequence[int] | None = None):
+        # required: the ids that end a reply differ per model (sarl.harness.stop_ids); Qwen's 151645/151643 are
+        # ordinary tokens in Gemma's vocabulary, so a silent default would truncate replies
+        if not stop_token_ids:
+            raise TypeError("VLLMPolicy needs stop_token_ids (use sarl.harness.stop_ids)")
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.sampling = sampling or Sampling()
@@ -84,7 +88,9 @@ class VLLMPolicy:
 
 
 class HFPolicy:
-    def __init__(self, model, tokenizer, sampling: Sampling | None = None, stop_token_ids: Sequence[int] = (151645, 151643)):
+    def __init__(self, model, tokenizer, sampling: Sampling | None = None, stop_token_ids: Sequence[int] | None = None):
+        if not stop_token_ids:
+            raise TypeError("HFPolicy needs stop_token_ids (use sarl.harness.stop_ids)")
         self.model, self.tok = model, tokenizer
         self.sampling = sampling or Sampling()
         self.stop_token_ids = list(stop_token_ids)
@@ -116,7 +122,7 @@ class ScriptedPolicy:
     all-zero. Its tokens are trained on with a positive advantage but were never sampled from the policy, so it is
     off-policy data (log-probs None) — labelled as such in every record."""
 
-    def __init__(self, tokenizer, replies: Sequence[str], fallback: str | None = None, im_end_id: int = 151645):
+    def __init__(self, tokenizer, replies: Sequence[str], fallback: str | None = None, *, im_end_id: int):
         self.tok = tokenizer
         self.replies = list(replies)
         self.fallback = fallback

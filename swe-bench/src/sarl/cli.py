@@ -57,7 +57,7 @@ def cmd_episode(a) -> int:
     from transformers import AutoTokenizer
 
     from sarl.env.apptainer import ApptainerEnv, ensure_sif, sif_for
-    from sarl.harness import ChatFormat, Limits, oracle_replies, run_episode
+    from sarl.harness import ChatFormat, Limits, oracle_replies, run_episode, stop_ids
     from sarl.paths import MODEL_ID, MODEL_REVISION
     from sarl.policy import ScriptedPolicy, VLLMPolicy
     from sarl.reward import grade
@@ -67,7 +67,8 @@ def cmd_episode(a) -> int:
     tok = AutoTokenizer.from_pretrained(MODEL_ID, revision=MODEL_REVISION)
     fmt = ChatFormat(tok)
     sif = ensure_sif(t.docker_ref, sif_for(t))
-    pol = ScriptedPolicy(tok, oracle_replies(t)) if a.policy == "oracle" else VLLMPolicy(a.url, a.model)
+    pol = (ScriptedPolicy(tok, oracle_replies(t), im_end_id=fmt.im_end_id) if a.policy == "oracle"
+           else VLLMPolicy(a.url, a.model, stop_token_ids=stop_ids(fmt, MODEL_ID, MODEL_REVISION)))
     with ApptainerEnv(sif) as env:
         tr = run_episode(pol, env, t, fmt, Limits(max_turns=a.max_turns), policy_name=a.policy)
     for turn in tr.turns:

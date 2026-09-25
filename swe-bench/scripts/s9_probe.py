@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from sarl.env.apptainer import ApptainerEnv, sif_for
-from sarl.harness import ChatFormat, Limits, run_episode
+from sarl.harness import ChatFormat, Limits, run_episode, stop_ids
 from sarl.paths import MODELS, REPO, TEMPLATE_KWARGS
 from sarl.policy import Sampling, VLLMPolicy
 from sarl.protocol import tools_for
@@ -66,11 +66,12 @@ def main(argv=None) -> int:
               "sampling": samp, "template_kwargs": tkw, "protocols": {}}
     for proto in a.protocols:
         fmt = ChatFormat(tok, tools_for(proto), tkw)
+        stops = stop_ids(fmt, mid, rev)
 
         def one(i_t):
             i, t = i_t
             with ApptainerEnv(sif_for(t), command_timeout=lim.command_timeout_s) as env:
-                tr = run_episode(VLLMPolicy(a.url, a.served_model, Sampling(**samp, seed=1000 + i)), env, t, fmt, lim, protocol=proto)
+                tr = run_episode(VLLMPolicy(a.url, a.served_model, Sampling(**samp, seed=1000 + i), stop_token_ids=stops), env, t, fmt, lim, protocol=proto)
             g = grade(t, tr.patch, sif=sif_for(t)) if a.grade and tr.patch.strip() else None
             return t, tr, g
 

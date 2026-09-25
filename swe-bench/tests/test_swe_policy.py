@@ -18,7 +18,8 @@ def test_seed_differs_per_turn_and_pairs_across_policies(monkeypatch):
             return {"choices": [{"token_ids": [1, 151645], "logprobs": {"token_logprobs": [-0.1, -0.2]}, "text": "x"}]}
 
     monkeypatch.setattr(httpx, "post", lambda url, json, timeout: seen.append(json["seed"]) or _R())
-    a, b = VLLMPolicy(sampling=Sampling(seed=1003)), VLLMPolicy(sampling=Sampling(seed=1003))
+    a = VLLMPolicy(sampling=Sampling(seed=1003), stop_token_ids=[151645])
+    b = VLLMPolicy(sampling=Sampling(seed=1003), stop_token_ids=[151645])
     for _ in range(3):
         a.generate([1, 2], 8)
     for _ in range(3):
@@ -27,5 +28,12 @@ def test_seed_differs_per_turn_and_pairs_across_policies(monkeypatch):
     assert seen[:3] == seen[3:]  # the same episode seed gives the same per-turn seeds: arms stay paired
     unseeded = []
     monkeypatch.setattr(httpx, "post", lambda url, json, timeout: unseeded.append("seed" in json) or _R())
-    VLLMPolicy().generate([1], 4)
+    VLLMPolicy(stop_token_ids=[151645]).generate([1], 4)
     assert unseeded == [False]
+
+
+def test_stop_ids_are_required():
+    import pytest
+
+    with pytest.raises(TypeError, match="stop_token_ids"):
+        VLLMPolicy()

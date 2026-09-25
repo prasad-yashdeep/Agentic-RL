@@ -23,6 +23,7 @@ markers = [
   "upstream: needs reference/_upstream (bash reference/fetch.sh)",
   "swe_data: needs the pinned SWE-bench datasets in the HF cache",
   "qwen: needs Qwen2.5-Coder-0.5B-Instruct in the HF cache",
+  "gemma: needs the google/gemma-4-E4B-it tokenizer in the HF cache",
   "sif: needs a pulled SWE-bench image and apptainer (node08)",
   "grader: needs the swebench grader venv (node08 /var/tmp/swe/grader-venv)",
   "gpu: needs CUDA",

@@ -45,7 +45,7 @@ from pathlib import Path
 import httpx
 
 from sarl.env.apptainer import ApptainerEnv, ensure_sif, sif_for, stop_all
-from sarl.harness import ChatFormat, Limits, run_episode
+from sarl.harness import ChatFormat, Limits, run_episode, stop_ids
 from sarl.paths import MODELS, TEMPLATE_KWARGS
 from sarl.policy import Sampling, VLLMPolicy
 from sarl.protocol import tools_for
@@ -132,6 +132,7 @@ def main(argv=None) -> int:
     mid, rev = MODELS[a.model_key]
     tok = AutoTokenizer.from_pretrained(mid, revision=rev)
     fmt = ChatFormat(tok, tools_for(a.protocol), TEMPLATE_KWARGS.get(a.model_key, {}))
+    stops = stop_ids(fmt, mid, rev)
     lim = Limits(max_turns=a.max_turns, max_context_tokens=a.max_context, wall_clock_s=a.wall_clock,
                  command_timeout_s=a.command_timeout)
     tasks = read_pool(a.tasks_file, a.split)
@@ -266,7 +267,8 @@ def main(argv=None) -> int:
         tr = None
         try:
             with ApptainerEnv(sif_for(t, sif_dir), prefix=prefix, command_timeout=lim.command_timeout_s) as env:
-                tr = run_episode(VLLMPolicy(a.servers[s], arms[arm], Sampling(temperature=a.temperature, seed=1000 + i)),
+                tr = run_episode(VLLMPolicy(a.servers[s], arms[arm], Sampling(temperature=a.temperature, seed=1000 + i),
+                                            stop_token_ids=stops),
                                  env, t, fmt, lim, protocol=a.protocol)
         except (httpx.TransportError, httpx.HTTPStatusError) as e:
             if isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500 and e.response.status_code != 404:

@@ -210,7 +210,10 @@ artifact of the tool's formula, not a measurement.
 - **2026-09-24:** node08 is back (up since 09-22 ≈18:30 PDT) but was **reprovisioned**: every node-local
   cache is gone (`/var/tmp/tarl`, `/tmp/tb2`, `/tmp/sif-cache`, apptainer caches); NFS state is intact.
   node03 and **dlmdb01 are down** (so Prometheus/Grafana are down too); node01/02/04/05/07 down.
-  node08 is the only compute node: run tests there (`make test NODE=node08`). Health:
+  node08 is the only compute node: run tests there (`make test NODE=node08`).
+- **2026-09-25 05:05:** node04 is back (up since 09-24 ≈21:50). Verified read-only: RTX 4060 Laptop 8 GB (sm_89, native FP8),
+  driver 570.133.20, 22 threads / 14 GB RAM, local `/` 804 GB (778 free), `/var` 100 GB, `/tmp` 16 GB, unprivileged
+  userns on, the shared venv (torch CUDA, vLLM 0.25.1) and ~/apptainer-env run, and it reaches node08:8001. 1 GbE only. Health:
   `ssh node08 'bash /home/yashp/Agentic-RL/terminal-bench/scripts/_node08_health.sh'`.
 
 ## Other projects on this cluster (under `/home/yashp`)

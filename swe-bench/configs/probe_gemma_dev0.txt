@@ -1,0 +1,12 @@
+# Gemma 4 E4B probe (2026-09-25): 10 usable dev tasks where base mini-coder-1.7b solved 0/8 in the v2 screening
+# (experiments/screen-dev-v2{,b}.json), spread over repos in screening order. Can Gemma reach tasks mini-coder cannot?
+marshmallow-code__marshmallow-1252
+pydicom__pydicom-839
+pylint-dev__astroid-927
+sqlfluff__sqlfluff-1733
+marshmallow-code__marshmallow-1524
+pydicom__pydicom-900
+pylint-dev__astroid-934
+sqlfluff__sqlfluff-1517
+marshmallow-code__marshmallow-1702
+pydicom__pydicom-816

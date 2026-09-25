@@ -583,7 +583,7 @@ else:
                    action_text(f"cat > {TARGET} <<'EOF'\n{FIXED}\nEOF", "The cright branch assigns 1 instead of right. Fixing it.", proto),
                    action_text("python -m pytest", "Now run the tests.", proto),
                    action_text(f"echo {SUBMIT}", "Submitting.", proto)]
-        tr = run_episode(ScriptedPolicy(tok, replies), MockEnv({TARGET: MOCK_FILE}, lecture.fail_to_pass), lecture, fmt,
+        tr = run_episode(ScriptedPolicy(tok, replies, im_end_id=fmt.im_end_id), MockEnv({TARGET: MOCK_FILE}, lecture.fail_to_pass), lecture, fmt,
                          Limits(max_turns=6), policy_name="oracle", protocol=proto)
         MOCK_EPISODES[proto] = tr
         exact = rerender_ids(tok, tr.messages, proto)[: len(tr.ids)] == tr.ids
@@ -668,7 +668,8 @@ else:
     rows = []
     for proto in PROTOCOLS:
         with ApptainerEnv(DEMO_SIF, command_timeout=60) as env:
-            tr = run_episode(VLLMPolicy(SERVE_URL, model_name, Sampling()), env, train_t, ChatFormat(tok, tools_for(proto)),
+            fmt_ = ChatFormat(tok, tools_for(proto))
+            tr = run_episode(VLLMPolicy(SERVE_URL, model_name, Sampling(), stop_token_ids=[fmt_.im_end_id, 151643]), env, train_t, fmt_,
                              Limits(max_turns=6, max_context_tokens=8192, max_new_tokens=512), policy_name=model_name, protocol=proto)
         LIVE[proto] = tr
         pol_lp = [v for v, m in zip(tr.logprobs, tr.mask) if m]

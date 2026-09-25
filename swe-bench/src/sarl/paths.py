@@ -46,10 +46,17 @@ MODELS = {
     # with enable_thinking=True (its SFT turns carry no <think> block). Trained on SWE-smith bugs from all four pool
     # repos (astroid, sqlfluff, pydicom, marshmallow) -> measure generalisation on configs/holdout_dev.txt.
     "mini-coder-1.7b": ("ricdomolm/mini-coder-1.7b", "5b7fbc90b6c4684c546de7f811865cff4414a96c"),
+    # Gemma 4 E4B (Apache 2.0): Google's bf16 snapshot = tokenizer, chat template (2026-07-09; the FP8 copy's template is
+    # older) and training reference; the third-party FP8 copy is what vLLM serves on the A4000s (W8A16 on sm_86,
+    # --language-model-only). Same tokenizer.json / vocab. Render with enable_thinking=False; protocol mswea only (the
+    # template renders tool results only after a native tool call).
+    "gemma4-e4b": ("google/gemma-4-E4B-it", "ee0ef6023621cff504d758262d4e04895a5af4a2"),
+    "gemma4-e4b-fp8": ("prithivMLmods/gemma-4-E4B-it-FP8", "e991fcb6c8b3871071c0ad7f7343dc5e0e7e5639"),
 }
 
 # chat-template kwargs per model (ChatFormat defaults to enable_thinking=False)
-TEMPLATE_KWARGS = {"mini-coder-1.7b": {"enable_thinking": True}}
+TEMPLATE_KWARGS = {"mini-coder-1.7b": {"enable_thinking": True}, "gemma4-e4b": {"enable_thinking": False},
+                   "gemma4-e4b-fp8": {"enable_thinking": False}}
 
 
 def model_snapshot(key: str) -> Path:

@@ -9,6 +9,10 @@ KEY="${SARL_MODEL:-0.5b}"
 SNAP=$("$ARL/.venv/bin/python" -c "from sarl.paths import model_snapshot; print(model_snapshot('$KEY'))")
 [ -f "$SNAP/config.json" ] || { echo "model snapshot missing: $SNAP (download the pinned revision first)"; exit 1; }
 export HF_HUB_OFFLINE=1 VLLM_ALLOW_RUNTIME_LORA_UPDATING=True VLLM_USE_FLASHINFER_SAMPLER=0 NCCL_P2P_DISABLE=1
+export PATH="$ARL/.venv/bin:$PATH"  # vLLM's FP8-on-Ampere kernels JIT-compile and need the venv's ninja
+# SARL_SERVE_EXTRA: model-specific flags, e.g. Gemma 4 E4B FP8:
+#   --language-model-only --compilation-config '{"cudagraph_mode":"PIECEWISE"}'
+read -r -a EXTRA_ARGS <<< "${SARL_SERVE_EXTRA:-}"
 mkdir -p "$SWE/runs"
 # SARL_MAX_NUM_SEQS=16: capture only small CUDA graphs. vLLM 0.25.1's V2 runner does not count its graph pool (1.2 GiB at
 # the default 256) in --gpu-memory-utilization, which on a shared GPU leaves no room for the trainer's CUDA context.
@@ -26,5 +30,5 @@ CUDA_VISIBLE_DEVICES="${SARL_SERVE_GPU:-0}" exec "$ARL/.venv/bin/vllm" serve "$S
     --enable-lora --max-lora-rank 16 --max-loras 2 \
     --generation-config vllm \
     --enable-prefix-caching \
-    "${SLEEP_ARGS[@]}" \
+    "${SLEEP_ARGS[@]}" "${EXTRA_ARGS[@]}" \
     2>&1 | tee -a "$SWE/runs/serve.log"

@@ -11,6 +11,7 @@ re-serialise tool calls, merge consecutive tool messages, drop <think>), so the 
 
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import asdict, dataclass, field
 from typing import Any
@@ -67,7 +68,9 @@ class Trajectory:
 
 
 class ChatFormat:
-    """Token-level turn deltas derived from the tokenizer's own chat template (ChatML for Qwen2.5)."""
+    """Token-level turn deltas derived from the tokenizer's own chat template: ChatML (<|im_end|>) for Qwen, <turn|> for
+    Gemma 4. Nothing model-specific is hard-coded: the turn terminator is the special token the template writes after
+    an assistant reply."""
 
     PROBE = "\x00SARL_PROBE\x00"
 
@@ -77,12 +80,22 @@ class ChatFormat:
         # Qwen3 templates take enable_thinking; sarl runs them in non-thinking mode. Templates that do not know the
         # kwarg ignore it (Jinja), so passing it for Qwen2.5 is harmless.
         self.template_kwargs = {"enable_thinking": False, **(template_kwargs or {})}
-        self._special = sorted({t for t in getattr(tokenizer, "all_special_tokens", []) if t.startswith("<|")} |
-                               {t for t in getattr(tokenizer, "added_tokens_encoder", {}) if t.startswith("<|")}, key=len, reverse=True)
-        self.im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
-        self.eot_id = tokenizer.convert_tokens_to_ids("<|endoftext|>")
-        self.tool_prefix, self.tool_suffix = self._delta("tool")
+        added = getattr(tokenizer, "added_tokens_decoder", {}) or {}
+        special = ({t for t in getattr(tokenizer, "all_special_tokens", []) if t.startswith("<|")} |
+                   {t for t in getattr(tokenizer, "added_tokens_encoder", {}) if t.startswith("<|")} |
+                   {getattr(a, "content", str(a)) for a in added.values() if getattr(a, "special", False)})
+        self._special = sorted(special, key=len, reverse=True)  # longest first (Qwen: exactly the '<|…|>' tokens)
+        self._special_re = re.compile("|".join(re.escape(t) for t in self._special)) if self._special else None
+        self.turn_end: str | None = None
         self.user_prefix, self.user_suffix = self._delta("user")
+        self.turn_end_id = tokenizer.convert_tokens_to_ids(self.turn_end)
+        self.im_end_id = self.turn_end_id  # historical name (Qwen's <|im_end|>); the harness and tests use it
+        try:
+            self.tool_prefix, self.tool_suffix = self._delta("tool")
+        except NotImplementedError:
+            if self.tools:  # Gemma renders tool results only after a native tool call: the tool_call protocol cannot work
+                raise
+            self.tool_prefix = self.tool_suffix = None
 
     def _render(self, messages, gen=True) -> str:
         return self.tok.apply_chat_template(messages, tools=self.tools or None, add_generation_prompt=gen, tokenize=False,
@@ -100,8 +113,16 @@ class ChatFormat:
         after = self._render(base + [{"role": role, "content": self.PROBE}], gen=True)
         cut = after.index("SARL_ASSISTANT_REPLY") + len("SARL_ASSISTANT_REPLY")
         tail = after[cut:]
-        assert tail.startswith("<|im_end|>"), f"unexpected assistant turn ending: {tail[:40]!r}"
-        pre, post = tail[len("<|im_end|>"):].split(self.PROBE)  # the policy samples <|im_end|> itself
+        end = next((t for t in self._special if tail.startswith(t)), None)  # the policy samples this token itself
+        if end is None:
+            raise ValueError(f"the assistant turn does not end in a special token: {tail[:40]!r}")
+        if self.turn_end is not None and end != self.turn_end:
+            raise ValueError(f"inconsistent turn terminators {self.turn_end!r} / {end!r}")
+        self.turn_end = end
+        rest = tail[len(end):]
+        if rest.count(self.PROBE) != 1:
+            raise NotImplementedError(f"the template renders no plain {role!r} turn after a text reply")
+        pre, post = rest.split(self.PROBE)
         return pre, post
 
     def encode(self, text: str) -> list[int]:
@@ -111,21 +132,36 @@ class ChatFormat:
         """Untrusted text (issue, command output) must not contain literal special tokens: '<|im_end|>' printed by a
         command would otherwise tokenize as the real turn delimiter and forge a turn boundary (review finding). A word
         joiner after '<|' keeps it readable but plain text."""
-        if "<|" not in text:
+        if self._special_re is None:
             return text
-        for t in self._special:
-            if t in text:
-                text = text.replace(t, t[:2] + "\u2060" + t[2:])
-        return text
+        return self._special_re.sub(lambda m: m.group(0)[:2] + "\u2060" + m.group(0)[2:], text)
 
     def prompt_ids(self, messages: list[dict]) -> list[int]:
         return self.encode(self._render(messages, gen=True))
 
     def tool_turn(self, observation: str) -> list[int]:
+        if self.tool_prefix is None:
+            raise RuntimeError("this chat template has no plain tool turn; use the mswea or backticks protocol")
         return self.encode(self.tool_prefix + self.sanitize(observation) + self.tool_suffix)
 
     def user_turn(self, text: str) -> list[int]:
         return self.encode(self.user_prefix + self.sanitize(text) + self.user_suffix)
+
+
+def stop_ids(fmt: ChatFormat, model_id: str | None = None, revision: str | None = None) -> list[int]:
+    """Token ids that end a reply: the template's turn terminator, then the model's generation_config eos ids, then the
+    tokenizer's eos (deduplicated, in that order). Qwen / mini-coder: [151645, 151643]; Gemma 4: [106, 1, 50]."""
+    ids = [fmt.turn_end_id]
+    if model_id:
+        try:
+            from transformers import GenerationConfig
+
+            e = GenerationConfig.from_pretrained(model_id, revision=revision).eos_token_id
+            ids += list(e) if isinstance(e, (list, tuple)) else [e]
+        except Exception:
+            pass
+    ids.append(fmt.tok.eos_token_id)
+    return list(dict.fromkeys(i for i in ids if i is not None))
 
 
 def initial_messages(task, limits: Limits, protocol: str = "tool_call", fmt: "ChatFormat | None" = None) -> list[dict]:

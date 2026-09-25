@@ -29,7 +29,7 @@ import numpy as np
 
 from sarl.env.apptainer import ApptainerEnv, sif_for, stop_all
 from sarl.grpo import LoRATrainer, TrainConfig, group_advantages, is_degenerate, mismatch_stats
-from sarl.harness import ChatFormat, Limits, oracle_replies, run_episode
+from sarl.harness import ChatFormat, Limits, oracle_replies, run_episode, stop_ids
 from sarl.metrics import JsonlWriter
 from sarl.paths import REPO, RUNS, SCRATCH, refuse_on_home
 from sarl.policy import Sampling, ScriptedPolicy, VLLMPolicy
@@ -224,10 +224,10 @@ def _run_rollout(ro: Rollout, cfg: dict, fmt: ChatFormat, policy_model: str, tok
                           network=cfg.get("env", {}).get("network", False)) as env:
             protocol = cfg.get("protocol", "tool_call")
             if ro.kind == "oracle":
-                pol = ScriptedPolicy(tok, oracle_replies(ro.task, protocol))
+                pol = ScriptedPolicy(tok, oracle_replies(ro.task, protocol), im_end_id=fmt.im_end_id)
             else:
                 url = router.urls[j] if j is not None else cfg["serve_url"]
-                pol = VLLMPolicy(url, policy_model, Sampling(**{**cfg["sampling"], "seed": seed}))
+                pol = VLLMPolicy(url, policy_model, Sampling(**{**cfg["sampling"], "seed": seed}), stop_token_ids=cfg["_stop_ids"])
             ro.traj = run_episode(pol, env, ro.task, fmt, lim, policy_name="oracle" if ro.kind == "oracle" else policy_model,
                                   protocol=protocol)
             if j is not None:
@@ -344,11 +344,12 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     torch.manual_seed(cfg.get("seed", 0))  # LoRA init
     tok = AutoTokenizer.from_pretrained(cfg["model"], revision=cfg.get("revision"))
     fmt = ChatFormat(tok, tools_for(cfg.get("protocol", "tool_call")), cfg.get("chat_template_kwargs"))
+    cfg["_stop_ids"] = stop_ids(fmt, cfg["model"], cfg.get("revision"))
     pool = read_pool(REPO / cfg["pool"], cfg.get("split", "dev"))
     missing = [t.instance_id for t in pool if not sif_for(t).exists()]
     if missing:
         raise FileNotFoundError(f"images not pulled for {missing}; run `make -C swe-bench sifs`")
-    base_policy = VLLMPolicy(cfg["serve_url"], cfg["served_model"], Sampling(**cfg["sampling"]))
+    base_policy = VLLMPolicy(cfg["serve_url"], cfg["served_model"], Sampling(**cfg["sampling"]), stop_token_ids=cfg["_stop_ids"])
     if not base_policy.healthy():
         raise RuntimeError(f"vLLM serve not healthy at {cfg['serve_url']} (make -C swe-bench serve)")
     # servers: [{url, slots, sleep}] (default: the one serve_url). A "sleep" server shares its GPU with the trainer: it
@@ -395,7 +396,7 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     log(f"run {run_dir.name}: pool {len(pool)} tasks, {cfg['steps']} steps × {cfg['tasks_per_step']} tasks × G={cfg['group_size']} "
         f"(oracle {cfg['oracle_per_group']}/group); trainable {trainer.n_trainable:,}; adapter {trainer.adapter_hash()}")
     prev_probe = probe(base_policy, fmt)
-    probe_ids = fmt.prompt_ids([{"role": "user", "content": "Fix the failing test in /testbed."}]) + fmt.encode("```bash\nls\n```<|im_end|>")
+    probe_ids = fmt.prompt_ids([{"role": "user", "content": "Fix the failing test in /testbed."}]) + fmt.encode("```bash\nls\n```") + [fmt.turn_end_id]
     base_lp = np.array(served_logprobs(cfg["serve_url"], cfg["served_model"], probe_ids))
     G, n_or = cfg["group_size"], cfg["oracle_per_group"]
     adapter_root = refuse_on_home(SCRATCH / "adapters" / run_dir.name, "LoRA adapters")
@@ -482,7 +483,7 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
         if upd.get("stepped"):
             name = f"{cfg['served_model']}-{run_tag}-s{step}"
             sync.load(name, adapter_root / f"step-{step}")
-            pol_now = VLLMPolicy(cfg["serve_url"], name)
+            pol_now = VLLMPolicy(cfg["serve_url"], name, stop_token_ids=cfg["_stop_ids"])
             p = probe(pol_now, fmt)
             new_lp = np.array(served_logprobs(cfg["serve_url"], name, probe_ids))
             # proof that vLLM now serves πθ′: the fixed sequence's log-probs moved away from the base model's

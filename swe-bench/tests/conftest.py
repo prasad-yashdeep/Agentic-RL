@@ -21,6 +21,13 @@ def _have_qwen() -> bool:
     return (HF_CACHE / "hub" / "models--Qwen--Qwen2.5-Coder-0.5B-Instruct" / "snapshots" / MODEL_REVISION / "config.json").exists()
 
 
+def _have_gemma() -> bool:
+    from sarl.paths import MODELS
+
+    mid, rev = MODELS["gemma4-e4b"]
+    return (HF_CACHE / "hub" / f"models--{mid.replace('/', '--')}" / "snapshots" / rev / "tokenizer.json").exists()
+
+
 def _have_sif() -> bool:
     return APPTAINER.exists() and (SIF_DIR / f"{SMALL_TASK}.sif").exists() and not socket.gethostname().startswith("bcm11-headnode")
 
@@ -38,6 +45,7 @@ SKIPS = {
     "upstream": (lambda: (UPSTREAM / "utils.py").exists(), "reference/_upstream not fetched (bash reference/fetch.sh)"),
     "swe_data": (_have_data, "pinned SWE-bench datasets not in the HF cache (make assets)"),
     "qwen": (_have_qwen, "Qwen2.5-Coder-0.5B-Instruct not in the HF cache (make assets)"),
+    "gemma": (_have_gemma, "google/gemma-4-E4B-it tokenizer not in the HF cache"),
     "sif": (_have_sif, f"no apptainer image {SMALL_TASK}.sif in {SIF_DIR} on this host (node08: make sifs)"),
     "grader": (lambda: (GRADER_VENV / "bin" / "python").exists(), "grader venv missing (make grader)"),
     "gpu": (_have_gpu, "no CUDA"),
@@ -72,6 +80,16 @@ def qwen_tok():
     from sarl.paths import MODEL_ID
 
     return AutoTokenizer.from_pretrained(MODEL_ID, revision=MODEL_REVISION)
+
+
+@pytest.fixture(scope="session")
+def gemma_tok():
+    from transformers import AutoTokenizer
+
+    from sarl.paths import MODELS
+
+    mid, rev = MODELS["gemma4-e4b"]
+    return AutoTokenizer.from_pretrained(mid, revision=rev)
 
 
 @pytest.fixture(scope="session")

@@ -1,0 +1,11 @@
+# Gemma 4 E4B probe (2026-09-25): the first 10 tasks of configs/eval_verified_v1_gated.txt (eval-only; never trained on).
+scikit-learn__scikit-learn-14141
+scikit-learn__scikit-learn-9288
+django__django-13821
+django__django-15957
+django__django-14580
+django__django-16595
+django__django-16139
+sympy__sympy-21847
+django__django-14311
+django__django-15380
