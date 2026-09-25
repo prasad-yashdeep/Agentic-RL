@@ -148,12 +148,12 @@ Setup: 8 episodes per task, same limits (wall clock 1,200 s), both GPUs, images 
 
 **Timeline:**
 - 17:36: started.
-- Steps 10–12 slowed to about 40 min and the trainer was OOM-killed at step 13 (the 32 GB tmpfs incident above).
+- Steps 11 and 12 slowed to 39 and 45 min (2,326 s and 2,714 s) and the trainer was OOM-killed during step 13: one sandbox wrote about 32 GB into its RAM-backed tmpfs, swap filled, and the OOM killer took the trainer (details in `src/sarl/env/apptainer.py` and commit `400134d`). Several post-resume steps were also slow (step 14 1,306 s, step 24 2,095 s).
 - 21:24: resumed from step 12 with `--resume` (adapter hash verified, task draws replayed, AdamW moments reset).
 - 01:37: finished.
 
 **Speed:**
-- Steps took 561–776 s at the median, against 740 s per 16-rollout step in v1. That is about 2× the rollout throughput.
+- Steps took a median of 756 s (interquartile 656–935 s, min 561 s) for 32 rollouts, against a v1 median of 743 s for 16 rollouts. That is about 2× the rollout throughput.
 - The worst step, 2,714 s, was during the memory incident.
 - Sleep/wake took 1–3 s per step.
 
@@ -315,9 +315,9 @@ Next lever, untested: node08 is still eager. Decode-only CUDA graphs without Ind
 |---|---|---|
 | Resolved | 6/88 (6.8 %) | 5–30 % ✓ (just) |
 | Mixed tasks | 4: sqlfluff-884 3/8, astroid-1614 1/8, marshmallow-1164 1/8, pydicom-1192 1/8 | ≥ 4 ✓ (just) |
-| Valid actions | **70 %** | ≥ 90 % ✗ |
+| Valid actions | **74.1 %** turn-weighted (533/719; 69.8 % as the mean of per-episode rates) | ≥ 90 % ✗ |
 
-- 72 of 88 episodes submitted, after 8.2 turns on average; 15 ended on 3 format errors.
+- 73 of 88 episodes submitted, after 8.2 turns on average; 15 ended on 3 format errors.
 - For comparison, mini-coder-1.7b scored 31 % on its own probe pool.
 
 **Why the actions were invalid.** Replaying 7 episodes (`gemma_format_diag`) showed the pattern. Gemma 4 leaks its thinking channel even with thinking off, writing `reasoning … ```bash X``` <channel|>```bash X````. The reasoning repeats the command, so the reply holds two bash blocks and mini-swe-agent's exactly-one rule rejects it. 14 of 20 invalid replies contained `<channel|>`; **13 of those 14 parse as valid after the last `<channel|>`**.
@@ -345,8 +345,35 @@ for the batch, gate included):
   count are in the band. The decision is the user's.
 - The invalid turns are spread thin: 69 of 88 episodes have at least one, about one per episode, on every task
   (3/38 to 15/60 turns). The format-error message is fed back and the model usually recovers on the next turn; only 5
-  episodes ended on three in a row. The probe records no per-turn error types, so what the remaining 14 % are is not
-  yet known.
+  episodes ended on three in a row.
+
+**Why the remaining 14 % were invalid** (replay of 22 episodes / 192 turns with the current parser, `gemma_invalid_diag`,
+no grading): 36 invalid turns. 28 of them had `finish_reason = length`: the reply hit `Limits.max_new_tokens = 1024`
+before the bash block closed (18 with no block yet, 10 cut during the thinking that repeats the block, before the
+`<channel|>`). Only 8 of 192 turns were genuinely malformed (two or three bash blocks in the answer itself). 31 of 192
+turns hit the cap overall, and vLLM's counters show 13 % of all Gemma requests so far ended on `length`. Gemma thinks at
+length before its answer, so the cap set for mini-coder truncates it. `rolling_probe.py` gained `--max-new-tokens`.
+
+**Probe 3** (`experiments/probe-gemma-pool-v3.json`; same pool, seeds and settings, `--max-new-tokens 4096`; servers
+node08 12+12 + node04 8; 494 s for the batch):
+
+| Metric | Probe 1 | Probe 2 | Probe 3 | Pre-registered "Go" bar |
+|---|---|---|---|---|
+| Resolved | 6/88 | 9/88 | **4/88 (4.5 %)** | 5–30 % ✗ (by one episode) |
+| Mixed tasks | 4 | 6 | **4**: astroid-1614, astroid-1903, marshmallow-1343, sqlfluff-884 (1/8 each) | ≥ 4 ✓ |
+| Valid actions | 74.1 % | 86.3 % | **94.9 %** (33 invalid of 650 turns) | ≥ 90 % ✓ |
+| Exits | 73 / 15 / 0 | 81 / 5 / 2 | 87 submitted / 0 format errors / 1 context | |
+| Non-empty patches | 42 | 61 | 46 | |
+| Mean turns | 8.2 | 8.5 | 7.4 | |
+
+- Pooled over the three probes: **19/264 resolved (7.2 %)**; the per-probe counts 6, 9, 4 are within binomial noise
+  of that rate (sd ≈ 2.4 solves per 88 episodes). Mixed tasks over all probes: 6 of 11. The raised cap removed the
+  format errors entirely and shortened episodes (fewer patches, more direct submits); whether it lowered the solve
+  rate cannot be told from one probe.
+- Verdict against the rule: the last probe meets the valid-action and mixed-task bars and misses the solve band by
+  one episode; the pooled probes meet all three. The decision is the user's. If Go: the base rate of ~7 % means most
+  groups will be degenerate, so the pool needs more mixed tasks (screen more dev tasks with Gemma, as for mini-coder)
+  alongside the trainer port.
 
 ---
 

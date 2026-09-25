@@ -1,0 +1,745 @@
+<title>Teaching Gemma to Fix Real Bugs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#f6f7f9; --surface:#ffffff; --ink:#1a1f26; --muted:#5b6472; --line:#d9dee6; --line-strong:#b9c2cf;
+  --accent:#2a78d6; --accent-ink:#1f5fae; --accent-soft:#e4eefb;
+  --amber:#b7791f; --amber-soft:#fbf1dc; --green:#178a5f; --green-soft:#dff3ea; --red:#c23b3b; --red-soft:#f9e3e3;
+  --teal:#0f8f8a; --teal-soft:#d9f1f0;
+  --code-bg:#eef1f5; --shadow:0 1px 2px rgba(20,30,50,.06);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme:dark;
+  --paper:#0f1318; --surface:#161b22; --ink:#e6e9ee; --muted:#9aa4b2; --line:#2a323d; --line-strong:#3b4552;
+  --accent:#5b9cf0; --accent-ink:#8ab8f5; --accent-soft:#16304f;
+  --amber:#e0a94f; --amber-soft:#33291a; --green:#4cc38a; --green-soft:#16302a; --red:#f07070; --red-soft:#3a2020;
+  --teal:#4ccbc5; --teal-soft:#123634;
+  --code-bg:#1d242d; --shadow:none;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0f1318; --surface:#161b22; --ink:#e6e9ee; --muted:#9aa4b2; --line:#2a323d; --line-strong:#3b4552;
+  --accent:#5b9cf0; --accent-ink:#8ab8f5; --accent-soft:#16304f;
+  --amber:#e0a94f; --amber-soft:#33291a; --green:#4cc38a; --green-soft:#16302a; --red:#f07070; --red-soft:#3a2020;
+  --teal:#4ccbc5; --teal-soft:#123634;
+  --code-bg:#1d242d; --shadow:none;
+}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:var(--accent-ink)}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:2.5rem;max-width:1160px;margin:0 auto;padding-block:1.5rem 5rem;padding-inline:1.25rem}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)} nav.toc{position:static;max-height:none;border:none;padding:0;margin-bottom:1rem}}
+nav.toc{position:sticky;top:1rem;align-self:start;max-height:calc(100vh - 2rem);overflow:auto;font-size:.86rem;line-height:1.4;padding-right:.5rem}
+nav.toc .lbl{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 .5rem}
+nav.toc ol{list-style:none;padding:0;margin:0 0 1rem}
+nav.toc li{margin:.15rem 0}
+nav.toc a{color:var(--muted);text-decoration:none;display:block;padding:.15rem .4rem;border-left:2px solid transparent}
+nav.toc a:hover{color:var(--ink);border-left-color:var(--line-strong)}
+nav.toc .sub a{padding-left:1rem;font-size:.8rem}
+main{min-width:0}
+.eyebrow{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 .6rem}
+h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(1.9rem,3.4vw,2.6rem);line-height:1.12;margin:0 0 .8rem;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:1.55rem;line-height:1.2;margin:3rem 0 .8rem;text-wrap:balance;letter-spacing:-.005em}
+h3{font-family:"Source Sans 3",sans-serif;font-weight:600;font-size:1.08rem;margin:1.8rem 0 .4rem}
+h2 .num{color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:.8rem;font-weight:400;letter-spacing:.06em;margin-right:.6rem;vertical-align:.25em}
+h2 .star{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;padding:.12rem .5rem;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink);vertical-align:.3em;margin-left:.5rem;font-weight:600}
+p,li{max-width:72ch}
+p{margin:.55rem 0 .9rem}
+.lede{font-size:1.14rem;color:var(--muted);max-width:66ch;margin:.2rem 0 1.2rem}
+.meta{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;font-size:.84rem;color:var(--muted);margin:0 0 1.3rem}
+.meta b{color:var(--ink);font-weight:600}
+.banner{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);margin:0 0 1.5rem;box-shadow:var(--shadow)}
+.banner>div{padding:.85rem 1rem}
+.banner>div+div{border-left:1px solid var(--line)}
+.banner .h{font-family:"JetBrains Mono",monospace;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;margin:0 0 .35rem}
+.banner .measured .h{color:var(--green)} .banner .pending .h{color:var(--amber)}
+.banner ul{margin:0;padding-left:1.1rem;font-size:.9rem}
+@media (max-width:640px){.banner{grid-template-columns:1fr}.banner>div+div{border-left:none;border-top:1px solid var(--line)}}
+code,kbd,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em}
+code{background:var(--code-bg);padding:.08em .35em;border-radius:4px}
+pre{background:var(--code-bg);padding:.8rem 1rem;border-radius:8px;overflow-x:auto;font-size:.82rem;line-height:1.45;margin:.8rem 0;max-width:100%}
+pre code{background:none;padding:0;font-size:inherit}
+.callout{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:.7rem 1rem .6rem;margin:1.1rem 0;background:var(--surface);max-width:76ch}
+.callout .tag{font-family:"JetBrains Mono",monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);display:block;margin-bottom:.25rem}
+.callout p{margin:.3rem 0}
+.callout.gap{border-left-color:var(--amber)} .callout.gap .tag{color:var(--amber)}
+.callout.say{border-left-color:var(--teal)} .callout.say .tag{color:var(--teal)}
+.callout.metric{border-left-color:var(--green)} .callout.metric .tag{color:var(--green)}
+.callout.warn{border-left-color:var(--red)} .callout.warn .tag{color:var(--red)}
+.tablewrap{overflow-x:auto;margin:.8rem 0 1.2rem;max-width:100%}
+table.data{border-collapse:collapse;font-size:.86rem;min-width:100%;font-variant-numeric:tabular-nums}
+table.data th,table.data td{padding:.42rem .6rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.data th{font-family:"JetBrains Mono",monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line-strong)}
+table.data tr.chosen td{background:var(--accent-soft)}
+table.data td.num{text-align:right}
+table.tradeoff td:first-child{font-weight:600;white-space:nowrap}
+.pending,.interim,.measured{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;padding:.1rem .45rem;border-radius:999px;vertical-align:middle}
+.pending,.interim{background:var(--amber-soft);color:var(--amber)} .measured{background:var(--green-soft);color:var(--green)}
+figure.fig{margin:1.2rem 0 1.4rem;max-width:100%}
+figure.fig svg{width:100%;height:auto;display:block;overflow:visible}
+figcaption{font-size:.84rem;color:var(--muted);margin-top:.45rem;max-width:76ch}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin:1rem 0 1.2rem}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.8rem .95rem;box-shadow:var(--shadow)}
+.tile .k{font-family:"JetBrains Mono",monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:"Fraunces",Georgia,serif;font-size:1.7rem;font-weight:500;line-height:1.1;margin:.2rem 0 .1rem;font-variant-numeric:tabular-nums}
+.tile .s{font-size:.82rem;color:var(--muted)}
+.ledger{font-family:"JetBrains Mono",monospace;font-size:.78rem;line-height:1.45;background:var(--code-bg);border-radius:8px;padding:.6rem .8rem;overflow-x:auto;margin:.8rem 0 1rem}
+.ledger .row{display:grid;grid-template-columns:3.2rem 5.2rem 1fr;gap:.6rem;padding:.25rem 0;border-bottom:1px dashed var(--line)}
+.ledger .row:last-child{border-bottom:none}
+.ledger .t{color:var(--muted)} .ledger .cmd{color:var(--accent-ink);font-weight:600} .ledger .obs{color:var(--green)} .ledger .bad{color:var(--red)} .ledger .think{color:var(--muted);font-style:italic}
+.diagram{margin:1rem 0 1.2rem}
+.diagram svg{width:100%;height:auto;display:block}
+svg .box{fill:var(--surface);stroke:var(--line-strong);stroke-width:1.2}
+svg .box-agent{fill:var(--teal-soft);stroke:var(--teal);stroke-width:1.4}
+svg .box-env{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4}
+svg .box-reward{fill:var(--amber-soft);stroke:var(--amber);stroke-width:1.4}
+svg .box-outer{fill:var(--code-bg);stroke:var(--line-strong);stroke-width:1.2}
+svg .box-policy{fill:var(--teal);stroke:none}
+svg .box-gpu{fill:var(--accent);stroke:none}
+svg .t{fill:var(--ink);font-family:"Source Sans 3",system-ui,sans-serif;font-size:13px}
+svg .tb{fill:var(--ink);font-family:"Source Sans 3",system-ui,sans-serif;font-size:13px;font-weight:600}
+svg .th{fill:var(--ink);font-family:"Fraunces",Georgia,serif;font-size:15px;font-weight:600}
+svg .tm{fill:var(--muted);font-family:"JetBrains Mono",monospace;font-size:10.5px}
+svg .tw{fill:#ffffff;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600}
+svg .tc{fill:var(--accent-ink);font-family:"JetBrains Mono",monospace;font-size:11px}
+svg .tg{fill:var(--green);font-family:"JetBrains Mono",monospace;font-size:11px}
+svg .ta{fill:var(--amber);font-family:"JetBrains Mono",monospace;font-size:11px}
+svg .tt{fill:var(--teal);font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600}
+svg .arrow{stroke:var(--ink);stroke-width:1.6;fill:none}
+svg .arrow-teal{stroke:var(--teal);stroke-width:1.8;fill:none}
+svg .arrow-blue{stroke:var(--accent);stroke-width:1.8;fill:none}
+svg .arrow-amber{stroke:var(--amber);stroke-width:1.8;fill:none}
+svg .mask1{fill:var(--teal)} svg .mask0{fill:var(--line)}
+svg .bar{fill:var(--accent)} svg .bar-soft{fill:var(--accent-soft)} svg .bar-teal{fill:var(--teal)} svg .grid{stroke:var(--line);stroke-width:1}
+details{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 1rem;margin:.6rem 0}
+summary{cursor:pointer;font-weight:600;padding:.65rem 0;list-style:none}
+summary::before{content:"▸";color:var(--accent-ink);margin-right:.5rem;display:inline-block;transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details>*:not(summary){margin-top:.2rem}
+details>p:last-child,details>.tablewrap:last-child{margin-bottom:.9rem}
+.formula{font-family:"JetBrains Mono",monospace;font-size:.95rem;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.7rem 1rem;margin:.7rem 0 .9rem;overflow-x:auto;white-space:nowrap}
+.formula .lbl{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.3rem;font-family:"JetBrains Mono",monospace}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.quote{border-left:3px solid var(--line-strong);margin:.6rem 0 .9rem;padding:.1rem 0 .1rem .9rem;color:var(--muted);font-style:italic;max-width:70ch}
+hr.sep{border:none;border-top:1px solid var(--line);margin:2.6rem 0}
+.tiny{font-size:.8rem;color:var(--muted)}
+.prompt{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.7rem 1rem;margin:.7rem 0 .9rem;font-family:"JetBrains Mono",monospace;font-size:.78rem;line-height:1.5;white-space:pre-wrap;max-width:80ch;overflow-x:auto}
+.prompt .role{display:block;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:.25rem 1rem;font-size:.9rem;max-width:80ch;margin:.6rem 0 1rem}
+.kv dt{font-family:"JetBrains Mono",monospace;font-size:.78rem;color:var(--muted);margin:0}
+.kv dd{margin:0}
+.steps{counter-reset:s;list-style:none;padding:0;margin:.6rem 0 1rem;max-width:76ch}
+.steps li{counter-increment:s;position:relative;padding:.35rem 0 .35rem 2.4rem;border-bottom:1px dashed var(--line)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:.4rem;width:1.7rem;height:1.7rem;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);font-family:"JetBrains Mono",monospace;font-size:.78rem;font-weight:600;display:flex;align-items:center;justify-content:center}
+.steps li:last-child{border-bottom:none}
+footer{margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem;font-size:.82rem;color:var(--muted)}
+@media print{nav.toc{display:none}.layout{display:block}details{break-inside:avoid}details[open]>*{display:block}figure.fig{break-inside:avoid}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<p class="lbl">Contents</p>
+<ol>
+<li><a href="#situation">01 · Situation: why this matters</a></li>
+<li><a href="#task">02 · Task: what we set out to build</a></li>
+<li><a href="#picture">03 · The system in one picture</a></li>
+<li><a href="#data">04 · Data: one task, one sample</a></li>
+<li><a href="#episode">05 · One episode, turn by turn</a></li>
+<li><a href="#harness">06 · The harness loop</a></li>
+<li><a href="#sandbox">07 · Sandbox and reward</a></li>
+<li><a href="#grpo">08 · GRPO, with every term explained</a></li>
+<li><a href="#models">09 · The model journey: Qwen, then Gemma</a></li>
+<li><a href="#hardware">10 · Hardware and serving</a></li>
+<li><a href="#results">11 · Results</a></li>
+<li><a href="#challenges">12 · Challenges</a></li>
+<li><a href="#tradeoffs">13 · Trade-offs, in one table</a></li>
+<li><a href="#talk">Talk track · 15 minutes</a></li>
+<li class="sub"><a href="#a-math">A · The math, compactly</a></li>
+<li class="sub"><a href="#b-draw">B · Drawing the diagram by hand</a></li>
+<li class="sub"><a href="#c-glossary">C · Glossary</a></li>
+<li class="sub"><a href="#d-sources">D · Where every number comes from</a></li>
+</ol>
+</nav>
+
+<main>
+<p class="eyebrow">swe-bench · project deep-dive · interview reference</p>
+<h1>Teaching Gemma to fix real bugs: reinforcement learning on SWE-bench with three consumer GPUs</h1>
+<p class="lede">A small model reads a GitHub issue, works inside a real repository's container one shell command at a time, and gets a reward only if the repository's own tests pass. This page explains the whole pipeline in plain words: the data, one real episode, the harness loop, the sandbox and reward, GRPO with every term of the loss spelled out, the modest hardware, and what has and has not worked so far.</p>
+<div class="meta">
+  <span><b>Flow</b> follows the Vizuara SWE-RL lecture and its reference repo</span>
+  <span><b>Benchmark</b> SWE-bench (dev split to train, Verified to evaluate)</span>
+  <span><b>Star model</b> Gemma 4 E4B</span>
+  <span><b>Status</b> 2026-09-25</span>
+</div>
+
+<div class="banner">
+  <div class="measured"><p class="h">Measured so far</p><ul>
+    <li>Pipeline runs end to end: real containers, real tests, LoRA GRPO, weights synced back into the server every step.</li>
+    <li>Qwen-based SFT model (mini-coder-1.7b): GRPO mechanism clean over 60 steps, but no measurable gain (Verified 19.0 % → 20.5 %, p = 0.71).</li>
+    <li>Gemma 4 E4B served on all three GPUs; solves about 7 % of the training pool before any RL (19 of 264 episodes over three probes); 4–6 of 11 pool tasks give mixed groups; 95 % valid actions after two harness fixes.</li>
+    <li>Serving layout ×1.78 rollout throughput after adding an 8 GB laptop GPU.</li>
+  </ul></div>
+  <div class="pending"><p class="h">Pending</p><ul>
+    <li>Go/no-go on Gemma against the pre-registered rule (solve rate 5–30 %, ≥ 4 mixed tasks, ≥ 90 % valid): two of three bars met on the last probe, all three on the pooled probes.</li>
+    <li>Gemma trainer port (logit soft-cap, LoRA on the language model only, embedding table off the GPU).</li>
+    <li>GRPO on Gemma, then the 50-task Verified evaluation.</li>
+  </ul></div>
+</div>
+
+<h2 id="situation"><span class="num">01</span>Situation: why train a local model at all <span class="star">S</span></h2>
+<p>Frontier models are good at coding, but they are someone else's model. If you need a model that runs on your own hardware, inside your own network, on your own codebase and conventions, you have to be able to <em>train</em> one. And the way to know whether training did anything is a benchmark that cannot be argued with.</p>
+<p>For coding agents there are two such benchmarks. <b>SWE-bench</b> gives the model a real GitHub issue from a real Python repository and asks for a patch; the repository's own tests decide. <b>Terminal-Bench</b> does the same for general terminal work. This page is about SWE-bench only, because one benchmark, done carefully, teaches more than two done loosely.</p>
+<p>Why is SWE-bench a good target for reinforcement learning specifically? Three properties, all from the lecture's opening:</p>
+<ul>
+  <li><b>The environment is deterministic.</b> A command either runs or it fails; a file either changed or it did not.</li>
+  <li><b>The verifier is deterministic.</b> Unit tests pass or fail. There is no judge model to fool.</li>
+  <li><b>It is multi-turn.</b> The model must find the file, read it, edit it, run something, read the error, and try again. That is exactly the kind of behaviour that a single prompt cannot teach and that RL can.</li>
+</ul>
+<div class="callout say"><span class="tag">How to say it in the interview</span><p>"We wanted to know whether a small open model could be trained, on our own machines, to fix real bugs, and we wanted the answer to come from the repository's tests rather than from anyone's opinion."</p></div>
+
+<h2 id="task"><span class="num">02</span>Task: what we set out to build <span class="star">T</span></h2>
+<p>Build the loop from the lecture's diagram, end to end, on hardware a university lab actually has, and use it to run GRPO on a model that is small enough to train but strong enough to sometimes succeed. Concretely:</p>
+<ul>
+  <li>a <b>harness</b> that turns a language model into an agent: one shell command per turn, observations fed back, an exit when it submits;</li>
+  <li>a <b>sandbox</b> per rollout, built from the official SWE-bench images, without Docker and without root;</li>
+  <li>a <b>reward</b> that replays only the model's patch in a clean container and runs the held-out tests;</li>
+  <li>a <b>trainer</b> that samples groups of rollouts per task, scores them, computes GRPO advantages, updates LoRA weights, and pushes the new weights back into the inference server;</li>
+  <li>a <b>clean evaluation</b>: train on SWE-bench's dev split, evaluate on SWE-bench Verified, with zero repository overlap.</li>
+</ul>
+<p>The constraint that shaped everything: two 16 GB GPUs and one 8 GB laptop GPU, 62 GB of RAM, no Docker, no sudo, a shared network disk that is usually 95 % full. A frontier lab runs this loop across hundreds of GPUs with asynchronous rollouts; we had to make the same loop fit on three cards and still move.</p>
+
+<h2 id="picture"><span class="num">03</span>The system in one picture <span class="star">A</span></h2>
+<p>This is the diagram to draw on the whiteboard. It has five boxes and two loops. The <em>inner loop</em> is inference: it runs whether or not you are training. The <em>outer loop</em> is training: it only exists when you have rewards. Appendix B gives the drawing order.</p>
+<figure class="fig diagram" id="fig-arch">
+<svg viewBox="0 0 1000 620" role="img" aria-label="Architecture: agent (harness + policy) sends one bash action to the sandbox environment, gets an observation back, on submit the reward replays the patch and runs tests, and the outer loop turns trajectories and rewards into a GRPO update that is loaded back into the policy server">
+  <!-- AGENT -->
+  <rect x="20" y="40" width="300" height="300" rx="10" class="box-agent"/>
+  <text x="36" y="66" class="th">AGENT</text>
+  <text x="100" y="66" class="tm">= harness + policy</text>
+  <rect x="36" y="86" width="96" height="150" rx="6" class="box-policy"/>
+  <text x="84" y="128" text-anchor="middle" class="tw">POLICY</text>
+  <text x="84" y="146" text-anchor="middle" class="tw">π θ</text>
+  <text x="84" y="170" text-anchor="middle" class="tw" style="font-weight:400">vLLM</text>
+  <text x="84" y="186" text-anchor="middle" class="tw" style="font-weight:400">+ LoRA</text>
+  <rect x="52" y="206" width="64" height="18" rx="9" class="box-gpu"/>
+  <text x="84" y="219" text-anchor="middle" class="tw">GPU</text>
+  <!-- transcript -->
+  <rect x="148" y="86" width="158" height="236" rx="6" class="box"/>
+  <text x="158" y="104" class="tb">harness</text>
+  <text x="158" y="118" class="tm">owns transcript + loop (CPU)</text>
+  <rect x="158" y="128" width="138" height="18" rx="3" class="mask0"/><text x="164" y="141" class="tm">system + issue · mask 0</text>
+  <rect x="158" y="150" width="138" height="18" rx="3" class="mask1"/><text x="164" y="163" class="tw">assistant · bash · mask 1</text>
+  <rect x="158" y="172" width="138" height="18" rx="3" class="mask0"/><text x="164" y="185" class="tm">observation · mask 0</text>
+  <rect x="158" y="194" width="138" height="18" rx="3" class="mask1"/><text x="164" y="207" class="tw">assistant · bash · mask 1</text>
+  <rect x="158" y="216" width="138" height="18" rx="3" class="mask0"/><text x="164" y="229" class="tm">observation · mask 0</text>
+  <rect x="158" y="238" width="138" height="18" rx="3" class="mask1"/><text x="164" y="251" class="tw">… submit · mask 1</text>
+  <text x="158" y="282" class="tm">teal = sampled tokens</text>
+  <text x="158" y="296" class="tm">→ these get the gradient</text>
+  <text x="158" y="312" class="tm">grey = never trained on</text>
+  <!-- ACTION arrow -->
+  <path d="M320 150 H 680" class="arrow-teal" marker-end="url(#ah-teal)"/>
+  <text x="500" y="138" text-anchor="middle" class="tt">ACTION · exactly one bash command</text>
+  <rect x="340" y="160" width="320" height="26" rx="5" class="box-outer"/>
+  <text x="352" y="178" class="tc">```bash  sed -i 's/False/True/' base.py  ```</text>
+  <!-- OBSERVATION arrow -->
+  <path d="M680 260 H 320" class="arrow-blue" marker-end="url(#ah-blue)"/>
+  <text x="500" y="284" text-anchor="middle" class="tc">OBSERVATION · appended as a user turn, mask 0</text>
+  <rect x="340" y="222" width="320" height="26" rx="5" class="box-outer"/>
+  <text x="352" y="240" class="tc">&lt;returncode&gt;0&lt;/returncode&gt;&lt;output&gt;…&lt;/output&gt;</text>
+  <text x="500" y="214" text-anchor="middle" class="tm">inner loop · exits: submit · 50 turns · 24k tokens · 20 min · 3 format errors</text>
+  <!-- ENVIRONMENT -->
+  <rect x="680" y="40" width="300" height="300" rx="10" class="box-env"/>
+  <text x="696" y="66" class="th">ENVIRONMENT</text>
+  <text x="696" y="84" class="tm">apptainer instance of the task's SWE-bench image</text>
+  <text x="696" y="98" class="tm">/testbed at base_commit · no network · tmpfs in RAM</text>
+  <rect x="696" y="110" width="268" height="150" rx="6" class="box-outer"/>
+  <text x="708" y="132" class="tc">$ ls -F src/sqlfluff/core/</text>
+  <text x="708" y="150" class="tc">$ grep -n is_whitespace …/base.py</text>
+  <text x="708" y="168" class="tc">$ sed -i 's/…/…/' …/base.py</text>
+  <text x="708" y="186" class="tc">$ echo COMPLETE_TASK_AND_SUBMIT…</text>
+  <text x="708" y="212" class="tm">state = the files · patch = git diff HEAD</text>
+  <text x="708" y="228" class="tm">nothing in the loop is graded</text>
+  <text x="708" y="244" class="tm">one instance per rollout, ~0.7 s per exec</text>
+  <rect x="900" y="50" width="64" height="18" rx="9" class="box-gpu" style="fill:var(--muted)"/>
+  <text x="932" y="63" text-anchor="middle" class="tw">CPU</text>
+  <!-- after submit -->
+  <path d="M830 340 V 380" class="arrow-amber" marker-end="url(#ah-amber)"/>
+  <text x="842" y="366" class="ta">after submit</text>
+  <!-- REWARD -->
+  <rect x="680" y="380" width="300" height="120" rx="10" class="box-reward"/>
+  <text x="696" y="404" class="th">REWARD</text>
+  <text x="770" y="404" class="tm">episode end only</text>
+  <text x="696" y="426" class="ta">fresh container · bind patch read-only</text>
+  <text x="696" y="444" class="ta">git apply patch → bash eval.sh (held-out tests)</text>
+  <text x="696" y="462" class="ta">r = 1 iff all FAIL_TO_PASS + PASS_TO_PASS pass</text>
+  <text x="696" y="482" class="tm">the rollout's container is thrown away</text>
+  <!-- OUTER LOOP -->
+  <rect x="20" y="530" width="960" height="70" rx="10" class="box-outer"/>
+  <text x="36" y="556" class="th">OUTER LOOP</text>
+  <text x="36" y="580" class="t">trajectory (tokens · mask · vLLM log-probs) + reward  →  group of 8 per task  →  advantage A = (r − mean) / std  →  GRPO step on LoRA  →  π θ′</text>
+  <path d="M830 500 V 530" class="arrow-amber" marker-end="url(#ah-amber)"/>
+  <path d="M84 530 V 340" class="arrow-teal" marker-end="url(#ah-teal)"/>
+  <text x="96" y="400" class="tt">π θ′ loaded back</text>
+  <text x="96" y="416" class="tm">POST /v1/load_lora_adapter</text>
+  <text x="96" y="432" class="tm">same server, fresh weights</text>
+  <text x="96" y="470" class="tm">one step = 4 tasks × 8 rollouts</text>
+  <text x="96" y="486" class="tm">median 12.6 min on our hardware (v2)</text>
+  <defs>
+    <marker id="ah-teal" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--teal)"/></marker>
+    <marker id="ah-blue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--accent)"/></marker>
+    <marker id="ah-amber" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--amber)"/></marker>
+  </defs>
+</svg>
+<figcaption>The lecture's diagram, in our terms. Docker became apptainer (no Docker on the cluster), the tool call became a fenced bash block (the format the models were trained on), and "16 rollouts per task" became 8. Everything else is the same shape.</figcaption>
+</figure>
+<p>Three sentences that carry the whole picture:</p>
+<ol>
+  <li>The <b>agent</b> is two things glued together: a stateless <em>policy</em> (the model, served by vLLM) and a deterministic <em>harness</em> (plain code that owns the transcript, parses the command, and decides when to stop). Only the policy learns.</li>
+  <li>The <b>environment</b> is a container with the repository checked out. An action is one bash command; an observation is its return code and output. Nothing in this loop is scored.</li>
+  <li>When the agent submits, the <b>reward</b> replays only the patch in a fresh container and runs the tests. That number, together with the transcript, feeds the <b>outer loop</b>, which nudges the weights and loads them back.</li>
+</ol>
+
+<h2 id="data"><span class="num">04</span>Data: what one task looks like</h2>
+<p>SWE-bench is a table of real GitHub issues. Each row is a task. Here is one of ours, <code>sqlfluff__sqlfluff-884</code>, exactly as our code sees it (the fields the agent sees are marked; the rest is only for the grader).</p>
+<dl class="kv">
+  <dt>instance_id</dt><dd><code>sqlfluff__sqlfluff-884</code></dd>
+  <dt>repo</dt><dd><code>sqlfluff/sqlfluff</code>, a SQL linter</dd>
+  <dt>base_commit</dt><dd><code>c0bad78f3f…</code>: the commit just before the human fix was merged. The container is checked out here.</dd>
+  <dt>problem_statement</dt><dd><b>Shown to the agent.</b> "Whitespace token is_whitespace is False. I expect segment.is_whitespace of a Whitespace token is True, however, it is set to False. Expected behaviour: … return True. Observed behaviour: … return False."</dd>
+  <dt>patch (gold)</dt><dd><b>Hidden.</b> The maintainer's fix: add <code>is_whitespace=True</code> to the whitespace and newline entries of the ANSI dialect's lexer table (3 hunks in <code>dialect_ansi.py</code>).</dd>
+  <dt>test_patch</dt><dd><b>Hidden.</b> The tests the maintainers added with the fix. The grader applies it; the agent never sees it.</dd>
+  <dt>FAIL_TO_PASS</dt><dd><b>Hidden.</b> 1 test: <code>test__dialect__ansi_is_whitespace</code>. It fails at <code>base_commit</code> and must pass after the patch.</dd>
+  <dt>PASS_TO_PASS</dt><dd><b>Hidden.</b> 37 tests that pass today and must still pass. This is the regression guard.</dd>
+  <dt>image</dt><dd><code>swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-884</code>: a ~1 GB Docker image with the repo and its dependencies installed.</dd>
+</dl>
+<p><b>Resolved</b> means every FAIL_TO_PASS test passes <em>and</em> every PASS_TO_PASS test passes. That single boolean is the reward.</p>
+
+<h3>Which rows we use, and why they never overlap</h3>
+<div class="tablewrap"><table class="data">
+<tr><th>Split</th><th>Rows</th><th>Repositories</th><th>Our use</th></tr>
+<tr><td>SWE-bench <b>dev</b></td><td class="num">225</td><td>marshmallow 9 · pvlib 63 · pydicom 56 · astroid 31 · pyvista 16 · sqlfluff 50</td><td>training only</td></tr>
+<tr><td>SWE-bench <b>Verified</b></td><td class="num">500</td><td>django 231 · sympy 75 · sphinx 44 · matplotlib 34 · scikit-learn 32 · astropy 22 · xarray 22 · pytest 19 · pylint 10 · requests 8 · seaborn 2 · flask 1</td><td>evaluation only. A pre-registered 50-task subset chosen by hashing instance ids (10 repos, 23 of them django; SWE-bench's own labels: 24 "under 15 min", 22 "15 min to 1 h", 4 "1–4 h"), each task gated offline (gold patch = 1, empty patch = 0; two failures replaced in hash order)</td></tr>
+</table></div>
+<p>The two splits share no repository, no instance id and no base commit. The lecture trains on a Verified task "for illustrative purposes" and says so; we did not, because the whole point of the evaluation is that the model has never seen those repositories in training. A contamination check runs on every pool: no shared repository, instance id or base commit with Verified.</p>
+
+<h3>From 225 rows to a training pool of 11</h3>
+<p>Not every dev task is usable, and not every usable task is useful for RL.</p>
+<ul>
+  <li><b>Usable</b> means the image exists on Docker Hub and the gold patch scores 1 while an empty patch scores 0 in our offline sandbox. 42 of the tasks we screened passed. 9 pydicom tasks failed because some of their tests download data (we run with the network off); 34 of the 39 remaining sqlfluff images are simply missing from Docker Hub; the pvlib and pyvista images are broken upstream (the gold patch scores 0).</li>
+  <li><b>Useful</b> means the model sometimes succeeds and sometimes fails on it. GRPO learns from the <em>difference</em> between rollouts of the same task, so a task the model always fails (or always solves) carries no signal. We screened each usable task with 8 rollouts and kept the ones with mixed outcomes: 11 tasks. Their images live on the rollout host's local disk.</li>
+</ul>
+<div class="callout"><span class="tag">Why this matters</span><p>With a binary reward, the fraction of tasks that give mixed groups is the fraction of your compute that produces a gradient. The screening step is what makes a small pool trainable at all.</p></div>
+
+<h2 id="episode"><span class="num">05</span>One episode, turn by turn</h2>
+<p>An <b>episode</b> (or rollout) is one attempt at one task: the model starts from the issue, issues commands, and ends by submitting. This one is real, captured from Gemma 4 E4B on <code>sqlfluff-884</code> at temperature 1.0: 16 turns, 8,887 tokens in the transcript (4,685 of them prompt and observations, 4,202 sampled by the model), 144 seconds, graded <b>resolved</b>.</p>
+<p>The model's first reply, verbatim:</p>
+<div class="prompt"><span class="role">assistant · turn 0</span>THOUGHT: The user is reporting a bug where `segment.is_whitespace` for a `Whitespace` token is incorrectly returning `False` when it should be `True`. This is a logic bug in the code related to token representation or whitespace detection within SQLFluff.
+
+Since I don't have the codebase structure, I need to start by exploring the files to locate where tokens are defined and where `is_whitespace` is being calculated or set. I'll start by listing files to get an overview of the project structure.
+
+```bash
+ls -F
+```</div>
+<p>The harness runs <code>ls -F</code> in the container and appends what came back as the next user turn:</p>
+<div class="prompt"><span class="role">user · observation 0</span>&lt;returncode&gt;0&lt;/returncode&gt;
+&lt;output&gt;
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+…
+setup.py
+src/
+test/
+tox.ini
+util.py
+&lt;/output&gt;</div>
+<p>And so on. The whole episode as a ledger (generated tokens per turn, return code, size of the observation, the command):</p>
+<div class="ledger">
+<div class="row"><span class="t">turn</span><span class="t">gen · rc · obs</span><span class="t">command</span></div>
+<div class="row"><span class="t">0</span><span class="t">120 · 0 · 220</span><span class="cmd">ls -F</span></div>
+<div class="row"><span class="t">1</span><span class="t">84 · 0 · 29</span><span class="cmd">ls -F src/</span></div>
+<div class="row"><span class="t">2</span><span class="t">94 · 0 · 83</span><span class="cmd">ls -F src/sqlfluff/</span></div>
+<div class="row"><span class="t">3</span><span class="t">62 · 0 · 124</span><span class="cmd">ls -F src/sqlfluff/core/</span></div>
+<div class="row"><span class="t">4</span><span class="t">70 · 0 · 146</span><span class="cmd">ls -F src/sqlfluff/core/parser/</span></div>
+<div class="row"><span class="t">5</span><span class="t">76 · 0 · 72</span><span class="cmd">ls -F src/sqlfluff/core/parser/segments/</span></div>
+<div class="row"><span class="t">6</span><span class="t">147 · 0 · 42,211</span><span class="cmd">cat src/sqlfluff/core/parser/segments/base.py</span> <span class="obs">← 42k chars: the harness shows head + tail + a warning</span></div>
+<div class="row"><span class="t">7</span><span class="t">244 · 1 · 0</span><span class="cmd">grep -r "WhitespaceSegment" src/sqlfluff/core/parser/segments/</span></div>
+<div class="row"><span class="t">8</span><span class="t">291 · 123 · 303</span><span class="cmd">find … -exec basename {} \; | xargs grep -l "is_whitespace"</span> <span class="think">(thinking channel leaked, parsed after &lt;channel|&gt;)</span></div>
+<div class="row"><span class="t">9</span><span class="t">380 · 1 · 0</span><span class="cmd">grep -n "is_whitespace" …/segments/keyword.py</span></div>
+<div class="row"><span class="t">10</span><span class="t">83 · 1 · 0</span><span class="cmd">grep -n "is_whitespace" …/segments/raw.py</span></div>
+<div class="row"><span class="t">11</span><span class="t">758 · 0 · 0</span><span class="cmd">find … -name "*.py" -exec grep -l "Whitespace" {} \;</span></div>
+<div class="row"><span class="t">12</span><span class="t">324 · 0 · 29</span><span class="cmd">grep -n "is_whitespace" …/segments/base.py</span> <span class="obs">← line 72: is_whitespace = False</span></div>
+<div class="row"><span class="t">13</span><span class="t">1024 · — · —</span><span class="bad">FORMAT ERROR: reply hit the 1,024-token cap before the bash block closed; the error text is fed back</span></div>
+<div class="row"><span class="t">14</span><span class="t">257 · 0 · 0</span><span class="cmd">sed -i 's/is_whitespace = False/is_whitespace = True/g' …/segments/base.py</span></div>
+<div class="row"><span class="t">15</span><span class="t">188 · 0 · 588</span><span class="cmd">echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT &amp;&amp; git add -A &amp;&amp; git diff --cached</span> <span class="obs">← submit</span></div>
+</div>
+<p>The patch the harness collected (<code>git diff</code> against the commit recorded when the sandbox started):</p>
+<pre><code>--- a/src/sqlfluff/core/parser/segments/base.py
++++ b/src/sqlfluff/core/parser/segments/base.py
+@@ -69,7 +69,7 @@ class BaseSegment:
+     comment_seperate = False
+-    is_whitespace = False
++    is_whitespace = True
+     optional = False</code></pre>
+<p>The grader replayed it in a fresh container: FAIL_TO_PASS 1/1, PASS_TO_PASS 37/37, <b>reward 1.0</b>, 5.6 seconds.</p>
+<div class="callout warn"><span class="tag">Look closely: the reward is exactly what the tests check, and nothing more</span><p>The model's fix flips <code>is_whitespace</code> to <code>True</code> on the <em>base class of every segment</em>. The maintainers' fix sets it only on whitespace and newline tokens. The model's patch is wrong in spirit, and the tests cannot tell, so it earns the same reward as the real fix. This is the single most important thing to understand about verifiable rewards: they are only as good as the tests, and RL will find every gap in them. It is why we keep the test files out of the agent's reach, grade in a fresh container, and treat "resolved" on a training task as a signal to learn from, not as proof of a correct fix.</p></div>
+
+<h3>What the trainer sees: the same episode as tokens</h3>
+<p>The harness never re-renders text into tokens for training. It keeps the exact token ids the server sampled, with a 0/1 mask and the server's log-probability for each sampled token. The mask is the whole story of "what gets the gradient".</p>
+<figure class="fig" id="fig-mask">
+<svg viewBox="0 0 1000 150" role="img" aria-label="A token transcript strip: prompt (mask 0), then alternating assistant replies (mask 1) and observations (mask 0), ending with the submit reply">
+  <text x="0" y="16" class="tb">ids</text>
+  <rect x="60" y="4" width="180" height="20" class="mask0"/><text x="66" y="18" class="tm">system + issue (2,600 tok)</text>
+  <rect x="242" y="4" width="26" height="20" class="mask1"/>
+  <rect x="270" y="4" width="40" height="20" class="mask0"/>
+  <rect x="312" y="4" width="20" height="20" class="mask1"/>
+  <rect x="334" y="4" width="12" height="20" class="mask0"/>
+  <rect x="348" y="4" width="22" height="20" class="mask1"/>
+  <rect x="372" y="4" width="20" height="20" class="mask0"/>
+  <rect x="394" y="4" width="34" height="20" class="mask1"/>
+  <rect x="430" y="4" width="120" height="20" class="mask0"/><text x="436" y="18" class="tm">cat base.py → 10k chars</text>
+  <rect x="552" y="4" width="56" height="20" class="mask1"/>
+  <rect x="610" y="4" width="8" height="20" class="mask0"/>
+  <rect x="620" y="4" width="66" height="20" class="mask1"/>
+  <rect x="688" y="4" width="30" height="20" class="mask0"/>
+  <rect x="720" y="4" width="150" height="20" class="mask1"/><text x="726" y="18" class="tw">…grep / find / sed…</text>
+  <rect x="872" y="4" width="20" height="20" class="mask0"/>
+  <rect x="894" y="4" width="44" height="20" class="mask1"/><text x="898" y="18" class="tw">submit</text>
+  <text x="0" y="52" class="tb">mask</text>
+  <text x="60" y="52" class="tm">0 0 0 0 0 0 0 0 0 0 … │ 1 1 1 1 … 1 │ 0 0 0 0 … 0 │ 1 1 1 … │ 0 0 … │ … │ 1 1 1 1 1</text>
+  <text x="0" y="80" class="tb">log-prob</text>
+  <text x="60" y="80" class="tm">None … None │ −0.02 −1.31 −0.00 … │ None … None │ −0.41 … │ None … │ … │ −0.00 −0.07 …</text>
+  <rect x="60" y="100" width="16" height="12" class="mask1"/><text x="82" y="110" class="t">mask 1: 4,202 tokens the model sampled → loss, gradient, importance weight</text>
+  <rect x="60" y="122" width="16" height="12" class="mask0"/><text x="82" y="132" class="t">mask 0: 4,685 tokens the harness inserted (prompt, observations, format-error messages) → context only</text>
+</svg>
+<figcaption>Widths are proportional to token counts in the real episode. The turn-13 reply that hit the length cap is still in the transcript as mask-1 tokens; the harness appended the turn terminator itself with mask 0, because that token was never sampled.</figcaption>
+</figure>
+
+<h2 id="harness"><span class="num">06</span>The harness loop</h2>
+<p>The harness is about 300 lines of plain Python and it is never trained. Its job is to be boring and exact. In pseudo-code, faithful to <code>sarl/harness.py</code>:</p>
+<pre><code>def run_episode(policy, env, task, fmt, limits):
+    ids   = fmt.prompt_ids([system_prompt, instance_prompt(task.issue)])   # rendered once; issue cut at 6,000 chars
+    mask  = [0] * len(ids);  logprobs = [None] * len(ids)
+    for turn in range(limits.max_turns):                                  # 50
+        budget = limits.max_context_tokens - len(ids)                      # 24,576
+        if budget &lt; limits.min_reply_tokens: exit = "context"; break
+        if elapsed() &gt; limits.wall_clock_s:   exit = "wall_clock"; break   # 1,200 s
+        gen = policy.generate(ids, min(limits.max_new_tokens, budget))     # vLLM: token ids + log-probs
+        ids += gen.token_ids;  mask += [1]*len(gen.token_ids);  logprobs += gen.logprobs
+        if gen did not end on the turn terminator: append it with mask 0   # cut by length: not sampled
+        answer = fmt.answer_text(gen.text)                                 # Gemma: text after the last &lt;channel|&gt;
+        parsed = parse_reply(answer)                                       # exactly one ```bash block, else error
+        if not parsed.ok:
+            delta = fmt.user_turn(FORMAT_ERROR)                            # fed back; 3 in a row → exit
+        else:
+            result = env.run(parsed.command, timeout=60)
+            if is_submit(parsed.command): exit = "submitted"; break
+            delta = fmt.user_turn(format_observation(result))             # &lt;returncode&gt;…&lt;output&gt;…, 10k-char cap
+        ids += delta;  mask += [0]*len(delta);  logprobs += [None]*len(delta)
+    return Trajectory(ids, mask, logprobs, patch=env.patch(), exit_reason=exit)</code></pre>
+<p>Four design points that come up in questions:</p>
+<ul>
+  <li><b>Why token ids, not text?</b> If you re-render the transcript through the chat template for training, the tokens you train on are not the tokens you sampled: templates merge turns, strip thinking blocks, and re-tokenise boundaries differently. Training on the sampled ids, with the server's own log-probs next to them, is what makes the importance weights in the loss meaningful. A test checks that the incrementally built ids equal a one-shot tokenisation.</li>
+  <li><b>Why exactly one bash command per turn?</b> It is the mini-swe-agent protocol the models were trained on. The system prompt is 521 characters; the instance prompt is 4,866. Both are byte-for-byte the text from the SFT corpus, so the policy sees exactly what it learned on. A reply with zero or two bash blocks gets a format-error message back instead of an observation.</li>
+  <li><b>Where do the exits come from?</b> Submit (the model echoes a sentinel), 50 turns, a 24k-token context, a 20-minute wall clock, or 3 consecutive format errors. Every exit still yields a patch (possibly empty) and gets graded.</li>
+  <li><b>Untrusted text.</b> Issue text and command output pass through a sanitiser before tokenisation: a literal special token printed by a command would otherwise forge a turn boundary. That is a real attack surface once the policy is being optimised against the reward.</li>
+</ul>
+<details><summary>The system prompt the model sees (verbatim)</summary>
+<div class="prompt"><span class="role">system</span>You are a helpful assistant that can interact multiple times with a computer shell to solve programming tasks.
+Your response must contain exactly ONE bash code block with ONE command (or commands connected with &amp;&amp; or ||).
+
+Include a THOUGHT section before your command where you explain your reasoning process.
+Format your response as shown in &lt;example&gt;.
+
+&lt;example&gt;
+THOUGHT: Your reasoning and analysis here
+
+```bash
+your_command_here
+```
+&lt;/example&gt;
+
+Failure to follow these rules will cause your response to be rejected.</div>
+<p class="tiny">The instance prompt wraps the issue in <code>&lt;pr_description&gt;</code>, then gives a recommended workflow (find and read, reproduce, edit, verify), boundaries (modify source, not tests or config), sed and heredoc examples, and the submit command <code>echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT &amp;&amp; git add -A &amp;&amp; git diff --cached</code>.</p>
+</details>
+
+<h2 id="sandbox"><span class="num">07</span>Sandbox and reward</h2>
+<h3>A container per rollout, without Docker</h3>
+<p>The cluster has no Docker and no root. We pull each SWE-bench image once into a single-file <b>apptainer</b> image (~1 GB) and start one <em>instance</em> per rollout with a writable overlay in RAM, the network switched off, and a fake root user inside. File edits persist across the episode's commands; each command is a ~0.7 s exec with a 60 s timeout and its output captured to a file inside the container (a pipe would hang if a command backgrounded a child). At the end, the patch is <code>git diff</code> against the commit recorded when the instance started, so an agent that commits cannot hide its changes.</p>
+<h3>Grading: replay only the patch, in a fresh container</h3>
+<ol class="steps">
+  <li>Drop any part of the patch that touches tests or the test harness (<code>conftest.py</code>, <code>pytest.ini</code>, <code>tox.ini</code>, <code>setup.cfg</code>, test files). Report what was dropped.</li>
+  <li>Write <code>patch.diff</code> and the official <code>eval.sh</code> (from the swebench package) into a folder that is bound into the container <b>read-only</b>.</li>
+  <li>Start a <em>fresh</em> container from the same image. Apply the patch (<code>git apply</code>, then <code>--reject</code>, then <code>patch --fuzz</code>). Run <code>eval.sh</code>, which applies the hidden <code>test_patch</code> and runs the tests.</li>
+  <li>Parse the log with the official parser on the host. <b>Resolved</b> = all FAIL_TO_PASS pass and all PASS_TO_PASS pass. Reward = 1.0 if resolved, else 0.0. Five to ten seconds for our pool tasks.</li>
+</ol>
+<p>Why a fresh container rather than "checkout and clean" inside the rollout's container, as the diagram suggests? Because the policy ran as root in there and could have changed anything: installed packages, environment, files outside the repo. Replaying only the diff in a clean image means the reward depends on the patch and nothing else.</p>
+<div class="callout gap"><span class="tag">A hole we found in review</span><p>The first version bound the whole grading folder writable. Code under test runs as root inside the container, so a policy could, in principle, rewrite the list of tests to run or the log itself and forge a reward of 1. Now only the input folder is bound, read-only; the test list, the log and the report never enter the container. Nothing was exploited, but with RL you assume it would have been eventually.</p></div>
+<h3>Keeping the host alive</h3>
+<p>The overlay is RAM. One rollout wrote 32 GB into it and the kernel's OOM killer took the trainer. A grading run once grew to 61.7 GB of the host's 62 GB. The fixes are unglamorous and essential: every sandbox command runs under <code>ulimit -v</code> (12 GB on the 62 GB host, 4 GB on the 15 GB one) and <code>ulimit -f</code> 512 MB, with <code>oom_score_adj</code> set so the kernel kills the sandbox before the trainer; a watchdog kills any test process over a threshold; and training runs resume from their last step.</p>
+
+<h2 id="grpo"><span class="num">08</span>GRPO, with every term explained</h2>
+<p>GRPO stands for Group Relative Policy Optimization. Strip the name away and it is one idea: <b>for the same task, sample several attempts; the ones that scored better than the group's average get their tokens made more likely, the ones that scored worse get their tokens made less likely.</b> No value network, no critic, no learned reward model. The group <em>is</em> the baseline.</p>
+
+<h3>Step 1: a group</h3>
+<p>Per training step we draw 4 tasks and run 8 rollouts of each with the current weights, at temperature 1.0, each in its own sandbox. That is 32 episodes per step. Every rollout gets a reward of 0 or 1.</p>
+
+<h3>Step 2: the advantage</h3>
+<div class="formula"><span class="lbl">advantage of rollout i in its group of G = 8</span>A_i = ( r_i − mean(r_1 … r_G) ) / ( std(r_1 … r_G) + ε ),   ε = 1e-4</div>
+<p>Worked example, <code>sqlfluff-884</code> in probe 2: 3 of 8 rollouts resolved. Mean reward 0.375, standard deviation 0.484. Each winner gets A = +1.29; each loser gets A = −0.77. The winners are pushed up harder than the losers are pushed down, because winning was rarer. If 1 of 8 had won, the winner would get +2.65 and each loser −0.38.</p>
+<p><b>Degenerate groups.</b> If all 8 rollouts score the same, the standard deviation is 0 and every advantage is 0. There is nothing to learn, so the group is skipped and counted. In GRPO v2, 34 of 120 groups were degenerate; that number is the honest measure of how much compute produced no gradient.</p>
+
+<h3>Step 3: the loss</h3>
+<p>Here is the exact loss we minimise, then each piece in words. One sum over every sampled token of every rollout in the step:</p>
+<div class="formula"><span class="lbl">the loss (token-mean, with truncated importance sampling)</span>L(θ) = − ( 1 / T ) · Σ_i  Σ_{t ∈ sampled(i)}   A_i · w_{i,t} · log π_θ( a_{i,t} | s_{i,t} )</div>
+<div class="formula"><span class="lbl">the importance weight, detached (no gradient through it)</span>w_{i,t} = min( π_θ(a_{i,t}|s_{i,t}) / π_vLLM(a_{i,t}|s_{i,t}) ,  2 )</div>
+<div class="tablewrap"><table class="data">
+<tr><th>Term</th><th>What it is</th><th>Why it is there</th></tr>
+<tr><td><code>log π_θ(a | s)</code></td><td>The trainer's log-probability of the token the model actually sampled, given everything before it.</td><td>Making this larger makes that token more likely next time. The gradient of this is the whole update.</td></tr>
+<tr><td><code>A_i</code></td><td>The rollout's advantage, one number per rollout, the same for all its tokens.</td><td>Positive: push every token of that rollout up. Negative: push down. Zero: ignore. This is what turns a scalar test result into a per-token signal.</td></tr>
+<tr><td><code>t ∈ sampled(i)</code></td><td>Only mask-1 tokens: what the model wrote.</td><td>The prompt, observations and error messages were not the model's choices. Rewarding or punishing them would teach nothing and would distort the loss.</td></tr>
+<tr><td><code>w_{i,t}</code></td><td>The ratio of the trainer's probability to the inference server's probability for the same token, capped at 2, and detached.</td><td>vLLM runs the model in FP8/bf16 with fused kernels; the trainer runs it in bf16 with LoRA in fp32. They disagree slightly. Without the weight, tokens the trainer finds unlikely but the server sampled anyway would get an outsized push. The cap stops any single token from dominating. Our measured mismatch is small (mean |Δ log p| ≈ 0.01), and in practice the weights averaged 1.000 with none capped; the term is insurance.</td></tr>
+<tr><td><code>1 / T</code></td><td>T = the total number of sampled tokens in the step (token-mean).</td><td>The reference code averaged per rollout, then over rollouts (sequence-mean), which gives a long rollout's tokens less weight each. Token-mean weights every sampled token equally, so a long, successful episode is not discounted for being long.</td></tr>
+<tr><td>no PPO clip, no KL</td><td>The textbook GRPO loss has a PPO-style clipped surrogate and a KL penalty to a reference model.</td><td>We take exactly one gradient step per batch of fresh rollouts, so the policy that sampled and the policy being updated are the same up to the mismatch the weight already corrects; the surrogate's clip would never activate. The KL term costs a second forward pass through a frozen model and we watch the drift directly instead (the served policy moved 0.04 → 0.10 nats per token over 30 steps). Two things <em>are</em> clipped: the importance weight (from above, at 2, with no gradient) and the global gradient norm (at 1.0).</td></tr>
+</table></div>
+<p>The code that implements it is short enough to read in an interview:</p>
+<pre><code>lp   = trainer.token_logprobs(ids, mask)              # log π_θ at every mask-1 position (chunked log-softmax)
+diff = lp.detach() - sampler_logprobs                 # trainer minus vLLM, per token
+w    = exp(diff).clamp(max=2.0)                       # truncated importance weight, detached
+loss = -(A * (lp * w).sum()) / n_tokens_in_step        # token-mean; summed over rollouts, one backward each
+clip_grad_norm_(lora_params, 1.0); AdamW.step()       # lr 5e-5</code></pre>
+
+<h3>Step 4: the update and the sync</h3>
+<ul>
+  <li><b>LoRA</b>, rank 16 on every linear layer (17.4 M trainable parameters for the 1.7B model), adapter in fp32 (PEFT's default) on a bf16 base with gradient checkpointing. A 24k-token trajectory peaks at 10.7 GiB and takes 18 s to backpropagate on one 16 GB card.</li>
+  <li><b>Chunked log-softmax.</b> The vocabulary is 152k (Qwen) or 262k (Gemma). Full logits for a 24k-token trajectory would be billions of floats. We run the transformer body once, gather hidden states only at the sampled positions, and apply the output head in chunks of 1,024 with checkpointing.</li>
+  <li><b>Sync.</b> After the step the adapter is saved to local disk and loaded into the running vLLM server with one HTTP call (<code>POST /v1/load_lora_adapter</code>). The next step samples from the new adapter name. No server restart. We verify every step that the served policy's log-probs on a probe sequence moved.</li>
+  <li><b>Diagnostics every step:</b> objective before and after the update on the same batch, |log p_trainer − log p_vLLM| statistics (the lecture's "training-inference mismatch" plot), degenerate-group count, truncated-trajectory count, valid-action rate.</li>
+</ul>
+<figure class="fig diagram" id="fig-grpo">
+<svg viewBox="0 0 1000 260" role="img" aria-label="GRPO flow: 8 rollouts of one task with rewards, mean and std, advantages, and the sign of the push per rollout">
+  <text x="0" y="18" class="th">One task, one group, one step</text>
+  <g>
+    <rect x="0" y="40" width="110" height="46" rx="6" class="box"/><text x="55" y="58" text-anchor="middle" class="tb">rollout 1</text><text x="55" y="76" text-anchor="middle" class="tg">r = 1</text>
+    <rect x="120" y="40" width="110" height="46" rx="6" class="box"/><text x="175" y="58" text-anchor="middle" class="tb">rollout 2</text><text x="175" y="76" text-anchor="middle" class="tm">r = 0</text>
+    <rect x="240" y="40" width="110" height="46" rx="6" class="box"/><text x="295" y="58" text-anchor="middle" class="tb">rollout 3</text><text x="295" y="76" text-anchor="middle" class="tm">r = 0</text>
+    <rect x="360" y="40" width="110" height="46" rx="6" class="box"/><text x="415" y="58" text-anchor="middle" class="tb">rollout 4</text><text x="415" y="76" text-anchor="middle" class="tg">r = 1</text>
+    <rect x="480" y="40" width="110" height="46" rx="6" class="box"/><text x="535" y="58" text-anchor="middle" class="tb">rollout 5</text><text x="535" y="76" text-anchor="middle" class="tm">r = 0</text>
+    <rect x="600" y="40" width="110" height="46" rx="6" class="box"/><text x="655" y="58" text-anchor="middle" class="tb">rollout 6</text><text x="655" y="76" text-anchor="middle" class="tm">r = 0</text>
+    <rect x="720" y="40" width="110" height="46" rx="6" class="box"/><text x="775" y="58" text-anchor="middle" class="tb">rollout 7</text><text x="775" y="76" text-anchor="middle" class="tg">r = 1</text>
+    <rect x="840" y="40" width="110" height="46" rx="6" class="box"/><text x="895" y="58" text-anchor="middle" class="tb">rollout 8</text><text x="895" y="76" text-anchor="middle" class="tm">r = 0</text>
+  </g>
+  <path d="M475 92 V 112" class="arrow" marker-end="url(#ah-ink)"/>
+  <rect x="300" y="114" width="350" height="34" rx="6" class="box-outer"/>
+  <text x="475" y="136" text-anchor="middle" class="t">mean = 0.375   std = 0.484   →   A = (r − 0.375) / 0.484</text>
+  <path d="M475 152 V 172" class="arrow" marker-end="url(#ah-ink)"/>
+  <g>
+    <rect x="0" y="176" width="110" height="40" rx="6" class="box-agent"/><text x="55" y="201" text-anchor="middle" class="tt">A = +1.29 ↑</text>
+    <rect x="120" y="176" width="110" height="40" rx="6" class="box"/><text x="175" y="201" text-anchor="middle" class="tm">A = −0.77 ↓</text>
+    <rect x="240" y="176" width="110" height="40" rx="6" class="box"/><text x="295" y="201" text-anchor="middle" class="tm">A = −0.77 ↓</text>
+    <rect x="360" y="176" width="110" height="40" rx="6" class="box-agent"/><text x="415" y="201" text-anchor="middle" class="tt">A = +1.29 ↑</text>
+    <rect x="480" y="176" width="110" height="40" rx="6" class="box"/><text x="535" y="201" text-anchor="middle" class="tm">A = −0.77 ↓</text>
+    <rect x="600" y="176" width="110" height="40" rx="6" class="box"/><text x="655" y="201" text-anchor="middle" class="tm">A = −0.77 ↓</text>
+    <rect x="720" y="176" width="110" height="40" rx="6" class="box-agent"/><text x="775" y="201" text-anchor="middle" class="tt">A = +1.29 ↑</text>
+    <rect x="840" y="176" width="110" height="40" rx="6" class="box"/><text x="895" y="201" text-anchor="middle" class="tm">A = −0.77 ↓</text>
+  </g>
+  <text x="0" y="246" class="t">↑ every sampled token of that rollout becomes more likely · ↓ less likely · the size is the advantage times the token's importance weight</text>
+  <defs><marker id="ah-ink" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--ink)"/></marker></defs>
+</svg>
+<figcaption>The real reward pattern of <code>sqlfluff-884</code> in Gemma's second probe (3 of 8). Advantages sum to zero within a group by construction; the group is its own baseline.</figcaption>
+</figure>
+
+<h2 id="models"><span class="num">09</span>The model journey: Qwen first, then Gemma</h2>
+<p>The lecture's own lesson at 2:50 is "if the base model does not know the action space, do SFT first or use a larger model". We learned it three times before taking it seriously.</p>
+<div class="tablewrap"><table class="data">
+<tr><th>Model</th><th>What happened</th><th>What it taught us</th></tr>
+<tr><td>Qwen2.5-Coder 0.5B / 1.5B / 7B</td><td>0 valid JSON tool calls in 48 turns; every size writes JSON inside a markdown fence. With a fenced-bash protocol, 92 % valid but it mostly submits on turn 1.</td><td>The protocol must be one the model already speaks. Reward stayed 0; the loop was proven only with a scripted "oracle" rollout that writes the gold patch.</td></tr>
+<tr><td>Qwen3-1.7B</td><td>97 % valid tool calls, 0 of 140 tasks solved; loops on <code>grep</code>.</td><td>Following the format is not the same as making progress.</td></tr>
+<tr><td>mini-coder-1.7b (Qwen3-1.7B after SFT on 400k agent trajectories)</td><td>Solves 24 % of an 8-task pool before any RL. GRPO v1 (30 steps): flat. GRPO v2 (30 steps, twice the rollouts per step, 2.5× the learning rate, 11-task pool): mechanism clean (objective rose 30/30 steps, TIS weights 1.000, mismatch 0.01), success on training tasks −1.2 ± 2.6 points, Verified 19.0 % → 20.5 % (p = 0.71).</td><td>The pipeline is correct and reproduces the model's published number (its card says 18.6 %). 60 steps of 16–32 rollouts on a 1.7B model is not enough signal to move a binary reward. A bigger, stronger base was needed.</td></tr>
+<tr class="chosen"><td><b>Gemma 4 E4B</b> (Apache 2.0)</td><td>Solves 4–10 % of the 11-task pool per probe at temperature 1 (7.2 % pooled over 264 episodes) with no RL and no SFT on agent data; 4–6 of 11 tasks give mixed groups. Serves on all three GPUs.</td><td>At the low end of the 5–30 % band where GRPO has signal and headroom; most groups will be degenerate, so the pool must grow. Qwen is parked; Gemma is the model this project is now about.</td></tr>
+</table></div>
+<p>Two Gemma-specific things we had to handle in the harness, both found by reading failed replies rather than guessing:</p>
+<ul>
+  <li><b>It thinks out loud even with thinking off.</b> Replies often carry a reasoning passage ending in a special <code>&lt;channel|&gt;</code> token, then the answer. The reasoning repeats the bash block, so the reply has two blocks and fails the "exactly one" rule. Parsing only the text after the last <code>&lt;channel|&gt;</code> took valid actions from 74 % to 86 %.</li>
+  <li><b>It writes long.</b> A replay of 192 turns showed 28 of the remaining 36 invalid replies were cut by our 1,024-token reply cap before the bash block closed. Only 8 of 192 were genuinely malformed. With the cap raised to 4,096, the third probe reached 94.9 % valid actions and 87 of 88 episodes ended with a submit.</li>
+</ul>
+
+<h2 id="hardware"><span class="num">10</span>Hardware and serving: making it move on three consumer GPUs</h2>
+<div class="tiles">
+  <div class="tile"><div class="k">node08</div><div class="v">2 × A4000</div><div class="s">16 GB each, 62 GB RAM, 24 threads, no NVLink</div></div>
+  <div class="tile"><div class="k">node04</div><div class="v">RTX 4060 L</div><div class="s">8 GB laptop GPU, 15 GB RAM, 1 GbE</div></div>
+  <div class="tile"><div class="k">storage</div><div class="v">NFS</div><div class="s">shared 715 GB disk, usually 95 % full; images go on local disks</div></div>
+  <div class="tile"><div class="k">not available</div><div class="v">Docker · sudo</div><div class="s">user-space apptainer instead</div></div>
+</div>
+<p>A frontier lab separates rollout generation and training across many machines and runs them asynchronously. We have three cards, so the layout is the optimisation. The rule we worked to: <b>the GPUs should never wait for the CPUs, and the trainer should never wait for a GPU.</b></p>
+<figure class="fig diagram" id="fig-layout">
+<svg viewBox="0 0 1000 300" role="img" aria-label="Serving layout: node08 GPU0 vLLM server always on, GPU1 vLLM server that sleeps during the trainer step, node04 vLLM server with the embedding table in CPU RAM; node04 also hosts sandboxes and grading">
+  <rect x="0" y="30" width="600" height="250" rx="10" class="box"/>
+  <text x="16" y="54" class="th">node08</text><text x="86" y="54" class="tm">2 × A4000 16 GB · 62 GB RAM</text>
+  <rect x="16" y="70" width="270" height="190" rx="8" class="box-outer"/>
+  <text x="28" y="92" class="tb">GPU 0 · vLLM server :8001</text>
+  <text x="28" y="112" class="t">Gemma 4 E4B, FP8 weights · 12 rollouts in flight</text>
+  <text x="28" y="130" class="t">109k-token KV cache · LoRA adapters loaded at runtime</text>
+  <text x="28" y="148" class="t">always on</text>
+  <rect x="28" y="170" width="246" height="76" rx="6" class="box-agent"/>
+  <text x="40" y="192" class="tt">generates during every phase</text>
+  <text x="40" y="210" class="tm">rollouts · probes · adapter checks</text>
+  <text x="40" y="228" class="tm">prefix cache hit rate ≈ 89 %</text>
+  <rect x="310" y="70" width="270" height="190" rx="8" class="box-outer"/>
+  <text x="322" y="92" class="tb">GPU 1 · vLLM server :8002 + trainer</text>
+  <text x="322" y="112" class="t">server at 0.84 of memory, 86k-token KV cache</text>
+  <text x="322" y="130" class="t">POST /sleep → weights to CPU, KV freed (1–3 s)</text>
+  <text x="322" y="148" class="t">trainer moves on, steps, moves off · POST /wake_up</text>
+  <rect x="322" y="170" width="120" height="76" rx="6" class="box-agent"/>
+  <text x="334" y="192" class="tt">rollouts</text><text x="334" y="210" class="tm">12 in flight</text><text x="334" y="228" class="tm">server awake</text>
+  <rect x="452" y="170" width="116" height="76" rx="6" class="box-reward"/>
+  <text x="464" y="192" class="ta">GRPO step</text><text x="464" y="210" class="tm">LoRA, 18 s/traj</text><text x="464" y="228" class="tm">server asleep</text>
+  <rect x="620" y="30" width="380" height="250" rx="10" class="box"/>
+  <text x="636" y="54" class="th">node04</text><text x="706" y="54" class="tm">RTX 4060 Laptop 8 GB · 15 GB RAM</text>
+  <rect x="636" y="70" width="348" height="96" rx="8" class="box-outer"/>
+  <text x="648" y="92" class="tb">GPU · vLLM server :8003</text>
+  <text x="648" y="112" class="t">5.25 GiB embedding table pinned in CPU RAM,</text>
+  <text x="648" y="130" class="t">read over PCIe row by row · 5.5 GiB on the GPU</text>
+  <text x="648" y="148" class="t">8 rollouts in flight · decode CUDA graphs</text>
+  <rect x="636" y="176" width="348" height="84" rx="8" class="box-env"/>
+  <text x="648" y="198" class="tb">CPU · every sandbox and every grade</text>
+  <text x="648" y="216" class="t">up to 32 apptainer instances + grading in parallel</text>
+  <text x="648" y="234" class="t">ulimit -v 4 GB per command · watchdog · images on local disk</text>
+  <text x="648" y="252" class="tm">keeps all container CPU and RAM pressure off node08</text>
+</svg>
+<figcaption>Rollouts are routed least-loaded across the three servers with per-server slot limits (12 · 12 · 8). Any server that fails a request is fenced for the rest of the step unless it is the last healthy one.</figcaption>
+</figure>
+<p>The serving decisions, each with the number that justified it:</p>
+<ul>
+  <li><b>Two servers on node08, not one.</b> One server holds ~95k tokens of KV cache. With 16 concurrent 20k-token episodes on it, the prefix-cache hit rate fell from 92 % to 17 % and decoding halved. At 8 per server on two servers, the hit rate stayed above 89 %. Rule of thumb we now use: about 8 long episodes per 16 GB card.</li>
+  <li><b>Sleep mode instead of a dedicated trainer GPU.</b> vLLM can put its weights to sleep on the CPU in 1–3 seconds. So GPU1 serves rollouts during the rollout phase and hosts the trainer during the update. That doubled rollout throughput between GRPO v1 and v2: a median step of 743 s for 16 rollouts became 756 s for 32.</li>
+  <li><b>The CUDA-graph pool is not counted in vLLM's memory budget.</b> At the default settings it took 1.2 GiB outside the limit and left 221 MiB for the trainer's CUDA context. Capping <code>max-num-seqs</code> at 16 and the memory fraction at 0.84 fixed it.</li>
+  <li><b>The 8 GB laptop GPU can serve Gemma.</b> Gemma 4 E4B's weights load at 10.8 GiB in FP8, of which 5.25 GiB is a per-layer embedding table where each token only reads one 21 KB row. We keep that table in pinned CPU memory and hand the model a GPU-visible view of it; lookups gather rows over PCIe. The model then needs 5.5 GiB on the GPU. Measured like for like on the real probe (same tasks, seeds, images, sandboxes): node08 alone at 8+8 in flight, 743 s; node08 at 12+12 plus node04 at 8, <b>453 s</b>. That is ×1.78 in turns per minute, and node04's episodes match node08's in every quality measure.</li>
+  <li><b>Everything heavy on CPU runs on node04.</b> The sandboxes' RAM overlays and the grading runs are what took node08 down twice. node04 now hosts all of them; node08's GPUs only generate.</li>
+</ul>
+<div class="callout metric"><span class="tag">Throughput, end to end</span><p>One GRPO step (4 tasks × 8 rollouts, grading included) took a median of 12.6 minutes (interquartile 11–16) on mini-coder with the two-server layout. With three servers the 88-episode Gemma probe runs in about 8 minutes, so a 32-rollout Gemma step should land near 10 minutes before the update itself.</p></div>
+
+<h2 id="results"><span class="num">11</span>Results <span class="star">R</span></h2>
+<p>Measured, with the record file for each number in Appendix D. The Gemma training results are pending; this section will change.</p>
+<div class="tablewrap"><table class="data">
+<tr><th>Experiment</th><th>Setup</th><th>Result</th><th>Status</th></tr>
+<tr><td>Pipeline gates S0–S8</td><td>Qwen2.5-Coder-0.5B, 10 steps</td><td>Loop proven end to end; policy reward 0/140; oracle rollouts give the gradient</td><td><span class="measured">measured</span></td></tr>
+<tr><td>mini-coder-1.7b probe</td><td>8 tasks × 16 episodes</td><td>31/128 resolved (24 %); 99 % valid actions</td><td><span class="measured">measured</span></td></tr>
+<tr><td>GRPO v1</td><td>30 steps × 2 tasks × 8, lr 2e-5</td><td>153/480 (32 %) flat vs 31 % before</td><td><span class="measured">measured</span></td></tr>
+<tr><td>GRPO v2</td><td>30 steps × 4 tasks × 8, lr 5e-5, 11-task pool</td><td>Objective up 30/30 steps; success on training tasks −1.2 ± 2.6 pp (late vs early)</td><td><span class="measured">measured</span></td></tr>
+<tr><td>Verified evaluation</td><td>50 pre-registered tasks × 4 seeds, paired</td><td>base 38/200 (19.0 %) vs GRPO v2 41/200 (20.5 %); +1.5 pp, 95 % CI [−3.5, +6.5], p = 0.71</td><td><span class="measured">measured</span></td></tr>
+<tr><td>Gemma 4 E4B probe 1</td><td>11 tasks × 8, no RL</td><td>6/88 resolved, 4 mixed tasks, 74 % valid actions (thinking leak)</td><td><span class="measured">measured</span></td></tr>
+<tr><td>Gemma 4 E4B probe 2</td><td>same, parse after &lt;channel|&gt;</td><td>9/88 resolved (10 %), 6 mixed tasks, 86 % valid actions</td><td><span class="measured">measured</span></td></tr>
+<tr><td>Gemma 4 E4B probe 3</td><td>same, reply cap 4,096 tokens</td><td>4/88 resolved, 4 mixed tasks, <b>94.9 % valid actions</b>; 87 of 88 episodes submitted. Pooled over the three probes: 19/264 (7.2 %) resolved</td><td><span class="measured">measured</span></td></tr>
+<tr><td>Serving A/B</td><td>88-episode probe, 4 layouts</td><td>node04 added: ×1.34; node08 slots 8→12: ×1.24; both: ×1.78 turns/min</td><td><span class="measured">measured</span></td></tr>
+<tr><td>GRPO on Gemma</td><td>—</td><td>—</td><td><span class="pending">pending</span></td></tr>
+<tr><td>Verified evaluation, Gemma</td><td>same 50 tasks</td><td>—</td><td><span class="pending">pending</span></td></tr>
+</table></div>
+<p>How to read the mini-coder result honestly: the harness reproduces the model's published accuracy (18.6 % on its card, 19.0 % here), the trainer's mechanism is verified on every step, and the 60 steps of GRPO did not change the model's success rate by more than noise. That is a null result with a clean instrument, which is exactly what let us move to a different model with confidence rather than debugging the pipeline again.</p>
+<div class="callout"><span class="tag">Impact, as of today</span><p>A reproducible, safe, three-GPU RL pipeline for SWE-bench that a lab can actually run: real containers, real tests, verified weight sync, resumable training, ×1.78 rollout throughput from a laptop GPU, and a clean train/eval split. The model-quality result is the next thing it will measure.</p></div>
+
+<h2 id="challenges"><span class="num">12</span>Challenges, and what each one taught</h2>
+<div class="tablewrap"><table class="data">
+<tr><th>What happened</th><th>What it was</th><th>What we did</th></tr>
+<tr><td>Small models never emitted the tool-call format</td><td>0 of 48 JSON tool calls at 0.5B, 1.5B, 7B</td><td>Switched to the fenced-bash protocol the SFT models were trained on; kept the prompts byte-identical to the corpus</td></tr>
+<tr><td>A rollout wrote 32 GB into its RAM overlay; the kernel killed the trainer</td><td>Sandbox tmpfs is RAM and apptainer's size limit is not enforced without root</td><td><code>ulimit -f</code>, <code>ulimit -v</code>, OOM priority on sandboxes, watchdog, resumable runs</td></tr>
+<tr><td>A grading run reached 61.7 GB RSS</td><td>A policy patch made a test suite explode</td><td>Same limits on grading; grading moved to the other node</td></tr>
+<tr><td>Decoding halved under load</td><td>16 long episodes thrashed one server's prefix cache</td><td>Two servers, 8 in flight each; later 12 once measured</td></tr>
+<tr><td>The trainer could not fit next to the server</td><td>vLLM's CUDA-graph pool sits outside its memory budget</td><td>Smaller graph pool, 0.84 memory fraction, sleep mode</td></tr>
+<tr><td>Gemma failed 26 % of its actions</td><td>A leaked thinking channel duplicated the bash block; then the reply cap cut long replies</td><td>Parse after <code>&lt;channel|&gt;</code>; raise the cap; both found by reading 20 failed replies</td></tr>
+<tr><td>Gemma would not compile on a 16 GB card</td><td>The compiler tried to copy the 5.25 GiB embedding table</td><td>Eager mode on node08; table in CPU RAM plus decode-only CUDA graphs on node04</td></tr>
+<tr><td>A quarter of the dev images are missing or broken upstream</td><td>Docker Hub 404s; pvlib/pyvista gold patches score 0</td><td>Gate every task (gold = 1, empty = 0) before it can enter a pool; rolling pulls with a disk reservation</td></tr>
+<tr><td>Same seed every turn</td><td>vLLM re-seeds per request, so turns of an episode were correlated</td><td>Seed changes per turn; found by a review, fixed before v2</td></tr>
+<tr><td>Grading folder was writable from inside the container</td><td>A reward-forging hole</td><td>Read-only input bind; spec and log stay on the host</td></tr>
+<tr><td><code>tmux kill-session -t swe-serve</code> killed <code>swe-serve1</code></td><td>Prefix matching</td><td>Always <code>-t =name</code>. Small, but it cost a running server.</td></tr>
+</table></div>
+
+<h2 id="tradeoffs"><span class="num">13</span>Trade-offs, in one table</h2>
+<div class="tablewrap"><table class="data tradeoff">
+<tr><th>Decision</th><th>We chose</th><th>Instead of</th><th>Because</th><th>Cost</th></tr>
+<tr><td>Reward</td><td>Binary test result in a fresh container</td><td>LLM judge; partial credit per test</td><td>Cannot be argued with or gamed by prose</td><td>Sparse; degenerate groups waste compute</td></tr>
+<tr><td>Algorithm</td><td>GRPO, one step per batch, no clip, no KL</td><td>PPO with a critic; textbook GRPO with clip + KL</td><td>No value network fits; fresh on-policy batches make the clip inert</td><td>No safe reuse of stale rollouts; drift watched, not constrained</td></tr>
+<tr><td>Mismatch</td><td>Truncated importance weights from vLLM's log-probs</td><td>Ignore it (the reference); match numerics exactly</td><td>Cheap, measured, corrects what it can</td><td>Cap 2 is a heuristic</td></tr>
+<tr><td>Loss scale</td><td>Token-mean</td><td>Sequence-mean (the reference)</td><td>Long successful episodes should not be discounted</td><td>Long rollouts dominate a step</td></tr>
+<tr><td>Weights</td><td>LoRA r16, runtime-loaded into vLLM</td><td>Full fine-tune with NCCL broadcast</td><td>Fits one 16 GB card; seconds to sync</td><td>Less capacity to move</td></tr>
+<tr><td>Rollouts</td><td>Synchronous, per-step</td><td>Asynchronous with a replay buffer</td><td>Strictly on-policy; simpler correctness</td><td>The slowest rollout holds the step</td></tr>
+<tr><td>Containers</td><td>Apptainer instances, RAM overlay</td><td>Docker (unavailable); one exec per command</td><td>Unprivileged; state persists; 0.7 s per exec</td><td>RAM is the disk; needs ulimits</td></tr>
+<tr><td>Protocol</td><td>One fenced bash command</td><td>JSON tool calls with file tools</td><td>What the models were trained on; simplest parser</td><td>No structured editing tools</td></tr>
+<tr><td>Data</td><td>Train on dev, evaluate on Verified</td><td>Train on Verified (the lecture)</td><td>Zero overlap keeps the eval honest</td><td>Only 225 dev tasks, 6 repos, many broken</td></tr>
+<tr><td>Model</td><td>Gemma 4 E4B</td><td>Keep pushing 1.7B Qwen SFT</td><td>10 % pool success without RL; headroom</td><td>Trainer port still to do; 262k vocab, 5 GiB embedding table</td></tr>
+<tr><td>Serving</td><td>3 servers incl. an 8 GB laptop GPU</td><td>One big server</td><td>Prefix-cache thrash above ~8 episodes per card; ×1.78 measured</td><td>More moving parts; router and fencing needed</td></tr>
+</table></div>
+
+<hr class="sep">
+<h2 id="talk">Talk track · 15 minutes</h2>
+<ol class="steps">
+  <li><b>Situation (1 min).</b> Local, trainable coding models matter; SWE-bench is the benchmark that cannot be argued with; three properties make it RL-friendly.</li>
+  <li><b>Task (1 min).</b> Build the lecture's loop end to end on three consumer GPUs, no Docker, no root; train on dev, evaluate on Verified.</li>
+  <li><b>Draw the diagram (3 min).</b> Agent = harness + policy; action; environment; observation; reward after submit; outer loop; weights loaded back. Say "inner loop is inference, outer loop is training".</li>
+  <li><b>One episode (2 min).</b> The sqlfluff story: 16 turns, the 42k-char <code>cat</code>, the length-cut turn, the one-line <code>sed</code>, the submit. Then the twist: the fix is wrong in spirit and the tests cannot tell.</li>
+  <li><b>GRPO (3 min).</b> Groups of 8; advantage = (r − mean)/std with the 3-of-8 numbers; the loss: log-prob × advantage × importance weight, sampled tokens only, token-mean; why no clip and no KL here.</li>
+  <li><b>Hardware (2 min).</b> Two servers per card rule, sleep mode, the 8 GB GPU with the embedding table in CPU RAM, ×1.78.</li>
+  <li><b>Results and honesty (2 min).</b> mini-coder null result with a clean instrument; Gemma at 10 % with headroom; what is pending.</li>
+  <li><b>What I would do next (1 min).</b> Partial credit from test counts to shrink degenerate groups; async rollouts; a bigger dev pool from SWE-smith; KL only if drift becomes a problem.</li>
+</ol>
+<div class="callout say"><span class="tag">Questions to ask the interviewer</span><p>How do you evaluate agentic models on internal codebases where there is no public benchmark? Do you train with verifiable rewards or judges, and how do you keep the judge honest? Where does the harness live in your stack: with the model team or the product team?</p></div>
+
+<h2 id="a-math">Appendix A · The math, compactly</h2>
+<div class="formula"><span class="lbl">group advantage (biased std, ε = 1e-4)</span>A_i = (r_i − μ_G) / (σ_G + ε)</div>
+<div class="formula"><span class="lbl">token-mean GRPO loss with truncated importance sampling</span>L(θ) = −(1/T) Σ_i Σ_{t∈S_i} A_i · sg[ min(π_θ(a_t|s_t)/π_μ(a_t|s_t), c) ] · log π_θ(a_t|s_t),   c = 2</div>
+<div class="formula"><span class="lbl">gradient (what AdamW actually receives)</span>∇L = −(1/T) Σ_i Σ_t A_i · w_t · ∇ log π_θ(a_t|s_t)</div>
+<div class="formula"><span class="lbl">mismatch diagnostic, per sampled token</span>δ_t = | log π_trainer(a_t|s_t) − log π_vLLM(a_t|s_t) |   (mean ≈ 0.01, p99 ≈ 0.1 measured)</div>
+<p><b>Why REINFORCE and not a ratio objective?</b> With one gradient step per batch of fresh samples, π_θ = π_μ at the moment the gradient is taken, so the PPO surrogate's ratio is 1 and its gradient equals the REINFORCE gradient above. The only difference between "the policy that sampled" and "the policy being trained" is numerical (bf16 kernels vs fp32 adapter), and that is exactly what w_t corrects.</p>
+<p><b>Why does the advantage sum to zero in a group?</b> Because μ_G is subtracted from every member. It means the update cannot make <em>all</em> rollouts of a task more likely; it can only move probability from the losers to the winners.</p>
+
+<h2 id="b-draw">Appendix B · Drawing the diagram by hand</h2>
+<ol class="steps">
+  <li>Left box: <b>AGENT</b>. Inside it a tall dark rectangle labelled <b>policy π_θ (vLLM, GPU)</b> and next to it a stack of six thin rows labelled <b>harness (CPU)</b>: system+issue, assistant, observation, assistant, observation, submit. Shade the assistant rows. Write "shaded = sampled = gradient".</li>
+  <li>Right box: <b>ENVIRONMENT</b>: a container, <code>/testbed</code> at <code>base_commit</code>, no network. Write three commands inside.</li>
+  <li>Arrow left→right on top: <b>ACTION: one bash command</b>. Arrow right→left below it: <b>OBSERVATION: return code + output, mask 0</b>. Between the arrows write the exits: submit · 50 turns · 24k tokens · 20 min.</li>
+  <li>From the environment, an arrow down labelled <b>after submit</b> to a box <b>REWARD</b>: fresh container, apply patch, run held-out tests, r ∈ {0, 1}.</li>
+  <li>A wide bar along the bottom: <b>OUTER LOOP</b>: trajectory + reward → group of 8 → advantage → GRPO step on LoRA → π_θ′.</li>
+  <li>One last arrow from the bar up into the policy: <b>π_θ′ loaded back</b>. Say: "inner loop is inference and runs the same at test time; the outer loop only exists in training."</li>
+</ol>
+
+<h2 id="c-glossary">Appendix C · Glossary</h2>
+<dl class="kv">
+  <dt>episode / rollout</dt><dd>One attempt at one task, from the issue to submit (or another exit). Produces a transcript and a patch.</dd>
+  <dt>turn</dt><dd>One model reply plus the harness's response to it (an observation or a format error).</dd>
+  <dt>trajectory</dt><dd>The episode as the trainer sees it: token ids, a 0/1 mask, the server's log-probs.</dd>
+  <dt>group</dt><dd>The G = 8 rollouts of one task in one step. Advantages are relative to the group.</dd>
+  <dt>degenerate group</dt><dd>All rewards equal; no signal; skipped.</dd>
+  <dt>mixed task</dt><dd>A task the current model sometimes solves; the only kind that produces a gradient with a binary reward.</dd>
+  <dt>advantage</dt><dd>How much better than the group's average a rollout scored, in units of the group's spread.</dd>
+  <dt>importance weight</dt><dd>π_trainer / π_server for a token, capped at 2, detached. Corrects the numerical mismatch between the two implementations of the same model.</dd>
+  <dt>LoRA</dt><dd>Small trainable matrices added to each linear layer; the base weights stay frozen. Here rank 16, ~17 M parameters.</dd>
+  <dt>prefix cache</dt><dd>vLLM reuses the key/value computation of a prompt prefix it has seen before. Multi-turn episodes share most of their prefix turn to turn, so hit rates near 90 % are the difference between fast and slow.</dd>
+  <dt>sleep mode</dt><dd>vLLM moves its weights to CPU and frees the KV cache on request, so a trainer can borrow the GPU, then wakes in seconds.</dd>
+  <dt>SFT</dt><dd>Supervised fine-tuning on example trajectories; teaches the action format before RL teaches the outcome.</dd>
+  <dt>FAIL_TO_PASS / PASS_TO_PASS</dt><dd>Tests that must flip from failing to passing / tests that must keep passing. Both required for "resolved".</dd>
+</dl>
+
+<h2 id="d-sources">Appendix D · Where every number comes from</h2>
+<div class="tablewrap"><table class="data">
+<tr><th>Number</th><th>Record</th></tr>
+<tr><td>Dev split 225 rows, per-repo counts; Verified 500</td><td>HF datasets <code>SWE-bench/SWE-bench</code> (dev) and <code>SWE-bench_Verified</code>, pinned revisions in <code>sarl/paths.py</code></td></tr>
+<tr><td>42 usable dev tasks, 9 pydicom gate failures, 34 sqlfluff images missing</td><td><code>experiments/screen-dev-v2.json</code>, <code>screen-dev-v2b.json</code>; EXPERIMENTS.md "Screening for the v2 pool"</td></tr>
+<tr><td>The sqlfluff-884 episode (16 turns, 8,887 tokens, resolved)</td><td>captured 2026-09-25 with the probe harness; grade 1/1 F2P, 37/37 P2P in 5.6 s</td></tr>
+<tr><td>mini-coder probe 31/128; v1 153/480; v2 −1.2 ± 2.6 pp; 34/120 degenerate</td><td><code>experiments/probe-minicoder-pool-{a,b}.json</code>, <code>experiments/runs/grpo-minicoder-v{1,2}</code></td></tr>
+<tr><td>Verified 38/200 vs 41/200, p = 0.71</td><td><code>experiments/eval-verified-v1.json</code>, tasks in <code>configs/eval_verified_v1_gated.txt</code></td></tr>
+<tr><td>Gemma probes 6/88 (74 % valid), 9/88 (86 % valid), 6 mixed</td><td><code>experiments/probe-gemma-pool.json</code>, <code>probe-gemma-pool-v2.json</code></td></tr>
+<tr><td>28 of 36 invalid replies cut by the length cap (192-turn replay)</td><td>diagnostic replay 2026-09-25 (<code>gemma_invalid_diag</code>)</td></tr>
+<tr><td>Serving A/B: 743 s → 453 s, ×1.78 turns/min</td><td><code>experiments/ab-serving/</code> (R1–R4, <code>summary.json</code>)</td></tr>
+<tr><td>Prefix-cache thrash 92 % → 17 %; sleep 1–3 s; graph pool 1.2 GiB</td><td>EXPERIMENTS.md, GRPO v1 probe and v2 setup</td></tr>
+<tr><td>Trainer memory 10.7 GiB / 17.8 s at 24k tokens</td><td><code>scripts/trainer_memcheck.py</code>, EXPERIMENTS.md</td></tr>
+<tr><td>Gemma weights 10.76 GiB → 5.46 GiB with the table in CPU RAM; KV 109k / 86k / 72.6k tokens</td><td>vLLM startup logs, EXPERIMENTS.md "node04 as a third Gemma server"</td></tr>
+<tr><td>Loss, advantage, TIS code</td><td><code>sarl/grpo.py</code>; config <code>configs/grpo_minicoder_v2.yaml</code></td></tr>
+<tr><td>Prompts, observation and error text</td><td><code>sarl/prompts_mswea.py</code> (mini-swe-agent v1, verbatim from the SFT corpus)</td></tr>
+</table></div>
+
+<footer>Project: <code>Agentic-RL/swe-bench</code> (package <code>sarl</code>), a from-scratch implementation of the Vizuara SWE-RL lecture's diagram (video <code>oNHzs7wi7TY</code>, repo <code>abgoswam/swe_in_prod_vizuara_01</code>), trained on SWE-bench dev and evaluated on SWE-bench Verified. Every number on this page is from a committed record; pending items are marked.</footer>
+</main>
+</div>

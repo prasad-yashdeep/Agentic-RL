@@ -98,6 +98,8 @@ def main(argv=None) -> int:
     p.add_argument("--protocol", default="mswea")
     p.add_argument("--max-turns", type=int, default=50)
     p.add_argument("--max-context", type=int, default=24_576)
+    p.add_argument("--max-new-tokens", type=int, default=1024,
+                   help="reply cap per turn; Gemma 4 thinks before its <channel|> answer and needs about 4096")
     p.add_argument("--wall-clock", type=float, default=1800)
     p.add_argument("--command-timeout", type=float, default=60)
     p.add_argument("--temperature", type=float, default=1.0)
@@ -139,15 +141,16 @@ def main(argv=None) -> int:
     tok = AutoTokenizer.from_pretrained(mid, revision=rev)
     fmt = ChatFormat(tok, tools_for(a.protocol), TEMPLATE_KWARGS.get(a.model_key, {}))
     stops = stop_ids(fmt, mid, rev)
-    lim = Limits(max_turns=a.max_turns, max_context_tokens=a.max_context, wall_clock_s=a.wall_clock,
-                 command_timeout_s=a.command_timeout)
+    lim = Limits(max_turns=a.max_turns, max_context_tokens=a.max_context, max_new_tokens=a.max_new_tokens,
+                 wall_clock_s=a.wall_clock, command_timeout_s=a.command_timeout)
     tasks = read_pool(a.tasks_file, a.split)
     by_id = {t.instance_id: t for t in tasks}
     state = json.loads(out.read_text()) if out.exists() else {}
     meta = {"tasks_file": a.tasks_file, "split": a.split, "model": mid, "revision": rev, "arms": arms,
             "episodes": a.episodes, "protocol": a.protocol,
             "limits": {"max_turns": lim.max_turns, "max_context_tokens": lim.max_context_tokens,
-                       "wall_clock_s": lim.wall_clock_s, "command_timeout_s": lim.command_timeout_s},
+                       "max_new_tokens": lim.max_new_tokens, "wall_clock_s": lim.wall_clock_s,
+                       "command_timeout_s": lim.command_timeout_s},
             "sampling": {"temperature": a.temperature, "top_p": 1.0, "top_k": -1},
             "seeds": "per turn: 1000 + episode index, then + 1000003 x turn (paired across arms)",
             "server_weights": next(iter(ident.values()), None)}
