@@ -138,7 +138,64 @@ Setup: 8 episodes per task, same limits (wall clock 1,200 s), both GPUs, images 
 
 **Screening total:** 42 usable dev tasks, 8 mixed. With v1's 3 mixed tasks, the v2 pool is 11 tasks (`configs/pool_minicoder_v2.txt`). Their images are in node08 `/var/tmp/swe/sif-dev`: 8 files plus 3 symlinks into `/tmp/swe-sif`.
 
-GRPO_V2_PENDING
+### GRPO v2: `runs/grpo-minicoder-v2`, `configs/grpo_minicoder_v2.yaml`
+
+**Config:**
+- 30 steps × 4 tasks × G = 8 (32 rollouts per step), lr 5e-5 (v1: 2e-5), LoRA r 16 on all linear layers, token-mean loss, TIS cap 2.
+- Pool: the 11 mixed tasks.
+- Rollouts on both GPUs: GPU0 at 0.88; GPU1 at 0.84 with `--max-num-seqs 16` and sleep mode. The trainer sits on the CPU until the GPU1 server sleeps.
+- Before the run, the dual-server code got an adversarial review (3 lenses, 9 confirmed findings, all fixed) and a 2-step smoke test (`runs/grpo-v2-smoke`).
+
+**Timeline:**
+- 17:36: started.
+- Steps 10–12 slowed to about 40 min and the trainer was OOM-killed at step 13 (the 32 GB tmpfs incident above).
+- 21:24: resumed from step 12 with `--resume` (adapter hash verified, task draws replayed, AdamW moments reset).
+- 01:37: finished.
+
+**Speed:**
+- Steps took 561–776 s at the median, against 740 s per 16-rollout step in v1. That is about 2× the rollout throughput.
+- The worst step, 2,714 s, was during the memory incident.
+- Sleep/wake took 1–3 s per step.
+
+**Health:**
+- 0 rollout errors; 14 over-long trajectories truncated.
+- TIS weights averaged 1.000 and none were capped; mismatch mean 0.009–0.012.
+- The objective rose on **30/30** steps.
+- The served policy drifted from the base by 0.044 nats per token at step 1 and 0.095 at step 30.
+- 34 of 120 groups were degenerate: astroid-1262, astroid-984 and pydicom-1256 are mostly 0/8, and astroid-1719 is mostly 8/8.
+
+**Outcome on the training tasks:**
+
+| Task | Pre-GRPO base | Steps 1–15 | Steps 16–30 |
+|---|---|---|---|
+| marshmallow-1164 | 3/8 | 15/32 (47 %) | 10/32 (31 %) |
+| marshmallow-1343 | 3/8 | 26/56 (46 %) | 25/48 (52 %) |
+| pydicom-1192 | 2/8 | 16/64 (25 %) | 9/32 (28 %) |
+| pydicom-1256 | 1/16 | 5/32 (16 %) | 6/40 (15 %) |
+| pydicom-1694 | 8/16 | 24/56 (43 %) | 18/56 (32 %) |
+| astroid-1262 | 1/8 | 1/56 | 0/40 |
+| astroid-1614 | 6/16 | 10/32 (31 %) | 9/24 (38 %) |
+| astroid-1719 | 7/8 | 30/32 (94 %) | 54/56 (96 %) |
+| astroid-1903 | 4/8 | 34/40 (85 %) | 44/56 (79 %) |
+| astroid-984 | 1/8 | 2/56 | 1/40 |
+| sqlfluff-884 | 1/8 | 4/24 (17 %) | 14/56 (25 %) |
+| pooled | 37/112 (33 %) | 167/480 (35 %) | 190/480 (40 %) |
+
+The pooled rise from 35 % to 40 % comes from the task mix. Comparing each task only with itself:
+- **Late vs early: −1.2 ± 2.6 points.**
+- **During the run vs the pre-GRPO baseline: +2.2 ± 4.1 points** (1 SE).
+
+So GRPO v2 did not measurably raise the success rate even on the tasks it trained on, despite a clean mechanism and twice v1's drift. The held-out test is the Verified evaluation below.
+
+### Evaluation: base vs GRPO v2 on the gated Verified subset
+
+- Tasks: `configs/eval_verified_v1_gated.txt`, 50 tasks.
+- Episodes: 4 per arm, with the same per-turn seeds for both arms.
+- Arms: `base=policy` and `grpo=policy-051b4b-s30`, both served on both GPUs.
+- Limits: as in training.
+- Output: `experiments/eval-verified-v1.json`. Started 01:39.
+
+EVAL_PENDING
 
 ---
 

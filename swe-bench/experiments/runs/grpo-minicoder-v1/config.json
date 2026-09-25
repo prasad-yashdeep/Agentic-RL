@@ -1,0 +1,72 @@
+{
+ "name": "grpo-minicoder-check",
+ "model": "ricdomolm/mini-coder-1.7b",
+ "revision": "5b7fbc90b6c4684c546de7f811865cff4414a96c",
+ "chat_template_kwargs": {
+  "enable_thinking": true
+ },
+ "serve_url": "http://localhost:8001",
+ "served_model": "policy",
+ "pool": "configs/pool_minicoder_mixed.txt",
+ "split": "dev",
+ "steps": 30,
+ "tasks_per_step": 2,
+ "group_size": 8,
+ "oracle_per_group": 0,
+ "protocol": "mswea",
+ "seed": 0,
+ "sampling": {
+  "temperature": 1.0,
+  "top_p": 1.0,
+  "top_k": -1,
+  "repetition_penalty": 1.0
+ },
+ "limits": {
+  "max_turns": 50,
+  "max_context_tokens": 24576,
+  "max_new_tokens": 1024,
+  "wall_clock_s": 1800,
+  "command_timeout_s": 60,
+  "max_obs_chars": 10000,
+  "max_format_errors": 3
+ },
+ "train": {
+  "lr": 2e-05,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "targets": [
+   "q_proj",
+   "k_proj",
+   "v_proj",
+   "o_proj",
+   "gate_proj",
+   "up_proj",
+   "down_proj"
+  ],
+  "clip": 1.0,
+  "max_train_tokens": 24576,
+  "truncate_overlong": true,
+  "chunk": 1024,
+  "loss_agg": "token_mean",
+  "tis_cap": 2.0
+ },
+ "diagnostics": {
+  "mismatch": "batch"
+ },
+ "advantage": {
+  "eps": 0.0001,
+  "skip_degenerate": true
+ },
+ "concurrency": {
+  "rollouts": 8,
+  "grading": 8
+ },
+ "grading": {
+  "timeout_s": 1800,
+  "network": false
+ },
+ "env": {
+  "network": false
+ },
+ "_path": "/home/yashp/Agentic-RL/swe-bench/configs/grpo_minicoder_check.yaml"
+}

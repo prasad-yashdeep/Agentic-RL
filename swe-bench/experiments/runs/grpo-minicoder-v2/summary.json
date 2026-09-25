@@ -1,0 +1,7 @@
+{
+ "run": "grpo-minicoder-v2",
+ "steps": 30,
+ "final_adapter": "policy-051b4b-s30",
+ "trajectories": "/var/tmp/swe/trajectories/grpo-minicoder-v2",
+ "adapters": "/var/tmp/swe/adapters/grpo-minicoder-v2"
+}

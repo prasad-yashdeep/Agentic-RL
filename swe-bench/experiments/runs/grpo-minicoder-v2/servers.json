@@ -1,0 +1,23 @@
+{
+ "servers": [
+  {
+   "url": "http://localhost:8001",
+   "slots": 8
+  },
+  {
+   "url": "http://localhost:8002",
+   "slots": 8,
+   "sleep": true
+  }
+ ],
+ "identity": {
+  "http://localhost:8001": {
+   "root": "/home/yashp/hf-cache/hub/models--ricdomolm--mini-coder-1.7b/snapshots/5b7fbc90b6c4684c546de7f811865cff4414a96c",
+   "max_model_len": 32768
+  },
+  "http://localhost:8002": {
+   "root": "/home/yashp/hf-cache/hub/models--ricdomolm--mini-coder-1.7b/snapshots/5b7fbc90b6c4684c546de7f811865cff4414a96c",
+   "max_model_len": 32768
+  }
+ }
+}
