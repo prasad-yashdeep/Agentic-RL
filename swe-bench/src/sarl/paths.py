@@ -50,12 +50,16 @@ MODELS = {
     # older) and training reference; the third-party FP8 copy is what vLLM serves on the A4000s (W8A16 on sm_86,
     # --language-model-only). Same tokenizer.json / vocab. Render with enable_thinking=False; protocol mswea only (the
     # template renders tool results only after a native tool call).
+    # mini-coder-1.7b's 4B sibling: Qwen3-4B-Instruct-2507 SFT'd on the same mini-swe-agent corpus (MIT); card: 26.8 %
+    # pass@1 on Verified (bash-only). Same tokenizer family and protocol as mini-coder-1.7b.
+    "mini-coder-4b": ("ricdomolm/mini-coder-4b", "c87892d046a62415a349a6b3aa244bb630fb7417"),
     "gemma4-e4b": ("google/gemma-4-E4B-it", "ee0ef6023621cff504d758262d4e04895a5af4a2"),
     "gemma4-e4b-fp8": ("prithivMLmods/gemma-4-E4B-it-FP8", "e991fcb6c8b3871071c0ad7f7343dc5e0e7e5639"),
 }
 
 # chat-template kwargs per model (ChatFormat defaults to enable_thinking=False)
-TEMPLATE_KWARGS = {"mini-coder-1.7b": {"enable_thinking": True}, "gemma4-e4b": {"enable_thinking": False},
+TEMPLATE_KWARGS = {"mini-coder-1.7b": {"enable_thinking": True}, "mini-coder-4b": {"enable_thinking": True},
+                   "gemma4-e4b": {"enable_thinking": False},
                    "gemma4-e4b-fp8": {"enable_thinking": False}}
 
 

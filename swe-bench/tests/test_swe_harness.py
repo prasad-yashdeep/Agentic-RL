@@ -155,3 +155,17 @@ def test_stop_ids_per_model(qwen_tok, gemma_tok):
     assert stop_ids(ChatFormat(qwen_tok, tools_for("mswea")), MODEL_ID, MODEL_REVISION) == [151645, 151643]
     mid, rev = MODELS["gemma4-e4b"]
     assert stop_ids(ChatFormat(gemma_tok, tools_for("mswea"), {"enable_thinking": False}), mid, rev) == [106, 1, 50]
+
+
+@pytest.mark.gemma
+def test_gemma_answer_after_thinking_channel(qwen_tok, gemma_tok):
+    """Gemma 4 leaks '<reasoning with the command>```…```<channel|>```…```': only the part after <channel|> is parsed."""
+    from sarl.protocol import parse_reply
+
+    g = ChatFormat(gemma_tok, tools_for("mswea"), {"enable_thinking": False})
+    reply = "I will look.\n\n```bash\nls -la\n```\n<channel|>```bash\nls -la\n```"
+    assert not parse_reply(reply, "mswea").ok  # two blocks: a format error without the marker rule
+    p = parse_reply(g.answer_text(reply), "mswea")
+    assert p.ok and p.command == "ls -la"
+    assert g.answer_marker == "<channel|>" and ChatFormat(qwen_tok, tools_for("mswea")).answer_marker is None
+    assert ChatFormat(qwen_tok, tools_for("mswea")).answer_text(reply) == reply

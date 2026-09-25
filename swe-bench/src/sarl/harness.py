@@ -67,6 +67,14 @@ class Trajectory:
         return d
 
 
+# Special tokens that end a model's (possibly leaked) thinking channel; only the text after the last one is the answer.
+# Gemma 4 writes "...reasoning...<channel|>answer" even with thinking off: the reasoning often repeats the bash block,
+# which mini-swe-agent's one-block rule rejects (2026-09-25 probe: 13 of 20 invalid replies were valid after <channel|>).
+# Gemma's own template strips the thought from history the same way. Qwen has no such special token (</think> is not
+# special), so Qwen parsing is unchanged.
+ANSWER_MARKERS = ("<channel|>",)
+
+
 class ChatFormat:
     """Token-level turn deltas derived from the tokenizer's own chat template: ChatML (<|im_end|>) for Qwen, <turn|> for
     Gemma 4. Nothing model-specific is hard-coded: the turn terminator is the special token the template writes after
@@ -86,6 +94,7 @@ class ChatFormat:
                    {getattr(a, "content", str(a)) for a in added.values() if getattr(a, "special", False)})
         self._special = sorted(special, key=len, reverse=True)  # longest first (Qwen: exactly the '<|…|>' tokens)
         self._special_re = re.compile("|".join(re.escape(t) for t in self._special)) if self._special else None
+        self.answer_marker = next((m for m in ANSWER_MARKERS if m in self._special), None)
         self.turn_end: str | None = None
         self.user_prefix, self.user_suffix = self._delta("user")
         self.turn_end_id = tokenizer.convert_tokens_to_ids(self.turn_end)
@@ -124,6 +133,12 @@ class ChatFormat:
             raise NotImplementedError(f"the template renders no plain {role!r} turn after a text reply")
         pre, post = rest.split(self.PROBE)
         return pre, post
+
+    def answer_text(self, text: str) -> str:
+        """The part of a reply that is the answer: after the last thinking-channel marker, if the model has one."""
+        if self.answer_marker and self.answer_marker in text:
+            return text.rsplit(self.answer_marker, 1)[1]
+        return text
 
     def encode(self, text: str) -> list[int]:
         return self.tok(text, add_special_tokens=False)["input_ids"]
@@ -207,7 +222,10 @@ def run_episode(policy, env, task, fmt: ChatFormat, limits: Limits | None = None
             ids.append(fmt.im_end_id); mask.append(0); lps.append(None)
         messages.append({"role": "assistant", "content": gen.text})
         rec: dict[str, Any] = {"turn": k, "gen_tokens": len(g_ids), "finish": gen.finish_reason, "closed": closed}
-        parsed = parse_reply(gen.text, protocol)
+        answer = fmt.answer_text(gen.text)
+        if answer is not gen.text:
+            rec["leaked_thought"] = True  # the reply carried a thinking channel before its answer
+        parsed = parse_reply(answer, protocol)
         if not parsed.ok:
             n_fmt += 1
             streak += 1

@@ -1,0 +1,6282 @@
+{
+ "meta": {
+  "tasks_file": "configs/eval_verified_v1_gated.txt",
+  "split": "verified",
+  "model": "ricdomolm/mini-coder-1.7b",
+  "revision": "5b7fbc90b6c4684c546de7f811865cff4414a96c",
+  "arms": {
+   "base": "policy",
+   "grpo": "policy-051b4b-s30"
+  },
+  "episodes": 4,
+  "protocol": "mswea",
+  "limits": {
+   "max_turns": 50,
+   "max_context_tokens": 24576,
+   "wall_clock_s": 1200.0,
+   "command_timeout_s": 60
+  },
+  "sampling": {
+   "temperature": 1.0,
+   "top_p": 1.0,
+   "top_k": -1
+  },
+  "seeds": "per turn: 1000 + episode index, then + 1000003 x turn (paired across arms)",
+  "server_weights": {
+   "policy-051b4b-s30": "/var/tmp/swe/adapters/grpo-minicoder-v2/step-30",
+   "policy": "/home/yashp/hf-cache/hub/models--ricdomolm--mini-coder-1.7b/snapshots/5b7fbc90b6c4684c546de7f811865cff4414a96c"
+  }
+ },
+ "tasks": {
+  "scikit-learn__scikit-learn-14141": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 4743,
+       "wall_s": 25.0,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 11,
+       "tokens": 4089,
+       "wall_s": 34.6,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 10,
+       "tokens": 4710,
+       "wall_s": 36.74,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 15,
+       "tokens": 5814,
+       "wall_s": 78.04,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 4972,
+       "wall_s": 27.35,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 11,
+       "tokens": 4703,
+       "wall_s": 30.81,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 15,
+       "tokens": 5509,
+       "wall_s": 43.4,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 14708,
+       "wall_s": 171.71,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 0.957
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "2/2"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "4/4",
+    "grpo": "4/4"
+   }
+  },
+  "scikit-learn__scikit-learn-9288": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 13761,
+       "wall_s": 209.02,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.9
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 22402,
+       "wall_s": 304.56,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "context",
+       "turns": 33,
+       "tokens": 24539,
+       "wall_s": 372.75,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.97
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20803,
+       "wall_s": 439.69,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 14391,
+       "wall_s": 240.54,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 39,
+       "tokens": 16634,
+       "wall_s": 369.33,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 21341,
+       "wall_s": 427.91,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.966
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 22411,
+       "wall_s": 632.59,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "123/123"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-13821": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 15,
+       "tokens": 6904,
+       "wall_s": 48.21,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 17,
+       "tokens": 8700,
+       "wall_s": 70.75,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 13,
+       "tokens": 8475,
+       "wall_s": 97.04,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 17,
+       "tokens": 9779,
+       "wall_s": 95.23,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 7995,
+       "wall_s": 75.59,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 10656,
+       "wall_s": 76.15,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 6218,
+       "wall_s": 46.59,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 17,
+       "tokens": 7336,
+       "wall_s": 164.7,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "14/14"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "3/4",
+    "grpo": "3/4"
+   }
+  },
+  "django__django-15957": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 24,
+       "tokens": 9150,
+       "wall_s": 146.75,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/4",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20936,
+       "wall_s": 534.0,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/4",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 19756,
+       "wall_s": 512.87,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/4",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 14962,
+       "wall_s": 310.06,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/4",
+       "valid_rate": 0.975
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "context",
+       "turns": 39,
+       "tokens": 24682,
+       "wall_s": 352.91,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/4",
+       "valid_rate": 0.974
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 48,
+       "tokens": 16733,
+       "wall_s": 346.36,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/4",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20760,
+       "wall_s": 409.31,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/4",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 17855,
+       "wall_s": 426.79,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/4",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "4/4",
+    "gold_p2p": "89/89"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-14580": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 9164,
+       "wall_s": 113.88,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 22,
+       "tokens": 16320,
+       "wall_s": 302.57,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 14755,
+       "wall_s": 318.87,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.963
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 46,
+       "tokens": 19130,
+       "wall_s": 504.43,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20896,
+       "wall_s": 553.02,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 14699,
+       "wall_s": 410.56,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.962
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 20306,
+       "wall_s": 492.0,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 24072,
+       "wall_s": 487.02,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "49/49"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-16595": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 43,
+       "tokens": 18713,
+       "wall_s": 409.2,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.953
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 23348,
+       "wall_s": 446.64,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 17493,
+       "wall_s": 284.45,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 23771,
+       "wall_s": 596.28,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.977
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 19686,
+       "wall_s": 420.06,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.903
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 23641,
+       "wall_s": 436.61,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.944
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 21372,
+       "wall_s": 573.05,
+       "patch": true,
+       "resolved": false,
+       "f2p": "1/1",
+       "valid_rate": 0.897
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "context",
+       "turns": 39,
+       "tokens": 25538,
+       "wall_s": 657.08,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.949
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "37/37"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-16139": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 7388,
+       "wall_s": 37.16,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 11,
+       "tokens": 5811,
+       "wall_s": 38.04,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 6178,
+       "wall_s": 42.72,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 7772,
+       "wall_s": 46.01,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 8246,
+       "wall_s": 47.55,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 13,
+       "tokens": 6187,
+       "wall_s": 48.45,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 4568,
+       "wall_s": 48.27,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 28,
+       "tokens": 11500,
+       "wall_s": 150.89,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 0.929
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "86/86"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "4/4",
+    "grpo": "4/4"
+   }
+  },
+  "sympy__sympy-21847": {
+   "repo": "sympy/sympy",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 19724,
+       "wall_s": 527.45,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "context",
+       "turns": 40,
+       "tokens": 24711,
+       "wall_s": 542.46,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.95
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 34,
+       "tokens": 23600,
+       "wall_s": 545.6,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.971
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 23331,
+       "wall_s": 652.35,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.935
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "context",
+       "turns": 43,
+       "tokens": 24682,
+       "wall_s": 738.95,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.977
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 23621,
+       "wall_s": 816.4,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.977
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "context",
+       "turns": 39,
+       "tokens": 24711,
+       "wall_s": 853.3,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 23974,
+       "wall_s": 871.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "9/9"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-14311": {
+   "repo": "django/django",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 37,
+       "tokens": 14364,
+       "wall_s": 287.1,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 13533,
+       "wall_s": 371.02,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 24,
+       "tokens": 16623,
+       "wall_s": 366.95,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.958
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18571,
+       "wall_s": 588.98,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 24,
+       "tokens": 11795,
+       "wall_s": 343.91,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 17031,
+       "wall_s": 561.15,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 16275,
+       "wall_s": 590.03,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 20248,
+       "wall_s": 651.98,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "59/59"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-15380": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 13737,
+       "wall_s": 327.7,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 13861,
+       "wall_s": 174.39,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 13628,
+       "wall_s": 186.51,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17865,
+       "wall_s": 347.83,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 11357,
+       "wall_s": 205.25,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 15848,
+       "wall_s": 526.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 34,
+       "tokens": 21977,
+       "wall_s": 513.14,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 22113,
+       "wall_s": 383.16,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "133/133"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "2/4",
+    "grpo": "0/4"
+   }
+  },
+  "sympy__sympy-15017": {
+   "repo": "sympy/sympy",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 21,
+       "tokens": 9061,
+       "wall_s": 117.45,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 37,
+       "tokens": 12675,
+       "wall_s": 148.26,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 7513,
+       "wall_s": 140.68,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16166,
+       "wall_s": 439.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 18914,
+       "wall_s": 309.27,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 33,
+       "tokens": 15825,
+       "wall_s": 196.22,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 16950,
+       "wall_s": 299.4,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15820,
+       "wall_s": 246.46,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "14/14"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "pytest-dev__pytest-10051": {
+   "repo": "pytest-dev/pytest",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 38,
+       "tokens": 18941,
+       "wall_s": 374.11,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.947
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 13942,
+       "wall_s": 297.15,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 28,
+       "tokens": 14656,
+       "wall_s": 273.29,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 14933,
+       "wall_s": 282.38,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 34,
+       "tokens": 12941,
+       "wall_s": 289.01,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15950,
+       "wall_s": 329.11,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 46,
+       "tokens": 16103,
+       "wall_s": 356.57,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 48,
+       "tokens": 18930,
+       "wall_s": 293.83,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "15/15"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "sphinx-doc__sphinx-9461": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 15233,
+       "wall_s": 286.06,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 48,
+       "tokens": 23781,
+       "wall_s": 676.58,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 21857,
+       "wall_s": 687.62,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 24026,
+       "wall_s": 857.3,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 14738,
+       "wall_s": 415.84,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 37,
+       "tokens": 21917,
+       "wall_s": 684.3,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "context",
+       "turns": 37,
+       "tokens": 24526,
+       "wall_s": 722.56,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 21484,
+       "wall_s": 736.73,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "59/59"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "sympy__sympy-18698": {
+   "repo": "sympy/sympy",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 16739,
+       "wall_s": 465.94,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 22198,
+       "wall_s": 619.28,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.963
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "context",
+       "turns": 42,
+       "tokens": 24682,
+       "wall_s": 788.27,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.952
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "context",
+       "turns": 48,
+       "tokens": 24677,
+       "wall_s": 785.03,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 28,
+       "tokens": 19116,
+       "wall_s": 653.4,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.964
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "context",
+       "turns": 30,
+       "tokens": 24682,
+       "wall_s": 664.85,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.967
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 24242,
+       "wall_s": 760.36,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 48,
+       "tokens": 21977,
+       "wall_s": 791.72,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.958
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "147/147"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "sphinx-doc__sphinx-9367": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 18144,
+       "wall_s": 424.19,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "context",
+       "turns": 33,
+       "tokens": 26940,
+       "wall_s": 225.53,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 18895,
+       "wall_s": 256.15,
+       "patch": true,
+       "resolved": false,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 46,
+       "tokens": 15279,
+       "wall_s": 327.15,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17287,
+       "wall_s": 605.2,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 49,
+       "tokens": 18235,
+       "wall_s": 544.05,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 12228,
+       "wall_s": 155.47,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20451,
+       "wall_s": 235.08,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "25/25"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "2/4",
+    "grpo": "1/4"
+   }
+  },
+  "scikit-learn__scikit-learn-12973": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 10957,
+       "wall_s": 200.55,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 43,
+       "tokens": 17049,
+       "wall_s": 324.01,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 13109,
+       "wall_s": 238.17,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17939,
+       "wall_s": 347.02,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 12644,
+       "wall_s": 215.09,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 38,
+       "tokens": 15169,
+       "wall_s": 322.03,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 34,
+       "tokens": 17853,
+       "wall_s": 332.4,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 14285,
+       "wall_s": 185.54,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "32/32"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "1/4"
+   }
+  },
+  "sphinx-doc__sphinx-7454": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 14211,
+       "wall_s": 160.62,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 21,
+       "tokens": 9238,
+       "wall_s": 115.18,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 13969,
+       "wall_s": 151.73,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 11668,
+       "wall_s": 159.4,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 10626,
+       "wall_s": 116.69,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 49,
+       "tokens": 19550,
+       "wall_s": 296.83,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20946,
+       "wall_s": 307.8,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17667,
+       "wall_s": 239.12,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "27/27"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-11239": {
+   "repo": "django/django",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 7850,
+       "wall_s": 65.88,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 8070,
+       "wall_s": 65.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 8687,
+       "wall_s": 130.98,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 34,
+       "tokens": 16345,
+       "wall_s": 210.25,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 33,
+       "tokens": 13449,
+       "wall_s": 183.22,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 12325,
+       "wall_s": 149.34,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 19,
+       "tokens": 10692,
+       "wall_s": 116.62,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19304,
+       "wall_s": 259.72,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "5/5"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-12209": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 33,
+       "tokens": 16618,
+       "wall_s": 336.78,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 17208,
+       "wall_s": 354.31,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 17884,
+       "wall_s": 436.97,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18694,
+       "wall_s": 465.09,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 39,
+       "tokens": 18960,
+       "wall_s": 378.86,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "context",
+       "turns": 40,
+       "tokens": 24682,
+       "wall_s": 470.91,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 0.975
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 14002,
+       "wall_s": 527.05,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 18274,
+       "wall_s": 586.07,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "0/0"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "1/4",
+    "grpo": "2/4"
+   }
+  },
+  "scikit-learn__scikit-learn-25931": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19414,
+       "wall_s": 310.87,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18542,
+       "wall_s": 398.53,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16597,
+       "wall_s": 450.14,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20900,
+       "wall_s": 481.9,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "context",
+       "turns": 49,
+       "tokens": 24525,
+       "wall_s": 539.86,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17660,
+       "wall_s": 642.13,
+       "patch": true,
+       "resolved": false,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20244,
+       "wall_s": 717.13,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19250,
+       "wall_s": 803.37,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "21/21"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-15368": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 21,
+       "tokens": 6121,
+       "wall_s": 128.56,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 5408,
+       "wall_s": 80.24,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 17,
+       "tokens": 5970,
+       "wall_s": 79.52,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 13,
+       "tokens": 6735,
+       "wall_s": 144.64,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 7890,
+       "wall_s": 166.32,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 8078,
+       "wall_s": 159.9,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 17,
+       "tokens": 6422,
+       "wall_s": 234.1,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 9335,
+       "wall_s": 190.5,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 0.96
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "29/29"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "4/4",
+    "grpo": "4/4"
+   }
+  },
+  "sympy__sympy-22080": {
+   "repo": "sympy/sympy",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "context",
+       "turns": 29,
+       "tokens": 24739,
+       "wall_s": 98.25,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "context",
+       "turns": 33,
+       "tokens": 24682,
+       "wall_s": 253.58,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.97
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 22672,
+       "wall_s": 222.67,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "context",
+       "turns": 44,
+       "tokens": 25628,
+       "wall_s": 666.95,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.977
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 43,
+       "tokens": 22833,
+       "wall_s": 516.59,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 34,
+       "tokens": 23435,
+       "wall_s": 615.37,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "context",
+       "turns": 34,
+       "tokens": 24682,
+       "wall_s": 651.65,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.941
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 45,
+       "tokens": 22513,
+       "wall_s": 823.7,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "91/91"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "scikit-learn__scikit-learn-13124": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 19783,
+       "wall_s": 394.29,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "context",
+       "turns": 28,
+       "tokens": 24603,
+       "wall_s": 439.89,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "context",
+       "turns": 36,
+       "tokens": 24682,
+       "wall_s": 690.73,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.972
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "context",
+       "turns": 36,
+       "tokens": 24682,
+       "wall_s": 726.25,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.944
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "context",
+       "turns": 33,
+       "tokens": 25989,
+       "wall_s": 569.01,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "context",
+       "turns": 27,
+       "tokens": 24698,
+       "wall_s": 503.07,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.926
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "context",
+       "turns": 32,
+       "tokens": 24682,
+       "wall_s": 353.56,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.969
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "context",
+       "turns": 37,
+       "tokens": 24682,
+       "wall_s": 500.54,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.892
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "60/60"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-12754": {
+   "repo": "django/django",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 13224,
+       "wall_s": 549.39,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 45,
+       "tokens": 17135,
+       "wall_s": 650.97,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "context",
+       "turns": 45,
+       "tokens": 24682,
+       "wall_s": 774.7,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.933
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 22816,
+       "wall_s": 450.8,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 45,
+       "tokens": 20113,
+       "wall_s": 677.96,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 46,
+       "tokens": 15813,
+       "wall_s": 681.6,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 39,
+       "tokens": 19551,
+       "wall_s": 563.83,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 23827,
+       "wall_s": 393.68,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.98
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "112/112"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-15098": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 11395,
+       "wall_s": 168.61,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.95
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "context",
+       "turns": 45,
+       "tokens": 25522,
+       "wall_s": 619.25,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.978
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 24161,
+       "wall_s": 663.61,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 20952,
+       "wall_s": 705.97,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.976
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 13361,
+       "wall_s": 169.67,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 18094,
+       "wall_s": 388.69,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.975
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22370,
+       "wall_s": 792.48,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 24189,
+       "wall_s": 875.11,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "88/88"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-11999": {
+   "repo": "django/django",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 12366,
+       "wall_s": 153.79,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 11855,
+       "wall_s": 177.61,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 39,
+       "tokens": 10251,
+       "wall_s": 190.06,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 15156,
+       "wall_s": 239.33,
+       "patch": true,
+       "resolved": false,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "context",
+       "turns": 44,
+       "tokens": 24682,
+       "wall_s": 267.71,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.977
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17107,
+       "wall_s": 313.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19081,
+       "wall_s": 498.61,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 48,
+       "tokens": 17788,
+       "wall_s": 535.24,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "30/30"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "2/4"
+   }
+  },
+  "scikit-learn__scikit-learn-14629": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22230,
+       "wall_s": 555.65,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16293,
+       "wall_s": 671.43,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 24682,
+       "wall_s": 830.37,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15511,
+       "wall_s": 231.81,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 21568,
+       "wall_s": 625.47,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17523,
+       "wall_s": 497.04,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22756,
+       "wall_s": 660.99,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.94
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "context",
+       "turns": 43,
+       "tokens": 25052,
+       "wall_s": 351.07,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "26/26"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "sympy__sympy-13551": {
+   "repo": "sympy/sympy",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 18134,
+       "wall_s": 456.82,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.913
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "context",
+       "turns": 44,
+       "tokens": 24682,
+       "wall_s": 792.08,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.909
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "context",
+       "turns": 42,
+       "tokens": 24682,
+       "wall_s": 742.23,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.976
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "context",
+       "turns": 41,
+       "tokens": 24857,
+       "wall_s": 685.62,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.976
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "context",
+       "turns": 34,
+       "tokens": 24628,
+       "wall_s": 842.86,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.971
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 49,
+       "tokens": 24138,
+       "wall_s": 922.73,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "context",
+       "turns": 27,
+       "tokens": 25036,
+       "wall_s": 774.08,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.852
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 24483,
+       "wall_s": 617.73,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "17/17"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-14752": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 8888,
+       "wall_s": 131.95,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 10488,
+       "wall_s": 268.32,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 11898,
+       "wall_s": 275.05,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 21,
+       "tokens": 11027,
+       "wall_s": 147.65,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.952
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 19,
+       "tokens": 8680,
+       "wall_s": 123.67,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 22,
+       "tokens": 11508,
+       "wall_s": 227.81,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 19,
+       "tokens": 12096,
+       "wall_s": 159.05,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 9395,
+       "wall_s": 259.09,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "15/15"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "2/4",
+    "grpo": "4/4"
+   }
+  },
+  "django__django-16938": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 12501,
+       "wall_s": 308.23,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/23",
+       "valid_rate": 0.87
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 12927,
+       "wall_s": 468.15,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/23",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19512,
+       "wall_s": 276.9,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/23",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 24192,
+       "wall_s": 408.63,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/23",
+       "valid_rate": 0.98
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17634,
+       "wall_s": 399.37,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/23",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15280,
+       "wall_s": 289.33,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/23",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 13659,
+       "wall_s": 342.46,
+       "patch": true,
+       "resolved": false,
+       "f2p": "15/23",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 16858,
+       "wall_s": 211.06,
+       "patch": true,
+       "resolved": true,
+       "f2p": "23/23",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "23/23",
+    "gold_p2p": "65/65"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "1/4"
+   }
+  },
+  "pytest-dev__pytest-5787": {
+   "repo": "pytest-dev/pytest",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 13,
+       "tokens": 6924,
+       "wall_s": 30.99,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 20087,
+       "wall_s": 174.51,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 22773,
+       "wall_s": 246.92,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 39,
+       "tokens": 19498,
+       "wall_s": 313.27,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 33,
+       "tokens": 22774,
+       "wall_s": 246.64,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 19070,
+       "wall_s": 301.27,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 34,
+       "tokens": 20731,
+       "wall_s": 325.68,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.971
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 20059,
+       "wall_s": 396.81,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "123/123"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "sympy__sympy-16886": {
+   "repo": "sympy/sympy",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 11986,
+       "wall_s": 37.37,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 4186,
+       "wall_s": 59.06,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 17,
+       "tokens": 11145,
+       "wall_s": 96.02,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 0.941
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 11153,
+       "wall_s": 138.57,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 19,
+       "tokens": 9471,
+       "wall_s": 42.78,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 5228,
+       "wall_s": 51.51,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 10771,
+       "wall_s": 97.38,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 28,
+       "tokens": 7759,
+       "wall_s": 118.61,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "42/42"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "4/4",
+    "grpo": "3/4"
+   }
+  },
+  "matplotlib__matplotlib-25960": {
+   "repo": "matplotlib/matplotlib",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "context",
+       "turns": 40,
+       "tokens": 24682,
+       "wall_s": 153.33,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.975
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 16244,
+       "wall_s": 213.44,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 43,
+       "tokens": 19184,
+       "wall_s": 237.37,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.977
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17436,
+       "wall_s": 260.06,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17963,
+       "wall_s": 185.05,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 46,
+       "tokens": 16195,
+       "wall_s": 203.84,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 23390,
+       "wall_s": 225.18,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18381,
+       "wall_s": 241.99,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "137/137"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "sphinx-doc__sphinx-9320": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 22,
+       "tokens": 10988,
+       "wall_s": 136.54,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 12973,
+       "wall_s": 208.6,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20225,
+       "wall_s": 474.66,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19742,
+       "wall_s": 264.13,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 0.98
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 45,
+       "tokens": 15559,
+       "wall_s": 282.32,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18726,
+       "wall_s": 310.28,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 38,
+       "tokens": 17727,
+       "wall_s": 467.34,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16197,
+       "wall_s": 319.32,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "9/9"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "1/4"
+   }
+  },
+  "django__django-14034": {
+   "repo": "django/django",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 18236,
+       "wall_s": 361.75,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22847,
+       "wall_s": 477.7,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 43,
+       "tokens": 17737,
+       "wall_s": 293.41,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.977
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 21101,
+       "wall_s": 435.28,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.96
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 17850,
+       "wall_s": 407.85,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 19588,
+       "wall_s": 511.89,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19300,
+       "wall_s": 288.11,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "context",
+       "turns": 47,
+       "tokens": 24682,
+       "wall_s": 538.55,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.957
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "12/12"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-15741": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 8140,
+       "wall_s": 138.45,
+       "patch": true,
+       "resolved": true,
+       "f2p": "2/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 9119,
+       "wall_s": 173.24,
+       "patch": true,
+       "resolved": true,
+       "f2p": "2/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 21,
+       "tokens": 9268,
+       "wall_s": 171.12,
+       "patch": true,
+       "resolved": true,
+       "f2p": "2/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 11982,
+       "wall_s": 273.26,
+       "patch": true,
+       "resolved": true,
+       "f2p": "2/2",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 9044,
+       "wall_s": 156.9,
+       "patch": true,
+       "resolved": true,
+       "f2p": "2/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 15,
+       "tokens": 7488,
+       "wall_s": 126.98,
+       "patch": true,
+       "resolved": true,
+       "f2p": "2/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 7468,
+       "wall_s": 87.66,
+       "patch": true,
+       "resolved": true,
+       "f2p": "2/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 10013,
+       "wall_s": 113.78,
+       "patch": true,
+       "resolved": true,
+       "f2p": "2/2",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "104/104"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "4/4",
+    "grpo": "4/4"
+   }
+  },
+  "sphinx-doc__sphinx-7748": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 28,
+       "tokens": 14524,
+       "wall_s": 191.9,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.964
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 14357,
+       "wall_s": 222.21,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 17869,
+       "wall_s": 304.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 45,
+       "tokens": 23883,
+       "wall_s": 361.94,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 28,
+       "tokens": 13976,
+       "wall_s": 225.6,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 16418,
+       "wall_s": 263.37,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 0.966
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 19960,
+       "wall_s": 478.63,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 24160,
+       "wall_s": 643.54,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/2",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "12/12"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "pallets__flask-5014": {
+   "repo": "pallets/flask",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 8655,
+       "wall_s": 72.06,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 34,
+       "tokens": 12283,
+       "wall_s": 98.37,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 34,
+       "tokens": 11997,
+       "wall_s": 147.55,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20994,
+       "wall_s": 296.96,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 33,
+       "tokens": 16129,
+       "wall_s": 112.18,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 17968,
+       "wall_s": 119.31,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 12139,
+       "wall_s": 137.31,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17216,
+       "wall_s": 168.1,
+       "patch": true,
+       "resolved": false,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "59/59"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "2/4",
+    "grpo": "3/4"
+   }
+  },
+  "matplotlib__matplotlib-26291": {
+   "repo": "matplotlib/matplotlib",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 9250,
+       "wall_s": 142.62,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 37,
+       "tokens": 13588,
+       "wall_s": 243.29,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 14623,
+       "wall_s": 250.02,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 45,
+       "tokens": 24108,
+       "wall_s": 569.27,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 10223,
+       "wall_s": 240.39,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 12217,
+       "wall_s": 205.61,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17068,
+       "wall_s": 291.88,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 11983,
+       "wall_s": 356.73,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.969
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "49/49"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "psf__requests-1142": {
+   "repo": "psf/requests",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 16,
+       "tokens": 12909,
+       "wall_s": 72.39,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 13,
+       "tokens": 11827,
+       "wall_s": 139.5,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 19298,
+       "wall_s": 398.56,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 21,
+       "tokens": 19238,
+       "wall_s": 407.55,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 15856,
+       "wall_s": 193.03,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 22,
+       "tokens": 16756,
+       "wall_s": 133.73,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 28,
+       "tokens": 18822,
+       "wall_s": 189.48,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 15468,
+       "wall_s": 245.13,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "5/5"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "1/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-11951": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 19,
+       "tokens": 5573,
+       "wall_s": 84.08,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 9480,
+       "wall_s": 129.63,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 19,
+       "tokens": 5739,
+       "wall_s": 151.01,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 37,
+       "tokens": 11697,
+       "wall_s": 364.7,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 6844,
+       "wall_s": 94.36,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 8345,
+       "wall_s": 96.72,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 6214,
+       "wall_s": 155.48,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 10164,
+       "wall_s": 344.67,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "21/21"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "1/4",
+    "grpo": "2/4"
+   }
+  },
+  "sphinx-doc__sphinx-7910": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 13041,
+       "wall_s": 192.9,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 12003,
+       "wall_s": 221.68,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 33,
+       "tokens": 21003,
+       "wall_s": 417.86,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 18313,
+       "wall_s": 381.71,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19075,
+       "wall_s": 314.49,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 11337,
+       "wall_s": 296.81,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 17631,
+       "wall_s": 460.56,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17346,
+       "wall_s": 482.5,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "16/16"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-11555": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 11113,
+       "wall_s": 143.93,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 11505,
+       "wall_s": 192.28,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16117,
+       "wall_s": 211.38,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15745,
+       "wall_s": 248.27,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 14951,
+       "wall_s": 209.79,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15246,
+       "wall_s": 285.7,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 15731,
+       "wall_s": 298.97,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17680,
+       "wall_s": 304.35,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "26/26"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "astropy__astropy-14365": {
+   "repo": "astropy/astropy",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 11036,
+       "wall_s": 80.59,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 13253,
+       "wall_s": 160.64,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 14838,
+       "wall_s": 197.01,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17127,
+       "wall_s": 292.49,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 13742,
+       "wall_s": 142.08,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 13498,
+       "wall_s": 196.21,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15143,
+       "wall_s": 217.79,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18727,
+       "wall_s": 382.0,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "8/8"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-12858": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 13,
+       "tokens": 6547,
+       "wall_s": 143.3,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 13080,
+       "wall_s": 181.6,
+       "patch": true,
+       "resolved": false,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22494,
+       "wall_s": 423.29,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 18130,
+       "wall_s": 359.91,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 12034,
+       "wall_s": 262.27,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 13793,
+       "wall_s": 246.11,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 12858,
+       "wall_s": 351.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 12899,
+       "wall_s": 144.46,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "73/73"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-13449": {
+   "repo": "django/django",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 24,
+       "tokens": 11293,
+       "wall_s": 187.44,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22411,
+       "wall_s": 518.95,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 23001,
+       "wall_s": 500.78,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18593,
+       "wall_s": 580.38,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "context",
+       "turns": 38,
+       "tokens": 24682,
+       "wall_s": 399.64,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 0.947
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 24682,
+       "wall_s": 554.3,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 22670,
+       "wall_s": 555.37,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 23839,
+       "wall_s": 579.09,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "46/46"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "2/4",
+    "grpo": "0/4"
+   }
+  },
+  "matplotlib__matplotlib-24149": {
+   "repo": "matplotlib/matplotlib",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 21501,
+       "wall_s": 365.58,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 22,
+       "tokens": 7464,
+       "wall_s": 199.05,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16045,
+       "wall_s": 143.26,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 48,
+       "tokens": 14664,
+       "wall_s": 359.91,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.979
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18822,
+       "wall_s": 463.68,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16853,
+       "wall_s": 457.07,
+       "patch": true,
+       "resolved": false,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20915,
+       "wall_s": 408.95,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 49,
+       "tokens": 19330,
+       "wall_s": 298.1,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "767/767"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "1/4",
+    "grpo": "2/4"
+   }
+  },
+  "django__django-14559": {
+   "repo": "django/django",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 10760,
+       "wall_s": 265.1,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 11107,
+       "wall_s": 173.05,
+       "patch": true,
+       "resolved": false,
+       "f2p": "2/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 24,
+       "tokens": 9980,
+       "wall_s": 354.09,
+       "patch": true,
+       "resolved": true,
+       "f2p": "3/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 24,
+       "tokens": 12990,
+       "wall_s": 160.18,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "grpo": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 17,
+       "tokens": 7421,
+       "wall_s": 115.84,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 19606,
+       "wall_s": 367.77,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 22,
+       "tokens": 10519,
+       "wall_s": 124.18,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 11750,
+       "wall_s": 259.31,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "23/23"
+   },
+   "mixed": true,
+   "image_deleted": true,
+   "final": {
+    "base": "1/4",
+    "grpo": "0/4"
+   }
+  },
+  "django__django-13568": {
+   "repo": "django/django",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 17,
+       "tokens": 7624,
+       "wall_s": 99.57,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 15058,
+       "wall_s": 178.82,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.957
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 15900,
+       "wall_s": 207.06,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.967
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 39,
+       "tokens": 18382,
+       "wall_s": 233.46,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.974
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 10735,
+       "wall_s": 120.13,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.957
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 11281,
+       "wall_s": 132.79,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 17444,
+       "wall_s": 175.82,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.976
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 16730,
+       "wall_s": 195.74,
+       "patch": true,
+       "resolved": false,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "13/13"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  },
+  "pylint-dev__pylint-4970": {
+   "repo": "pylint-dev/pylint",
+   "arms": {
+    "grpo": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 9629,
+       "wall_s": 58.38,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 24,
+       "tokens": 12325,
+       "wall_s": 99.62,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18211,
+       "wall_s": 154.11,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 23317,
+       "wall_s": 199.3,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    },
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 11412,
+       "wall_s": 63.39,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 10842,
+       "wall_s": 80.35,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 12547,
+       "wall_s": 88.12,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 11849,
+       "wall_s": 88.41,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "17/17"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/4",
+    "grpo": "0/4"
+   }
+  }
+ }
+}

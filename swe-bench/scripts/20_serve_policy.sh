@@ -13,6 +13,8 @@ export PATH="$ARL/.venv/bin:$PATH"  # vLLM's FP8-on-Ampere kernels JIT-compile a
 # SARL_SERVE_EXTRA: model-specific flags, e.g. Gemma 4 E4B FP8:
 #   --language-model-only --compilation-config '{"cudagraph_mode":"PIECEWISE"}'
 read -r -a EXTRA_ARGS <<< "${SARL_SERVE_EXTRA:-}"
+LORA_ARGS=(--enable-lora --max-lora-rank 16 --max-loras 2)
+[ "${SARL_NO_LORA:-0}" = 1 ] && LORA_ARGS=()  # probes that never load an adapter
 mkdir -p "$SWE/runs"
 # SARL_MAX_NUM_SEQS=16: capture only small CUDA graphs. vLLM 0.25.1's V2 runner does not count its graph pool (1.2 GiB at
 # the default 256) in --gpu-memory-utilization, which on a shared GPU leaves no room for the trainer's CUDA context.
@@ -27,7 +29,7 @@ CUDA_VISIBLE_DEVICES="${SARL_SERVE_GPU:-0}" exec "$ARL/.venv/bin/vllm" serve "$S
     --max-model-len "${SARL_MAX_MODEL_LEN:-32768}" \
     --max-num-seqs "${SARL_MAX_NUM_SEQS:-256}" \
     --gpu-memory-utilization "${SARL_SERVE_MEM:-0.85}" \
-    --enable-lora --max-lora-rank 16 --max-loras 2 \
+    "${LORA_ARGS[@]}" \
     --generation-config vllm \
     --enable-prefix-caching \
     "${SLEEP_ARGS[@]}" "${EXTRA_ARGS[@]}" \

@@ -195,7 +195,69 @@ So GRPO v2 did not measurably raise the success rate even on the tasks it traine
 - Limits: as in training.
 - Output: `experiments/eval-verified-v1.json`. Started 01:39.
 
-EVAL_PENDING
+**Result:** 01:39–05:40, plus a resume for matplotlib-25960, whose image pull failed at SIF creation.
+
+| Arm | Resolved | Rate |
+|---|---|---|
+| base mini-coder-1.7b | 38/200 | 19.0 % |
+| GRPO v2 (step 30) | 41/200 | 20.5 % |
+
+- Per-task mean difference: **+1.5 pp**, 95 % bootstrap CI [−3.5, +6.5], sign-flip p = 0.71 (15 tasks differ).
+- Paired by seed: GRPO alone solved 16 episodes, base alone 13, both 25.
+- 20 of 50 tasks were solved by either arm.
+
+**No detectable effect on held-out Verified.** This matches the flat curve on the training tasks. Base mini-coder at 19 % agrees with its card (18.6 %, bash-only), which confirms the harness reproduces the model.
+
+---
+
+## 2026-09-25 — Gemma 4 E4B: exploration and serving probe
+
+**User decisions.**
+- After v2: "the model size is way too small and we have run far too less steps"; explore a Gemma ~4B policy.
+- A read-only exploration workflow (13 agents: research, synthesis, skeptic verification) recommended `google/gemma-4-E4B-it`, served from the FP8 copy, with a probe first.
+- The user chose to probe E4B only, to decide after the probe, and no long mini-coder run.
+- Later the user asked to put images and sandboxes on node04, then to focus on Gemma only; a started mini-coder-4b probe on node04 was stopped.
+
+**Harness changes** (commits `a9f3ca6` and later):
+- `ChatFormat` derives the turn terminator (`<turn|>` 106).
+- `stop_ids()` gives `[106, 1, 50]`.
+- `sanitize` covers every special token.
+- The policies require stop ids.
+- The answer is the text after the last `<channel|>` (below).
+
+**Serving** (`scripts/22_serve_gemma4.sh`; FP8 checkpoint, W8A16 on sm_86):
+- `--language-model-only` and `--max-num-batched-tokens 4096`.
+- **`--enforce-eager`**: vLLM 0.25.1's torch.compile (Inductor) tries to allocate a 5.25 GiB copy of the per-layer embedding table and runs out of memory on the A4000, with or without LoRA.
+- LoRA serving starts.
+- KV cache: 109k tokens on GPU0 (0.87) and 86k on GPU1 (0.84).
+- Decoding is about 26 tok/s per sequence at 6 concurrent in eager mode.
+
+**Layout:**
+- node04 holds the images (`/var/tmp/swe/sif-dev`; 11 GB copied from node08 at 114 MB/s) and runs the probe harness, sandboxes (`ulimit -v` 4 GB, 5 GB watchdog) and grading (node-local grader venv).
+- node08 only serves.
+
+**Probe 1** (`experiments/probe-gemma-pool.json`; 11-task pool × 8, 50 turns / 24k, T = 1.0):
+
+| Metric | Result | Pre-registered "Go" bar |
+|---|---|---|
+| Resolved | 6/88 (6.8 %) | 5–30 % ✓ (just) |
+| Mixed tasks | 4: sqlfluff-884 3/8, astroid-1614 1/8, marshmallow-1164 1/8, pydicom-1192 1/8 | ≥ 4 ✓ (just) |
+| Valid actions | **70 %** | ≥ 90 % ✗ |
+
+- 72 of 88 episodes submitted, after 8.2 turns on average; 15 ended on 3 format errors.
+- For comparison, mini-coder-1.7b scored 31 % on its own probe pool.
+
+**Why the actions were invalid.** Replaying 7 episodes (`gemma_format_diag`) showed the pattern. Gemma 4 leaks its thinking channel even with thinking off, writing `reasoning … ```bash X``` <channel|>```bash X````. The reasoning repeats the command, so the reply holds two bash blocks and mini-swe-agent's exactly-one rule rejects it. 14 of 20 invalid replies contained `<channel|>`; **13 of those 14 parse as valid after the last `<channel|>`**.
+
+**Fix:** `ChatFormat.answer_text` parses the answer only.
+- Gemma's own template strips thoughts from history the same way.
+- Qwen tokenizers have no special `<channel|>`, so Qwen parsing is unchanged.
+- The whole reply stays in the token transcript and is trained on.
+- Turns record `leaked_thought`.
+
+Probe 2 (the same 88 episodes with the fix, 8 per server) started at 07:04: `experiments/probe-gemma-pool-v2.json`.
+
+GEMMA_PROBE2_PENDING
 
 ---
 
