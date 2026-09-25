@@ -316,7 +316,10 @@ def _grade(ro: Rollout, cfg: dict) -> Rollout:
     return ro
 
 
-def run(config_path: str | Path, *, steps: int | None = None, run_name: str | None = None) -> Path:
+def run(config_path: str | Path, *, steps: int | None = None, run_name: str | None = None, resume: bool = False) -> Path:
+    """resume=True continues an existing run dir after its last recorded step: loads that step's adapter (checked
+    against the recorded hash), replays the task draws, serves the adapter, appends to the records. The AdamW moments
+    were not saved, so they restart from zero."""
     from transformers import AutoTokenizer
 
     cfg = load_config(config_path)
@@ -396,7 +399,22 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     base_lp = np.array(served_logprobs(cfg["serve_url"], cfg["served_model"], probe_ids))
     G, n_or = cfg["group_size"], cfg["oracle_per_group"]
     adapter_root = refuse_on_home(SCRATCH / "adapters" / run_dir.name, "LoRA adapters")
-    for step in range(1, cfg["steps"] + 1):
+    start = 1
+    if resume and (run_dir / "metrics.jsonl").exists():
+        recs = [json.loads(line) for line in open(run_dir / "metrics.jsonl")]
+        last = max(r["step"] for r in recs) if recs else 0
+        if last:
+            want = next((r.get("sync") or {}).get("adapter_hash") for r in recs if r["step"] == last)
+            got = trainer.load_adapter(adapter_root / f"step-{last}")
+            if want and got != want:
+                raise RuntimeError(f"adapter step-{last} hash {got} != recorded {want}")
+            for _ in range(last):  # the only per-step use of rng: the task draw
+                rng.sample(pool, min(cfg["tasks_per_step"], len(pool)))
+            sync.load(f"{cfg['served_model']}-{run_tag}-s{last}", adapter_root / f"step-{last}")
+            log(f"resumed after step {last}: adapter {got} (matches the record), task draws replayed, "
+                f"serving {sync.current} on {len(router.urls)} server(s); AdamW moments restart from zero")
+            start = last + 1
+    for step in range(start, cfg["steps"] + 1):
         t0 = time.time()
         tasks = rng.sample(pool, min(cfg["tasks_per_step"], len(pool)))
         ros = [Rollout(t, "oracle" if i >= G - n_or else "policy", i) for t in tasks for i in range(G)]

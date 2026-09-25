@@ -29,7 +29,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from sarl.env.apptainer import APPTAINER, SANDBOX_VMEM_KB, apptainer_env, refuse_on_headnode
+from sarl.env.apptainer import APPTAINER, SANDBOX_FSIZE_KB, SANDBOX_VMEM_KB, apptainer_env, refuse_on_headnode
 from sarl.paths import GRADER_VENV, REPO, SCRATCH, refuse_on_home
 
 GRADER_MAIN = REPO / "src" / "sarl" / "reward" / "grader_main.py"
@@ -38,8 +38,10 @@ TIMEOUT_MARK = ">>>>> Tests Timed Out"
 MAX_LOG_BYTES = 2_000_000
 
 APPLY_CHAIN = r"""
+echo 1000 > /proc/self/oom_score_adj 2>/dev/null
 cd /testbed
 ulimit -v %d 2>/dev/null
+ulimit -f %d 2>/dev/null
 ok=0
 for c in "git apply --verbose" "git apply --verbose --reject" "patch --batch --fuzz=5 -p1 -i"; do
     if $c /sarl_in/patch.diff; then ok=1; echo ">>>>> Applied Patch ($c)"; break; fi
@@ -47,7 +49,7 @@ for c in "git apply --verbose" "git apply --verbose --reject" "patch --batch --f
 done
 if [ "$ok" != 1 ]; then echo "%s"; exit 1; fi
 bash /sarl_in/eval.sh
-""" % (SANDBOX_VMEM_KB, APPLY_FAIL)
+""" % (SANDBOX_VMEM_KB, 4 * SANDBOX_FSIZE_KB, APPLY_FAIL)
 
 _HARNESS_FILE = re.compile(r"(^|/)(conftest\.py|pytest\.ini|tox\.ini|setup\.cfg|noxfile\.py)$|(^|/)tests?/|(^|/)test_[^/]*\.py$|_test\.py$")
 _DIFF_SPLIT = re.compile(r"(?m)^(?=diff --git )")

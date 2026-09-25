@@ -84,7 +84,7 @@ def cmd_episode(a) -> int:
 def cmd_train(a) -> int:
     from sarl.train import run
 
-    run(a.config, steps=a.steps, run_name=a.run_name)
+    run(a.config, steps=a.steps, run_name=a.run_name, resume=a.resume)
     return 0
 
 
@@ -111,7 +111,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--model", default="policy"); s.add_argument("--url", default="http://localhost:8001"); s.add_argument("--max-turns", type=int, default=20, dest="max_turns")
     s.add_argument("--grade", action="store_true"); s.add_argument("--out"); s.set_defaults(fn=cmd_episode)
     s = sp.add_parser("train"); s.add_argument("config", nargs="?", default="configs/basic_run.yaml"); s.add_argument("--steps", type=int)
-    s.add_argument("--run-name", dest="run_name"); s.set_defaults(fn=cmd_train)
+    s.add_argument("--run-name", dest="run_name")
+    s.add_argument("--resume", action="store_true", help="continue --run-name after its last recorded step")
+    s.set_defaults(fn=cmd_train)
     s = sp.add_parser("summarize"); s.add_argument("run_dir"); s.set_defaults(fn=cmd_summarize)
     return p
 

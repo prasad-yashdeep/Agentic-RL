@@ -162,3 +162,16 @@ def test_server_fault_classification():
     assert server_fault(httpx.ConnectError("down", request=req))
     assert server_fault(status(500)) and server_fault(status(404))
     assert not server_fault(status(400)) and not server_fault(ValueError("x"))
+
+
+def test_adapter_save_load_roundtrip(tiny_qwen, tmp_path):
+    """resume: a saved adapter loads back bit-exactly (same hash) into a fresh trainer."""
+    import copy
+
+    a = LoRATrainer("tiny", model=copy.deepcopy(tiny_qwen), cfg=TrainConfig(lr=5e-2, lora_r=4, lora_alpha=8), device="cpu")
+    b_ = _batch(2, seed=7)
+    a.step([(i, m, s) for (i, m), s in zip(b_, [1.0, -1.0])])
+    h = a.save_adapter(tmp_path / "step-1")
+    fresh = LoRATrainer("tiny", model=copy.deepcopy(tiny_qwen), cfg=TrainConfig(lora_r=4, lora_alpha=8), device="cpu")
+    assert fresh.adapter_hash() != h
+    assert fresh.load_adapter(tmp_path / "step-1") == h

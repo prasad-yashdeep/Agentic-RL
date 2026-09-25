@@ -207,6 +207,18 @@ class LoRATrainer:
                 h.update(p.detach().float().cpu().numpy().tobytes())
         return h.hexdigest()[:12]
 
+    def load_adapter(self, path: str | Path) -> str:
+        """Load LoRA weights saved by save_adapter() (to resume a run); returns the adapter hash."""
+        from peft import set_peft_model_state_dict
+        from safetensors.torch import load_file
+
+        sd = load_file(str(Path(path) / "adapter_model.safetensors"))
+        res = set_peft_model_state_dict(self.model, sd)
+        missing = [k for k in getattr(res, "missing_keys", []) if "lora_" in k]
+        if missing:
+            raise RuntimeError(f"adapter at {path} lacks {len(missing)} LoRA tensors, e.g. {missing[:2]}")
+        return self.adapter_hash()
+
     def save_adapter(self, path: str | Path) -> str:
         path = Path(path)
         path.mkdir(parents=True, exist_ok=True)

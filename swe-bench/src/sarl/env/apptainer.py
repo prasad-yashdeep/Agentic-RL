@@ -33,6 +33,13 @@ ACTIVATE = "source /opt/miniconda3/bin/activate testbed"
 # Address-space cap per sandbox process (ulimit -v). A policy patch once made an astroid test suite grow to 61.7 GB RSS
 # during grading and nearly OOM'd node08 (2026-09-24); with the cap the runaway test fails inside its own sandbox.
 SANDBOX_VMEM_KB = int(float(os.environ.get("SARL_SANDBOX_VMEM_GB", "12")) * 1024 * 1024)
+# File-size cap per sandbox command (ulimit -f, KiB). The writable overlay is RAM-backed tmpfs and apptainer's
+# "sessiondir max size" is not enforced unprivileged: one rollout wrote ~32 GB (a command printing without end into the
+# captured output file) and the OOM killer took the trainer (grpo-minicoder-v2, step 13, 2026-09-24).
+SANDBOX_FSIZE_KB = int(float(os.environ.get("SARL_SANDBOX_FSIZE_MB", "512")) * 1024)
+# Sandbox processes volunteer as the OOM killer's first victims (raising one's own oom_score_adj needs no privilege),
+# so memory pressure kills a rollout's command, not the trainer or a vLLM server.
+OOM_FIRST = "echo 1000 > /proc/self/oom_score_adj 2>/dev/null"
 
 
 def apptainer_env(offline: bool = False) -> dict[str, str]:
@@ -187,8 +194,8 @@ class ApptainerEnv:
             raise RuntimeError("sandbox not started")
         self.calls.append(command)
         t = float(timeout or self.command_timeout)
-        script = (f"{self.activate} >/dev/null 2>&1; cd {shlex.quote(self.workdir)}; "
-                  f"ulimit -v {SANDBOX_VMEM_KB} 2>/dev/null; "
+        script = (f"{OOM_FIRST}; {self.activate} >/dev/null 2>&1; cd {shlex.quote(self.workdir)}; "
+                  f"ulimit -v {SANDBOX_VMEM_KB} 2>/dev/null; ulimit -f {SANDBOX_FSIZE_KB} 2>/dev/null; "
                   f"timeout -k 5 {int(t)} bash -c {shlex.quote(command)} > /tmp/.sarl_out 2>&1 < /dev/null; "
                   "rc=$?; cat /tmp/.sarl_out; exit $rc")
         t0 = time.time()
