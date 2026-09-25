@@ -5,3 +5,6 @@ reference/_upstream/
 .cache/
 # run-record copies under experiments/runs/ are versioned, including their logs (the root .gitignore drops *.log)
 !experiments/runs/**/*.log
+
+# rolling_probe.py run locks
+experiments/*.json.lock
