@@ -100,6 +100,7 @@ def main(argv=None) -> int:
     p.add_argument("--temperature", type=float, default=1.0)
     p.add_argument("--min-free-gb", type=float, default=6.0, help="free space to leave on the SIF disk")
     p.add_argument("--pull-reserve-gb", type=float, default=5.0, help="space held back per pull in flight (layers + rootfs + SIF)")
+    p.add_argument("--gate-workers", type=int, default=8, help="concurrent gate gradings (keep low beside a training run)")
     p.add_argument("--keep-mixed", action="store_true")
     p.add_argument("--keep-all", action="store_true", help="never delete images (debugging)")
     p.add_argument("--allow-meta-change", action="store_true")
@@ -321,7 +322,7 @@ def main(argv=None) -> int:
     batches = [todo[i:i + a.batch] for i in range(0, len(todo), a.batch)]
     pull_ex = ThreadPoolExecutor(2)
     run_ex = ThreadPoolExecutor(len(a.servers) * a.per_server + 8)  # extra threads grade while new episodes start
-    grade_ex = ThreadPoolExecutor(8)
+    grade_ex = ThreadPoolExecutor(a.gate_workers)
     pending = {t.instance_id: pull_ex.submit(pull, t) for t in batches[0]} if batches else {}
     rc = 0
     stopped_at_target = False

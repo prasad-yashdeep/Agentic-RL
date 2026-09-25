@@ -1,0 +1,84 @@
+{
+ "meta": {
+  "tasks_file": "/var/tmp/swe/eval_v1_replacements.txt",
+  "split": "verified",
+  "model": "ricdomolm/mini-coder-1.7b",
+  "revision": "5b7fbc90b6c4684c546de7f811865cff4414a96c",
+  "arms": {
+   "base": "policy"
+  },
+  "episodes": 0,
+  "protocol": "mswea",
+  "limits": {
+   "max_turns": 50,
+   "max_context_tokens": 24576,
+   "wall_clock_s": 1800,
+   "command_timeout_s": 60
+  },
+  "sampling": {
+   "temperature": 1.0,
+   "top_p": 1.0,
+   "top_k": -1
+  },
+  "seeds": "per turn: 1000 + episode index, then + 1000003 x turn (paired across arms)",
+  "server_weights": null
+ },
+ "tasks": {
+  "django__django-13568": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "13/13"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pylint-dev__pylint-4970": {
+   "repo": "pylint-dev/pylint",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "17/17"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-12965": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "image_deleted": true,
+   "unscreened": true
+  },
+  "pydata__xarray-4356": {
+   "repo": "pydata/xarray",
+   "arms": {},
+   "pulled": true,
+   "image_deleted": true,
+   "unscreened": true
+  },
+  "scikit-learn__scikit-learn-13439": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {}
+  },
+  "sphinx-doc__sphinx-9658": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {}
+  }
+ }
+}

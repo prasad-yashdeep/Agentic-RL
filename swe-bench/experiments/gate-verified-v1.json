@@ -1,0 +1,878 @@
+{
+ "meta": {
+  "tasks_file": "configs/eval_verified_v1.txt",
+  "split": "verified",
+  "model": "ricdomolm/mini-coder-1.7b",
+  "revision": "5b7fbc90b6c4684c546de7f811865cff4414a96c",
+  "arms": {
+   "base": "policy"
+  },
+  "episodes": 0,
+  "protocol": "mswea",
+  "limits": {
+   "max_turns": 50,
+   "max_context_tokens": 24576,
+   "wall_clock_s": 1800,
+   "command_timeout_s": 60
+  },
+  "sampling": {
+   "temperature": 1.0,
+   "top_p": 1.0,
+   "top_k": -1
+  },
+  "seeds": "per turn: 1000 + episode index, then + 1000003 x turn (paired across arms)",
+  "server_weights": null
+ },
+ "tasks": {
+  "scikit-learn__scikit-learn-14141": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "2/2"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "scikit-learn__scikit-learn-9288": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "123/123"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-13821": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "14/14"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-15957": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "4/4",
+    "gold_p2p": "89/89"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-14580": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "49/49"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-16595": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "37/37"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-16139": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "86/86"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sympy__sympy-21847": {
+   "repo": "sympy/sympy",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "9/9"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-14311": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "59/59"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "psf__requests-1921": {
+   "repo": "psf/requests",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 0.0,
+    "empty": 0.0,
+    "gold_f2p": "1/6",
+    "gold_p2p": "69/107"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-15380": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "133/133"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sympy__sympy-15017": {
+   "repo": "sympy/sympy",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "14/14"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pytest-dev__pytest-10051": {
+   "repo": "pytest-dev/pytest",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "15/15"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sphinx-doc__sphinx-9461": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "59/59"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sympy__sympy-18698": {
+   "repo": "sympy/sympy",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "147/147"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sphinx-doc__sphinx-9367": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "25/25"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "scikit-learn__scikit-learn-12973": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "32/32"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-7530": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 1.0,
+    "empty": 1.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "59/59"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sphinx-doc__sphinx-7454": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "27/27"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-11239": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "5/5"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-12209": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "0/0"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "scikit-learn__scikit-learn-25931": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "21/21"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-15368": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "29/29"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sympy__sympy-22080": {
+   "repo": "sympy/sympy",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "91/91"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "scikit-learn__scikit-learn-13124": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "60/60"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-12754": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "112/112"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-15098": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "88/88"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-11999": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "30/30"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "scikit-learn__scikit-learn-14629": {
+   "repo": "scikit-learn/scikit-learn",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "26/26"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sympy__sympy-13551": {
+   "repo": "sympy/sympy",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "17/17"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-14752": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "15/15"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-16938": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "23/23",
+    "gold_p2p": "65/65"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pytest-dev__pytest-5787": {
+   "repo": "pytest-dev/pytest",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "123/123"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sympy__sympy-16886": {
+   "repo": "sympy/sympy",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "42/42"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "matplotlib__matplotlib-25960": {
+   "repo": "matplotlib/matplotlib",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "137/137"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sphinx-doc__sphinx-9320": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "9/9"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-14034": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "12/12"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-15741": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "104/104"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sphinx-doc__sphinx-7748": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "12/12"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pallets__flask-5014": {
+   "repo": "pallets/flask",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "59/59"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "matplotlib__matplotlib-26291": {
+   "repo": "matplotlib/matplotlib",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "49/49"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "psf__requests-1142": {
+   "repo": "psf/requests",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "5/5"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-11951": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "21/21"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sphinx-doc__sphinx-7910": {
+   "repo": "sphinx-doc/sphinx",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "16/16"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-11555": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "26/26"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "astropy__astropy-14365": {
+   "repo": "astropy/astropy",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "8/8"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-12858": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "73/73"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-13449": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "46/46"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "matplotlib__matplotlib-24149": {
+   "repo": "matplotlib/matplotlib",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "767/767"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "django__django-14559": {
+   "repo": "django/django",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "23/23"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  }
+ }
+}
