@@ -16,6 +16,7 @@ from __future__ import annotations
 import atexit
 import gzip
 import json
+import re
 import random
 import threading
 import time
@@ -57,6 +58,17 @@ class LoraSync:
         self.urls = [u.rstrip("/") for u in ([base_urls] if isinstance(base_urls, str) else base_urls)]
         self.base_url = self.urls[0]
         self.current, self.base = base_model, base_model
+        self.paths: dict[str, Path] = {}
+
+    @staticmethod
+    def remote_host(url: str) -> str | None:
+        """The server's host when it is another machine (its vLLM reads adapter files from its own disk)."""
+        import socket
+        from urllib.parse import urlparse
+
+        h = urlparse(url).hostname or "localhost"
+        me = {"localhost", "127.0.0.1", socket.gethostname(), socket.gethostname().split(".")[0]}
+        return None if h in me or h.split(".")[0] in me else h
 
     def unload_leftovers(self) -> list[str]:
         """Adapters left loaded by earlier runs (vLLM lists them in /v1/models with a parent); max_loras is small."""
@@ -71,16 +83,27 @@ class LoraSync:
         return gone
 
     def load(self, name: str, path: Path) -> None:
+        import subprocess
+
         import httpx
 
+        path = Path(path)
         for u in self.urls:
+            host = self.remote_host(u)
+            if host:  # a server on another node: give it the adapter under the same path on its own disk (~140 MB, ~2 s)
+                subprocess.run(["ssh", "-o", "BatchMode=yes", host, f"mkdir -p {path.parent}"], check=True, timeout=60)
+                subprocess.run(["scp", "-q", "-r", str(path), f"{host}:{path.parent}/"], check=True, timeout=300)
             r = httpx.post(u + "/v1/load_lora_adapter", json={"lora_name": name, "lora_path": str(path)}, timeout=300)
             if r.status_code != 200:
                 raise RuntimeError(f"load_lora_adapter {name} on {u}: {r.status_code} {r.text[:300]}")
+        self.paths[name] = path
         old, self.current = self.current, name
         if old != self.base:
             for u in self.urls:
                 httpx.post(u + "/v1/unload_lora_adapter", json={"lora_name": old}, timeout=120)
+                host = self.remote_host(u)
+                if host and old in self.paths:  # the remote copy has served its purpose; the local one stays
+                    subprocess.run(["ssh", "-o", "BatchMode=yes", host, f"rm -rf {self.paths[old]}"], timeout=60)
 
 
 ABORT = threading.Event()  # set on SIGTERM: no new rollouts, no grading
@@ -265,7 +288,9 @@ def preflight_servers(urls: list[str], sleepers: list[str], cfg: dict) -> dict:
         m = cards.get(cfg["served_model"])
         if m is None:
             raise RuntimeError(f"{u} does not serve {cfg['served_model']} (has {sorted(cards)})")
-        ident[u] = {"root": str(m.get("root")), "max_model_len": m.get("max_model_len")}
+        # an HF snapshot is identified by repo and revision, not by which cache holds it (node04 serves a local copy)
+        root = re.sub(r"^.*/hub/(models--[^/]+/snapshots/[0-9a-f]+)/?$", r"\1", str(m.get("root")))
+        ident[u] = {"root": root, "max_model_len": m.get("max_model_len")}
     if len({json.dumps(v, sort_keys=True) for v in ident.values()}) > 1:
         raise RuntimeError(f"servers serve different base weights or limits: {ident}")
     mml = next(iter(ident.values()))["max_model_len"]

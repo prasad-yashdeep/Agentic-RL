@@ -461,7 +461,25 @@ logs `/var/tmp/swe/gap-{step,push,sample-adapter,score-adapter}.log`):
   adapter loaded: pooled 11,632 tokens, mean |Δ| **0.0169**, p50 0.0008, p99 0.148, max 0.45, 0 % > 0.5, signed
   −0.0006 (bar ≤ 1.5 × 0.0151 = 0.023). Adapter unloaded afterwards.
 
-Gates G0–G4 pass. G5 = one end-to-end `train.py` step on the gate pool (`configs/grpo_gemma_gate.yaml`).
+Gates G0–G4 pass.
+
+**G5 one end-to-end step** (`bash scripts/21_train.sh configs/grpo_gemma_gate.yaml --run-name gemma-gate-s1`, node08;
+`runs/gemma-gate-s1/`, log `/var/tmp/swe/train-gemma-gate.log`; 16:13–16:21): 2 tasks × G = 4 on node08:8001 (12) +
+node04:8003 (8), trainer on GPU1.
+- Two fixes were needed for a two-node run first (`train.py`): `preflight_servers` compares weights by HF snapshot
+  (repo + revision) rather than cache path, and `LoraSync.load` copies each new adapter to a remote server's host under
+  the same path (`scp`, ~140 MB) before `load_lora_adapter`, deleting the copy once superseded.
+- Rollouts 404 s, step 492 s. sqlfluff-884 [1, 1, 0, 1] (mixed), astroid-1903 0/4 (degenerate, skipped); 4 trajectories,
+  9,019 tokens trained; valid actions 94.5 %; no truncation.
+- Update: loss 0.098, grad norm 0.142, `objective_gain` +0.0023; TIS mean weight 0.9996, none capped, min 0.30.
+- Mismatch (in the update's own forward): mean 0.032, p50 0.001, p99 0.34, max 1.21, 0.29 % > 0.5 (bar ≤ 1 %). Higher
+  than G2's 0.015 because half the rollouts came from node04, whose attention kernels differ from node08's (the greedy
+  cross-check showed max |Δlogp| 0.33 between the two servers); the importance weights absorb it.
+- Sync: adapter `policy-ffefc1-s1` loaded on both servers (the node04 copy worked), `served_dlogp_vs_base` 0.078,
+  greedy probe unchanged (expected for one small step).
+
+**All gates pass.** The trainer port is complete; the first Gemma GRPO run waits only for the pool
+(`configs/pool_gemma_v1.txt` from the screen).
 
 ---
 
