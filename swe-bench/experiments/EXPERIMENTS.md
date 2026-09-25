@@ -375,6 +375,94 @@ node08 12+12 + node04 8; 494 s for the batch):
   groups will be degenerate, so the pool needs more mixed tasks (screen more dev tasks with Gemma, as for mini-coder)
   alongside the trainer port.
 
+**Decision (user, 2026-09-25 14:20): Go Gemma.** Two tracks started:
+- **Pool screen** (`configs/screen_gemma_v1.txt` → `experiments/screen-gemma-v1.json`, log `/var/tmp/swe/screen-gemma-v1.log`
+  on node04): 86 dev tasks = the 42 mini-coder-usable tasks not in pool v2 + the 44 `screen_dev_v2b` candidates never
+  screened; 18 known bad ones excluded (9 gate failures, 9 missing images). 8 episodes per task, `--max-new-tokens 4096`,
+  `--keep-mixed`, batches of 10 with rolling pulls; servers node08:8001 (12) + node04:8003 (8). node08 GPU1's server
+  (`swe-serve1`) was stopped to free the GPU for trainer development.
+- **Trainer port** (below).
+
+### Trainer port to Gemma 4 E4B (`src/sarl/gemma.py`, `configs/grpo_gemma_v1.yaml`, `tests/test_swe_gemma.py`)
+
+Design (from a 5-agent read of transformers 5.14.1, vLLM 0.25.1, PEFT 0.19.1 and our trainer, then verified against the
+sources):
+- **Class.** `AutoModelForCausalLM` maps the checkpoint to the multimodal `Gemma4ForConditionalGeneration`; with
+  `vision_config`/`audio_config` set to None it builds the language model only, under the checkpoint's own names
+  (`model.language_model.layers.N…`). PEFT then writes adapters as `base_model.model.model.language_model.layers.N…`,
+  which vLLM's `--language-model-only` mapper (`model.language_model.` → `language_model.model.`) accepts.
+- **Base weights = the served FP8 checkpoint.** `FP8Linear` keeps the float8_e4m3fn weight and the per-channel bf16
+  scale and dequantises per forward (`F.linear(x, w8.to(bf16) * scale)`), what vLLM's W8A16 kernel computes on
+  sm_86, so trainer and sampler share weights. The FP8 checkpoint (`prithivMLmods/gemma-4-E4B-it-FP8`) holds 379 FP8
+  tensors (3.75 GiB; all 42 layers' q/k/v/o, gate/up/down, per_layer_input_gate, per_layer_projection, and
+  per_layer_model_projection) plus bf16 norms, the 1.25 GiB embedding and the 5.25 GiB PLE table; 36 k/v tensors of
+  the 18 KV-shared layers (24–41) have no module in HF and are skipped. Loading = `from_pretrained` on the bf16
+  Google snapshot (structure and buffers) then the FP8 overlay: 343 `FP8Linear`, 280 bf16 tensors copied, 6 s from
+  node08's local copy (`/var/tmp/swe/hf-cache`, 16 GB). NF4 was rejected on evidence: terminal-bench measured an
+  NF4-vs-FP8 gap of 0.28 nats mean with 16 % of tokens > 0.5.
+- **PLE on the CPU.** `CpuEmbedding` wraps `embed_tokens_per_layer`: the batch's rows (21.5 KB each) are gathered in
+  host memory and moved; `_apply` is a no-op so `.to(device)` leaves the table alone.
+- **Soft-cap.** `chunk_lp` applies `30·tanh(x/30)` in bf16 after `lm_head`, before the fp32 log-softmax, exactly as
+  the HF heads (`modeling_gemma4.py:1895-1899`) and vLLM's logits processor do.
+- **LoRA scope.** `targets` may be a regex (PEFT fullmatch): the language model's seven projections only; layers
+  24–41 have no k/v, so 258 targets, **34,881,536** parameters at r 16.
+- **`_core()`** returns the text decoder (`m.model.language_model`), skipping the wrapper's placeholder-mask work.
+- PEFT gotcha: it reads `module.weight` for the adapter's device/dtype; `FP8Linear` exposes a one-element bf16 probe
+  as `weight` (never the fp8 tensor), so adapters are created in bf16 and upcast to fp32 by PEFT's default.
+- Tests (`tests/test_swe_gemma.py`, tiny random Gemma 4 on the CPU): chunked log-probs equal HF's forward with the cap
+  and differ without it; adapter keys stay in the language model with no k/v in shared layers; the pinned PLE gives
+  identical log-probs; an FP8 base layer trains under PEFT with fp32 adapters. 19/19 trainer tests pass on node08.
+
+**G1/G3 memcheck** (`scripts/trainer_memcheck.py configs/grpo_gemma_v1.yaml`, node08 GPU1, math SDPA disabled, one
+trajectory per update, 30 % sampled positions; logs `/var/tmp/swe/memcheck-gemma{,2}.log`):
+
+| Tokens | Without `save_on_cpu` | With `save_on_cpu` (activations for backward in pinned host RAM) |
+|---|---|---|
+| after load | 5.08 GiB resident (343 FP8Linear, PLE on cpu, lm_head tied) | same |
+| 8,192 | 10.06 GiB peak, 19.6 s | 8.89 GiB, 20.5 s |
+| 12,288 | — | 10.94 GiB, 37.6 s |
+| 16,384 | **OOM** | **12.75 GiB (13.38 reserved), 65.8 s** |
+| 20,480 | OOM | 14.67 GiB (15.37 reserved), 89.2 s: too tight |
+| 24,576 | OOM | OOM |
+
+- Neither flash nor memory-efficient SDPA refused head_dim 256/512 (no "no available kernel" error with the math
+  kernel disabled).
+- The plan's activation estimate was low: checkpointing keeps one bf16 input per layer (0.2 MiB per token over 42
+  layers) and the per-layer recompute holds the [T, 10240] MLP intermediates. `save_on_cpu: true` (a
+  `torch.autograd.graph.save_on_cpu(pin_memory=True)` context around the body) removes the first term at a PCIe copy
+  per step. **`max_train_tokens: 16384`** with ~2.2 GiB headroom. Probe-3 episodes ran 5.9k–9.9k tokens at the median
+  8.5k, so most trajectories fit; longer ones are truncated (`truncate_overlong`).
+- Cost: 66 s per 16k-token trajectory (mini-coder 1.7B: 17.8 s at 24k). With ~7 % base success most groups are
+  degenerate and skipped, so a step trains 8–16 trajectories: 5–15 min of update per step on top of ~8 min of rollouts.
+
+**G2 trainer-vs-server log-prob gap** (`scripts/logprob_gap.py sample` on node04 against node08:8001, then `score`
+on node08 GPU1; `runs/gap/base`, log `/var/tmp/swe/gap-score-base.log`): 8 real mswea episodes on the 4 gate tasks
+(`configs/pool_gemma_gate.txt`), T = 1, 7.2k–19.2k tokens, 2.0k–4.5k sampled each; the trainer (fresh r-16 adapter,
+B = 0) re-scores exactly the sampled tokens against vLLM's `token_logprobs`:
+
+| | mean \|Δ\| | p50 | p99 | max | frac > 0.5 | signed mean |
+|---|---|---|---|---|---|---|
+| per episode | 0.012–0.019 | 0.0000–0.0014 | 0.12–0.15 | 0.21–0.36 | 0 | −0.0013…+0.0004 |
+| **pooled, 23,999 tokens** | **0.0151** | 0.0003 | 0.139 | 0.36 | 0.0000 | −0.0005 |
+
+Pass (bar: mean ≤ 0.05, p99 ≤ 0.5, frac > 0.5 ≤ 1 %, |signed| ≤ 0.02). Same regime as mini-coder's bf16/bf16 runs
+(0.009–0.012 mean): the FP8-faithful base plus the bf16 soft-cap reproduces the sampler. Scoring cost: 4–14 s per
+episode at 6.8–8.9 GiB peak (no grad).
+
+**G4 adapter round trip** (`logprob_gap.py step` → `push` → `sample` under the adapter on node04 → `score --adapter`;
+logs `/var/tmp/swe/gap-{step,push,sample-adapter,score-adapter}.log`):
+- One update on the 8 gate trajectories (A = 1, 23,999 tokens, lr 5e-5): loss 0.614, grad norm 0.109, TIS weights ≈ 1,
+  stepped; adapter `f7f603a7e37d` saved to `/var/tmp/swe/adapters/gate/step-1` (34.9 M params).
+- `POST /v1/load_lora_adapter` on node08:8001 → **200** (`policy-gate-s1`): vLLM accepted the packed qkv/gate-up
+  mapping with q/o-only adapters in the KV-shared layers.
+- `served_dlogp_vs_base` on the 25-token probe: **0.069** mean, 0.31 max (bar > 0.01): the adapter is applied, not
+  merely registered.
+- 4 episodes sampled under the adapter (3.8k–13.4k tokens, 1.5k–4.0k sampled), re-scored by the trainer with the same
+  adapter loaded: pooled 11,632 tokens, mean |Δ| **0.0169**, p50 0.0008, p99 0.148, max 0.45, 0 % > 0.5, signed
+  −0.0006 (bar ≤ 1.5 × 0.0151 = 0.023). Adapter unloaded afterwards.
+
+Gates G0–G4 pass. G5 = one end-to-end `train.py` step on the gate pool (`configs/grpo_gemma_gate.yaml`).
+
 ---
 
 ## 2026-09-24 s9-qwen3-1.7b-v1 — S9: the diagram's tool-call protocol with a model that follows it

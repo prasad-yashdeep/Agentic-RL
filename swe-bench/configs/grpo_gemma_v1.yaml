@@ -1,0 +1,44 @@
+# GRPO on Gemma 4 E4B (decision 2026-09-25: Gemma only). Serving: node08 GPU0 :8001 (12 in flight) + node04 :8003 (8,
+# PLE table pinned in CPU RAM); trainer on node08 GPU1 with the GPU to itself (no sleep server: the fp8 base is not
+# tested with offload). Trainer base = the served FP8 checkpoint, dequantised per forward (sarl.gemma.FP8Linear), so
+# trainer and sampler share weights; the 5.25 GiB per-layer embedding table stays on the CPU.
+name: grpo-gemma-v1
+model: google/gemma-4-E4B-it
+revision: ee0ef6023621cff504d758262d4e04895a5af4a2   # tokenizer, chat template, bf16 structure
+chat_template_kwargs: {enable_thinking: false}
+serve_url: http://node08:8001                        # probes and served-logprob checks
+servers:
+  - {url: http://node08:8001, slots: 12}
+  - {url: http://node04:8003, slots: 8}
+served_model: policy
+pool: configs/pool_gemma_v1.txt                       # written from experiments/screen-gemma-v1.json (mixed tasks)
+split: dev
+steps: 30
+tasks_per_step: 4
+group_size: 8
+oracle_per_group: 0
+protocol: mswea
+seed: 0
+sampling: {temperature: 1.0, top_p: 1.0, top_k: -1, repetition_penalty: 1.0}
+limits: {max_turns: 50, max_context_tokens: 24576, max_new_tokens: 4096, wall_clock_s: 1200, command_timeout_s: 60, max_obs_chars: 10000, max_format_errors: 3}
+train:
+  base: fp8
+  base_snapshot: gemma4-e4b-fp8                       # prithivMLmods/gemma-4-E4B-it-FP8 @e991fcb6 = what vLLM serves
+  ple_on_cpu: true
+  attn: sdpa
+  save_on_cpu: true                                   # memcheck 2026-09-25: without it 16k OOMs (8k = 10.1 GiB peak)
+  lr: 5.0e-5
+  lora_r: 16                                          # servers run --max-lora-rank 16
+  lora_alpha: 32
+  targets: '.*\.language_model\.layers\.\d+\.(self_attn\.(q_proj|k_proj|v_proj|o_proj)|mlp\.(gate_proj|up_proj|down_proj))'
+  clip: 1.0
+  max_train_tokens: 16384                             # memcheck decides; 24576 needs ~16.5 GiB on the estimate
+  truncate_overlong: true
+  chunk: 512                                          # 262k vocabulary: 1024 costs ~4.5 GiB transient in the head
+  loss_agg: token_mean
+  tis_cap: 2.0
+diagnostics: {mismatch: batch}
+advantage: {eps: 1.0e-4, skip_degenerate: true}
+concurrency: {rollouts: 20, grading: 8}
+grading: {timeout_s: 1800, network: false}
+env: {network: false}

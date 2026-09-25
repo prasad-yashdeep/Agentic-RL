@@ -36,7 +36,9 @@ class TrainConfig:
     lr: float = 1e-5
     lora_r: int = 8
     lora_alpha: int = 16
-    targets: tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj")
+    # a tuple matches module names by suffix (PEFT); a str is a regex that must fullmatch the module path (Gemma 4:
+    # sarl.gemma.LORA_TARGET_REGEX keeps the adapter inside the language model)
+    targets: tuple[str, ...] | str = ("q_proj", "k_proj", "v_proj", "o_proj")
     clip: float = 1.0
     max_train_tokens: int = 8192
     chunk: int = 1024
@@ -49,6 +51,27 @@ class TrainConfig:
     # weight each sampled token by min(π_trainer/π_vLLM, cap) (detached) to correct the train-inference mismatch.
     # None = off (the reference). Needs the sampler's log-probs per token.
     tis_cap: float | None = None
+    # Gemma 4 (sarl.gemma): base weights "bf16" (the HF snapshot) or "fp8" (the served checkpoint, dequantised per
+    # forward: trainer and sampler then share weights); base_snapshot = a sarl.paths.MODELS key for the fp8 copy;
+    # ple_on_cpu keeps the 5.25 GiB per-layer embedding table in host memory
+    base: str = "bf16"
+    base_snapshot: str | None = None
+    ple_on_cpu: bool = False
+    attn: str = "sdpa"
+    # keep the activations autograd saves for the backward pass (one input per checkpointed layer, ~0.2 MiB per token
+    # for Gemma 4 E4B) in pinned host memory instead of the GPU; costs a PCIe copy each way per step
+    save_on_cpu: bool = False
+
+    @classmethod
+    def from_train_section(cls, tr: dict, **overrides) -> "TrainConfig":
+        """The `train:` section of a run config (train.py and trainer_memcheck.py share this)."""
+        keys = ("lr", "lora_r", "lora_alpha", "clip", "max_train_tokens", "chunk", "grad_checkpointing", "loss_agg",
+                "tis_cap", "base", "base_snapshot", "ple_on_cpu", "attn", "save_on_cpu")
+        kw = {k: tr[k] for k in keys if k in tr}
+        if "targets" in tr:
+            kw["targets"] = tr["targets"] if isinstance(tr["targets"], str) else tuple(tr["targets"])
+        kw.update(overrides)
+        return cls(**kw)
 
 
 class LoRATrainer:
@@ -62,17 +85,30 @@ class LoRATrainer:
         self.cfg = cfg or TrainConfig()
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         if model is None:
-            from transformers import AutoModelForCausalLM
+            from sarl.gemma import is_gemma4, load_policy_model
 
             dt = getattr(torch, dtype) if self.device != "cpu" else torch.float32
-            model = AutoModelForCausalLM.from_pretrained(model_id, revision=revision, dtype=dt, attn_implementation="sdpa")
+            if is_gemma4(model_id, revision):
+                model = load_policy_model(model_id, revision, base=self.cfg.base, base_snapshot=self.cfg.base_snapshot,
+                                          dtype=dt, attn=self.cfg.attn, ple_on_cpu=self.cfg.ple_on_cpu)
+            else:
+                from transformers import AutoModelForCausalLM
+
+                model = AutoModelForCausalLM.from_pretrained(model_id, revision=revision, dtype=dt, attn_implementation=self.cfg.attn)
         self.offloaded = bool(offloaded) and self.device != "cpu"
+        if self.offloaded and self.cfg.base != "bf16":
+            raise RuntimeError("the sleep-server layout (trainer offloaded to the CPU) is only tested with base='bf16'")
+        # Gemma 4: the soft-cap the HF heads and vLLM apply to the final logits, in the model dtype, before the log-softmax
+        self.softcap = getattr(model.config.get_text_config(), "final_logit_softcapping", None) if hasattr(model.config, "get_text_config") else None
         model.to("cpu" if self.offloaded else self.device)
         if self.cfg.grad_checkpointing:
             model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
             model.enable_input_require_grads()
+        targets = self.cfg.targets if isinstance(self.cfg.targets, str) else list(self.cfg.targets)
         self.model = get_peft_model(model, LoraConfig(r=self.cfg.lora_r, lora_alpha=self.cfg.lora_alpha, lora_dropout=0.0,
-                                                      bias="none", task_type="CAUSAL_LM", target_modules=list(self.cfg.targets)))
+                                                      bias="none", task_type="CAUSAL_LM", target_modules=targets))
+        if not self.offloaded:
+            self.model.to(self.device)  # adapters of FP8Linear layers are created on the CPU (no base weight to follow)
         self.params = [p for p in self.model.parameters() if p.requires_grad]
         self.opt = torch.optim.AdamW(self.params, lr=self.cfg.lr)
         self.n_trainable = sum(p.numel() for p in self.params)
@@ -96,6 +132,8 @@ class LoRATrainer:
         """Model and optimizer state to the CPU and the CUDA cache released, so a vLLM server on this GPU can wake."""
         import torch
 
+        if self.cfg.base != "bf16":
+            raise RuntimeError("offload() is only tested with base='bf16'")
         if not self.offloaded and self.device != "cpu":
             self._move("cpu")
             self.offloaded = True
@@ -103,8 +141,11 @@ class LoRATrainer:
 
     # log-probs ------------------------------------------------------------------------------------------------
     def _core(self):
+        """(transformer body, lm_head). Gemma 4's multimodal wrapper is skipped: its text decoder takes input_ids
+        directly and returns the same normed hidden states without the placeholder-mask work."""
         m = self.model.get_base_model()
-        return m.model, m.lm_head
+        body = m.model.language_model if hasattr(m.model, "language_model") else m.model
+        return body, m.lm_head
 
     def token_logprobs(self, ids: Sequence[int], mask: Sequence[int]):
         """log π(ids[t] | ids[<t]) for every t with mask[t] == 1 (a 1-D tensor, with grad if grad is enabled)."""
@@ -119,12 +160,21 @@ class LoRATrainer:
         pos = torch.nonzero(m[1:], as_tuple=False).squeeze(-1)  # hidden state at t predicts token t+1
         if pos.numel() == 0:
             return torch.zeros(0, device=self.device)
-        hidden = body(input_ids=x).last_hidden_state[0]  # [T, H]
+        if self.cfg.save_on_cpu and torch.is_grad_enabled() and self.device != "cpu":
+            with torch.autograd.graph.save_on_cpu(pin_memory=True):
+                hidden = body(input_ids=x).last_hidden_state[0]  # [T, H]
+        else:
+            hidden = body(input_ids=x).last_hidden_state[0]  # [T, H]
         h = hidden.index_select(0, pos)
         tgt = x[0, 1:].index_select(0, pos)
 
+        cap = self.softcap
+
         def chunk_lp(hc, tc):
-            logits = head(hc).float()
+            logits = head(hc)
+            if cap is not None:  # Gemma: cap·tanh(x/cap) in the head's dtype, exactly as HF and vLLM do, then upcast
+                logits = torch.tanh(logits / cap) * cap
+            logits = logits.float()
             return torch.log_softmax(logits, -1).gather(-1, tc.unsqueeze(-1)).squeeze(-1)
 
         outs = []

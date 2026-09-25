@@ -377,10 +377,8 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     if (gone := sync.unload_leftovers()):
         print(f"unloaded leftover adapters: {gone}", flush=True)
     tr = cfg["train"]
-    trainer = LoRATrainer(cfg["model"], cfg.get("revision"), TrainConfig(
-        lr=tr["lr"], lora_r=tr["lora_r"], lora_alpha=tr["lora_alpha"], targets=tuple(tr["targets"]), clip=tr["clip"],
-        max_train_tokens=tr["max_train_tokens"], chunk=tr.get("chunk", 1024), loss_agg=tr.get("loss_agg", "seq_mean"),
-        tis_cap=tr.get("tis_cap")), offloaded=bool(sleepers))  # on the CPU while a vLLM on its GPU is awake
+    trainer = LoRATrainer(cfg["model"], cfg.get("revision"), TrainConfig.from_train_section(tr),
+                          offloaded=bool(sleepers))  # on the CPU while a vLLM on its GPU is awake
     if sleepers:
         # the trainer's CUDA context (~0.3-0.45 GiB) stays on the GPU after offload(): create it now, while the server
         # is awake, and refuse to start if wake_up would not fit (review finding: 0.88 left 221 MiB free)
@@ -394,7 +392,8 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
                                "lower SARL_SERVE_MEM and SARL_MAX_NUM_SEQS=16")
     truncate = bool(tr.get("truncate_overlong", False))
     log(f"run {run_dir.name}: pool {len(pool)} tasks, {cfg['steps']} steps × {cfg['tasks_per_step']} tasks × G={cfg['group_size']} "
-        f"(oracle {cfg['oracle_per_group']}/group); trainable {trainer.n_trainable:,}; adapter {trainer.adapter_hash()}")
+        f"(oracle {cfg['oracle_per_group']}/group); trainable {trainer.n_trainable:,}; adapter {trainer.adapter_hash()}; "
+        f"base {trainer.cfg.base}, ple_on_cpu {trainer.cfg.ple_on_cpu}, softcap {trainer.softcap}")
     prev_probe = probe(base_policy, fmt)
     probe_ids = fmt.prompt_ids([{"role": "user", "content": "Fix the failing test in /testbed."}]) + fmt.encode("```bash\nls\n```") + [fmt.turn_end_id]
     base_lp = np.array(served_logprobs(cfg["serve_url"], cfg["served_model"], probe_ids))
