@@ -1,0 +1,2841 @@
+{
+ "meta": {
+  "tasks_file": "configs/screen_dev_v2.txt",
+  "split": "dev",
+  "model": "ricdomolm/mini-coder-1.7b",
+  "revision": "5b7fbc90b6c4684c546de7f811865cff4414a96c",
+  "arms": {
+   "base": "policy"
+  },
+  "episodes": 8,
+  "protocol": "mswea",
+  "limits": {
+   "max_turns": 50,
+   "max_context_tokens": 24576,
+   "wall_clock_s": 1200.0,
+   "command_timeout_s": 60
+  },
+  "sampling": {
+   "temperature": 1.0,
+   "top_p": 1.0,
+   "top_k": -1
+  },
+  "seeds": "per turn: 1000 + episode index, then + 1000003 x turn (paired across arms)",
+  "server_weights": {
+   "policy": "/home/yashp/hf-cache/hub/models--ricdomolm--mini-coder-1.7b/snapshots/5b7fbc90b6c4684c546de7f811865cff4414a96c"
+  }
+ },
+ "tasks": {
+  "pydicom__pydicom-1031": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 0.0,
+    "empty": 0.0,
+    "gold_f2p": "0/2",
+    "gold_p2p": "92/149"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sqlfluff__sqlfluff-3170": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {},
+   "pull_error": "RuntimeError: apptainer pull docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-3170:latest failed (255): FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-3170:latest: reading manifest latest in docker.io/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-3170: requested access to"
+  },
+  "sqlfluff__sqlfluff-2386": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {},
+   "pull_error": "RuntimeError: apptainer pull docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-2386:latest failed (255): FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-2386:latest: reading manifest latest in docker.io/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-2386: requested access to"
+  },
+  "pydicom__pydicom-1069": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 0.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "255/288"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pydicom__pydicom-1416": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 0.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "238/307"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pylint-dev__astroid-927": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 12501,
+       "wall_s": 165.89,
+       "patch": true,
+       "resolved": false,
+       "f2p": "2/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18937,
+       "wall_s": 426.59,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18602,
+       "wall_s": 486.88,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20643,
+       "wall_s": 497.95,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20488,
+       "wall_s": 503.6,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "context",
+       "turns": 48,
+       "tokens": 24682,
+       "wall_s": 538.43,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.917
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20131,
+       "wall_s": 543.78,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 48,
+       "tokens": 21701,
+       "wall_s": 547.71,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "320/320"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pydicom__pydicom-1539": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 0.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "96/163"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pylint-dev__astroid-934": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 11325,
+       "wall_s": 83.53,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 15047,
+       "wall_s": 173.99,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18840,
+       "wall_s": 214.26,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16055,
+       "wall_s": 280.18,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17340,
+       "wall_s": 320.8,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 16823,
+       "wall_s": 339.0,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "context",
+       "turns": 44,
+       "tokens": 24682,
+       "wall_s": 451.81,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.977
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "context",
+       "turns": 44,
+       "tokens": 24574,
+       "wall_s": 495.66,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.977
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "312/312"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "marshmallow-code__marshmallow-1252": {
+   "repo": "marshmallow-code/marshmallow",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 37,
+       "tokens": 16111,
+       "wall_s": 353.41,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 15400,
+       "wall_s": 270.19,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.933
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 10996,
+       "wall_s": 94.92,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "context",
+       "turns": 35,
+       "tokens": 25436,
+       "wall_s": 465.75,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 19662,
+       "wall_s": 426.86,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19306,
+       "wall_s": 313.51,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22892,
+       "wall_s": 511.8,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 49,
+       "tokens": 20039,
+       "wall_s": 410.52,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "37/37"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "sqlfluff__sqlfluff-1733": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 18913,
+       "wall_s": 248.4,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 16148,
+       "wall_s": 308.93,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 16944,
+       "wall_s": 243.47,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 22780,
+       "wall_s": 254.01,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.976
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 21385,
+       "wall_s": 250.43,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 17826,
+       "wall_s": 218.52,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 20868,
+       "wall_s": 325.26,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19268,
+       "wall_s": 281.14,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "3/3"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pylint-dev__astroid-1719": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 19,
+       "tokens": 7291,
+       "wall_s": 59.22,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 9266,
+       "wall_s": 62.65,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 28,
+       "tokens": 8423,
+       "wall_s": 73.38,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 11757,
+       "wall_s": 91.34,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 10315,
+       "wall_s": 93.66,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 28,
+       "tokens": 10058,
+       "wall_s": 96.77,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 14893,
+       "wall_s": 124.2,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 16211,
+       "wall_s": 134.34,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "10/10"
+   },
+   "mixed": true,
+   "final": {
+    "base": "7/8"
+   }
+  },
+  "sqlfluff__sqlfluff-4151": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {},
+   "pull_error": "RuntimeError: apptainer pull docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-4151:latest failed (255): FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-4151:latest: reading manifest latest in docker.io/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-4151: requested access to"
+  },
+  "pylint-dev__astroid-1903": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 13,
+       "tokens": 5292,
+       "wall_s": 51.43,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 8476,
+       "wall_s": 93.07,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 8731,
+       "wall_s": 101.21,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 24,
+       "tokens": 11881,
+       "wall_s": 108.95,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15376,
+       "wall_s": 172.47,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15272,
+       "wall_s": 179.87,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17850,
+       "wall_s": 181.93,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16941,
+       "wall_s": 201.38,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "10/10"
+   },
+   "mixed": true,
+   "final": {
+    "base": "4/8"
+   }
+  },
+  "pylint-dev__astroid-1164": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 8599,
+       "wall_s": 140.66,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 8493,
+       "wall_s": 120.63,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 8674,
+       "wall_s": 130.14,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 10024,
+       "wall_s": 147.09,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 14770,
+       "wall_s": 213.22,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 13452,
+       "wall_s": 215.33,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 14097,
+       "wall_s": 158.05,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 43,
+       "tokens": 19736,
+       "wall_s": 422.35,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "241/241"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pydicom__pydicom-839": {
+   "repo": "pydicom/pydicom",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 20,
+       "tokens": 8733,
+       "wall_s": 118.87,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 19,
+       "tokens": 8518,
+       "wall_s": 112.34,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 14,
+       "tokens": 6421,
+       "wall_s": 51.91,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 13677,
+       "wall_s": 154.68,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 26,
+       "tokens": 11479,
+       "wall_s": 170.61,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18683,
+       "wall_s": 294.52,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22069,
+       "wall_s": 319.41,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19181,
+       "wall_s": 262.28,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "141/141"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pydicom__pydicom-1192": {
+   "repo": "pydicom/pydicom",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 13170,
+       "wall_s": 197.13,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 15332,
+       "wall_s": 135.8,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 12674,
+       "wall_s": 167.35,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17379,
+       "wall_s": 216.61,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 14353,
+       "wall_s": 219.33,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 21021,
+       "wall_s": 259.66,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 12618,
+       "wall_s": 148.61,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 21353,
+       "wall_s": 303.48,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "46/46"
+   },
+   "mixed": true,
+   "final": {
+    "base": "2/8"
+   }
+  },
+  "pylint-dev__astroid-1866": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 4436,
+       "wall_s": 47.25,
+       "patch": true,
+       "resolved": false,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 15,
+       "tokens": 5700,
+       "wall_s": 56.42,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 8410,
+       "wall_s": 121.79,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 12069,
+       "wall_s": 94.38,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 9173,
+       "wall_s": 140.3,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 9137,
+       "wall_s": 139.85,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 4032,
+       "wall_s": 26.2,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 4817,
+       "wall_s": 43.28,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "10/10"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pydicom__pydicom-1050": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pull_error": "RuntimeError: apptainer pull docker://swebench/sweb.eval.x86_64.pydicom_1776_pydicom-1050:latest failed (255): FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://swebench/sweb.eval.x86_64.pydicom_1776_pydicom-1050:latest: reading manifest latest in docker.io/swebench/sweb.eval.x86_64.pydicom_1776_pydicom-1050: requested access to the r"
+  },
+  "sqlfluff__sqlfluff-3220": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {},
+   "pull_error": "RuntimeError: apptainer pull docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-3220:latest failed (255): FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-3220:latest: reading manifest latest in docker.io/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-3220: requested access to"
+  },
+  "pydicom__pydicom-900": {
+   "repo": "pydicom/pydicom",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 10634,
+       "wall_s": 137.93,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 21,
+       "tokens": 6644,
+       "wall_s": 87.67,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 4881,
+       "wall_s": 47.37,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 11145,
+       "wall_s": 118.45,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15436,
+       "wall_s": 218.88,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 15687,
+       "wall_s": 143.59,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 40,
+       "tokens": 12135,
+       "wall_s": 140.47,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15235,
+       "wall_s": 169.22,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "36/36"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pydicom__pydicom-1633": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 0.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "313/315"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pydicom__pydicom-1194": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 0.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "95/162"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "marshmallow-code__marshmallow-1343": {
+   "repo": "marshmallow-code/marshmallow",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 13346,
+       "wall_s": 114.56,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 10774,
+       "wall_s": 178.44,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15290,
+       "wall_s": 211.0,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16364,
+       "wall_s": 274.04,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19177,
+       "wall_s": 286.35,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 24403,
+       "wall_s": 603.33,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 49,
+       "tokens": 20033,
+       "wall_s": 617.72,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19359,
+       "wall_s": 649.21,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "24/24"
+   },
+   "mixed": true,
+   "final": {
+    "base": "3/8"
+   }
+  },
+  "sqlfluff__sqlfluff-1577": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {},
+   "pull_error": "RuntimeError: apptainer pull docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-1577:latest failed (255): FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-1577:latest: reading manifest latest in docker.io/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-1577: requested access to"
+  },
+  "sqlfluff__sqlfluff-2998": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {},
+   "pull_error": "RuntimeError: apptainer pull docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-2998:latest failed (255): FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-2998:latest: reading manifest latest in docker.io/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-2998: requested access to"
+  },
+  "sqlfluff__sqlfluff-1517": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 31,
+       "tokens": 17086,
+       "wall_s": 217.33,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 13036,
+       "wall_s": 228.66,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.967
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 37,
+       "tokens": 17692,
+       "wall_s": 233.91,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 23928,
+       "wall_s": 365.9,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 24938,
+       "wall_s": 381.57,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "context",
+       "turns": 49,
+       "tokens": 24774,
+       "wall_s": 533.54,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "context",
+       "turns": 44,
+       "tokens": 24579,
+       "wall_s": 595.27,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 23118,
+       "wall_s": 635.95,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "42/42"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pylint-dev__astroid-1333": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 7,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 14403,
+       "wall_s": 276.11,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 43,
+       "tokens": 15397,
+       "wall_s": 250.57,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "context",
+       "turns": 43,
+       "tokens": 27674,
+       "wall_s": 358.26,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 46,
+       "tokens": 18639,
+       "wall_s": 294.35,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 50,
+       "tokens": 22066,
+       "wall_s": 389.28,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 47,
+       "tokens": 23360,
+       "wall_s": 195.0,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 13706,
+       "wall_s": 215.68,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20215,
+       "wall_s": 517.22,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "46/46"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pydicom__pydicom-1139": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 0.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "36/38"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "sqlfluff__sqlfluff-3435": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {},
+   "pull_error": "RuntimeError: apptainer pull docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-3435:latest failed (255): FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-3435:latest: reading manifest latest in docker.io/swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-3435: requested access to"
+  },
+  "pylint-dev__astroid-1959": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 12,
+       "tokens": 5092,
+       "wall_s": 66.46,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 9169,
+       "wall_s": 111.7,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 13546,
+       "wall_s": 214.06,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 38,
+       "tokens": 9473,
+       "wall_s": 166.16,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 12877,
+       "wall_s": 212.74,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 29,
+       "tokens": 10326,
+       "wall_s": 421.9,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15198,
+       "wall_s": 173.25,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 13966,
+       "wall_s": 184.58,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "11/11"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pylint-dev__astroid-1962": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 9,
+       "tokens": 4915,
+       "wall_s": 43.06,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 6364,
+       "wall_s": 48.39,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 6295,
+       "wall_s": 56.51,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 21,
+       "tokens": 6880,
+       "wall_s": 64.01,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 7467,
+       "wall_s": 70.48,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 27,
+       "tokens": 8905,
+       "wall_s": 92.1,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 9012,
+       "wall_s": 106.38,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 9892,
+       "wall_s": 116.48,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "11/11"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pylint-dev__astroid-1262": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 18,
+       "tokens": 10344,
+       "wall_s": 47.26,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 12126,
+       "wall_s": 102.13,
+       "patch": true,
+       "resolved": true,
+       "f2p": "1/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 13754,
+       "wall_s": 124.76,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 14461,
+       "wall_s": 151.82,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16072,
+       "wall_s": 156.7,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16812,
+       "wall_s": 165.48,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15413,
+       "wall_s": 226.77,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20314,
+       "wall_s": 231.77,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "21/21"
+   },
+   "mixed": true,
+   "final": {
+    "base": "1/8"
+   }
+  },
+  "pylint-dev__astroid-2023": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 30,
+       "tokens": 15351,
+       "wall_s": 129.73,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 9551,
+       "wall_s": 133.46,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 25,
+       "tokens": 14299,
+       "wall_s": 204.67,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.96
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 33,
+       "tokens": 15891,
+       "wall_s": 329.12,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22002,
+       "wall_s": 606.6,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 44,
+       "tokens": 22069,
+       "wall_s": 609.59,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20941,
+       "wall_s": 549.59,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 32,
+       "tokens": 14615,
+       "wall_s": 474.58,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "5/5"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pydicom__pydicom-938": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 1.0,
+    "empty": 1.0,
+    "gold_f2p": "4/4",
+    "gold_p2p": "33/33"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pydicom__pydicom-1413": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pulled": true,
+   "gate": {
+    "ok": false,
+    "gold": 0.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "299/301"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/0"
+   }
+  },
+  "pylint-dev__astroid-1616": {
+   "repo": "pylint-dev/astroid",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 16457,
+       "wall_s": 281.81,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17092,
+       "wall_s": 384.26,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19564,
+       "wall_s": 548.09,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20530,
+       "wall_s": 630.51,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 1,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 35,
+       "tokens": 17908,
+       "wall_s": 580.0,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "format_errors",
+       "turns": 38,
+       "tokens": 24577,
+       "wall_s": 746.31,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.789
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19409,
+       "wall_s": 546.37,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 0.98
+      },
+      {
+       "i": 7,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20353,
+       "wall_s": 545.02,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/1",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "10/10"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "sqlfluff__sqlfluff-1763": {
+   "repo": "sqlfluff/sqlfluff",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 38,
+       "tokens": 12949,
+       "wall_s": 336.77,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 45,
+       "tokens": 20651,
+       "wall_s": 385.03,
+       "patch": false,
+       "resolved": false,
+       "f2p": null,
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 33,
+       "tokens": 19009,
+       "wall_s": 397.3,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.97
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20300,
+       "wall_s": 429.24,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 43,
+       "tokens": 21931,
+       "wall_s": 509.74,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 33,
+       "tokens": 17953,
+       "wall_s": 230.17,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 42,
+       "tokens": 16584,
+       "wall_s": 223.05,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18027,
+       "wall_s": 239.2,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "63/63"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "pydicom__pydicom-866": {
+   "repo": "pydicom/pydicom",
+   "arms": {},
+   "pull_error": "RuntimeError: apptainer pull docker://swebench/sweb.eval.x86_64.pydicom_1776_pydicom-866:latest failed (255): FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://swebench/sweb.eval.x86_64.pydicom_1776_pydicom-866:latest: reading manifest latest in docker.io/swebench/sweb.eval.x86_64.pydicom_1776_pydicom-866: requested access to the reso"
+  },
+  "pydicom__pydicom-816": {
+   "repo": "pydicom/pydicom",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15594,
+       "wall_s": 381.79,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 13337,
+       "wall_s": 201.83,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 13964,
+       "wall_s": 230.11,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 23,
+       "tokens": 13666,
+       "wall_s": 150.23,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 19819,
+       "wall_s": 381.75,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 14886,
+       "wall_s": 290.56,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 17668,
+       "wall_s": 331.55,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "context",
+       "turns": 41,
+       "tokens": 24682,
+       "wall_s": 354.44,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/3",
+       "valid_rate": 0.976
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "36/36"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  },
+  "marshmallow-code__marshmallow-1524": {
+   "repo": "marshmallow-code/marshmallow",
+   "arms": {
+    "base": {
+     "episodes": [
+      {
+       "i": 0,
+       "server": 0,
+       "exit": "submitted",
+       "turns": 36,
+       "tokens": 11615,
+       "wall_s": 189.98,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/5",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 1,
+       "server": 1,
+       "exit": "submitted",
+       "turns": 41,
+       "tokens": 17868,
+       "wall_s": 240.45,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/5",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 2,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 20977,
+       "wall_s": 241.22,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/5",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 7,
+       "server": 1,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 12778,
+       "wall_s": 137.73,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/5",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 3,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 15563,
+       "wall_s": 214.79,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/5",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 4,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 21312,
+       "wall_s": 240.57,
+       "patch": true,
+       "resolved": false,
+       "f2p": "2/5",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 5,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 18208,
+       "wall_s": 233.3,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/5",
+       "valid_rate": 1.0
+      },
+      {
+       "i": 6,
+       "server": 0,
+       "exit": "max_turns",
+       "turns": 50,
+       "tokens": 22509,
+       "wall_s": 272.16,
+       "patch": true,
+       "resolved": false,
+       "f2p": "0/5",
+       "valid_rate": 1.0
+      }
+     ],
+     "errors": []
+    }
+   },
+   "pulled": true,
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "5/5",
+    "gold_p2p": "127/127"
+   },
+   "mixed": false,
+   "image_deleted": true,
+   "final": {
+    "base": "0/8"
+   }
+  }
+ }
+}

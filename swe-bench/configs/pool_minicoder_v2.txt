@@ -1,0 +1,15 @@
+# GRPO v2 pool (2026-09-24): every dev task with a mixed outcome (0 < resolved < n) for base mini-coder-1.7b under
+# mswea, 50 turns / 24k, T=1.0. 42 usable tasks were screened (experiments/screen-dev-v2{,b}.json, 8 episodes each)
+# plus the 8-task probe pool (experiments/probe-minicoder-pool-{a,b}.json, 16 episodes each).
+# Images: /var/tmp/swe/sif-dev on node08 (run with SARL_SIF_DIR=/var/tmp/swe/sif-dev).
+pylint-dev__astroid-1614         # probe 6/16
+pydicom__pydicom-1694            # probe 8/16
+pydicom__pydicom-1256            # probe 1/16
+pylint-dev__astroid-1719         # screen 7/8
+pylint-dev__astroid-1903         # screen 4/8
+marshmallow-code__marshmallow-1343  # screen 3/8
+marshmallow-code__marshmallow-1164  # screen 3/8
+pydicom__pydicom-1192            # screen 2/8
+pylint-dev__astroid-1262         # screen 1/8
+sqlfluff__sqlfluff-884           # screen 1/8
+pylint-dev__astroid-984          # screen 1/8

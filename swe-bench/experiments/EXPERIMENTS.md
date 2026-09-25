@@ -20,6 +20,128 @@ Template:
 
 ---
 
+## 2026-09-24 grpo-minicoder-v1 — GRPO on top of a public SFT checkpoint (mini-coder-1.7b)
+
+**Why.** S9's reward was all-zero: GRPO had nothing on-policy to reinforce. The evaluation (distil, then GRPO) found an existing off-policy distillation of our exact student, so we skip building SFT and test GRPO on top of it.
+- `ricdomolm/mini-coder-1.7b` is Qwen3-1.7B, SFT'd on about 400k Qwen3-Coder-30B-A3B trajectories (mini-swe-agent, SWE-smith tasks, MIT). The card reports 18.6 % pass@1 on Verified bash-only.
+
+**Harness changes (commit `b926fbd`):**
+- Protocol `mswea`, which is mini-swe-agent v1:
+  - the system prompt, task template, observation text and format-error text are byte-identical to the SFT corpus (41 rows checked, one template);
+  - a reply must contain exactly one ```bash block.
+- mini-coder is rendered with `enable_thinking=True`. Its SFT turns carry no `<think>` block, and the plain `<|im_start|>assistant\n` prefix matches how the authors evaluated it.
+- Trainer changes:
+  - truncated importance sampling (cap 2) against vLLM's log-probs;
+  - a token-mean loss;
+  - over-long trajectories are cut, not dropped;
+  - mismatch statistics come from the update's own forward pass.
+
+### Probe: mini-coder-1.7b on the 8-task pool (`experiments/probe-minicoder-pool-{a,b}.json`)
+
+Setup: 16 episodes per task, 50 turns / 32k tokens, T = 1.0 plain sampling. It ran on two vLLM servers, one per GPU, with 8 episodes in flight on each.
+- 16 episodes on one server thrashed the 95k-token KV cache: the prefix-cache hit rate fell from 42 % to 17 %, and decoding ran at 130–180 tokens/s.
+- At 8 per server, the hit rate was 92–94 % and decoding about 280 tokens/s.
+
+| Task | Resolved | Non-empty patches |
+|---|---|---|
+| pydicom-811 | **16/16** | 16 |
+| pydicom-1694 | **8/16** | 16 |
+| astroid-1614 | **6/16** | 16 |
+| pydicom-1256 | **1/16** | 13 |
+| astroid-946, marshmallow-1359, sqlfluff-1625, astroid-1268 | 0/16 each | 63 of 64 |
+
+- **Total: 31/128 (24 %).** Inside the 5–30 % band from the evaluation. Base Qwen3-1.7B scored 0/140 in S9.
+- **Actions:** 99–100 % valid, 0 % turn-1 submits.
+- **Exits:** 104 submitted, 24 `max_turns`. 31–36 % of episodes repeat a command 3 or more times.
+- **Budget:** resolved episodes took a median of 22 turns (p90 43, max 50) and at most 23.2k tokens. A 30-turn cap would have lost 10 of the 31 successes, so GRPO uses 50 turns / 24k tokens.
+- **Caveat:** mini-coder's SFT data contains SWE-smith bugs from all four pool repos. These pool numbers measure familiarity with those repos as much as skill.
+
+**Held-out check failed: the images are broken upstream (`experiments/holdout-gate.json`).** The 79 pvlib and pyvista dev tasks are the only dev repos absent from the SFT data. For all 7 selected tasks, the gold patch scores 0:
+- the pvlib images ship NumPy 2, and pvlib 0.8 uses `np.Inf`, so it fails at import;
+- pyvista fails with an `AttributeError` in `pyvista/core/dataset.py`.
+
+Any generalisation claim therefore needs the Verified subset.
+
+**Trainer memory** (`scripts/trainer_memcheck.py`; r = 16, all linear layers, 17.4M parameters, one update on GPU1):
+
+| Tokens | Peak allocated | Time |
+|---|---|---|
+| 16k | 8.1 GiB | 10.6 s |
+| 24k | 10.7 GiB | 17.8 s |
+| 32k | 13.1 GiB | 28.3 s |
+
+### Run: `configs/grpo_minicoder_check.yaml`
+
+- **Schedule:** 30 steps × 2 tasks × G = 8, no oracle rollouts.
+- **Pool:** `configs/pool_minicoder_mixed.txt`, the 3 mixed tasks.
+- **Sampling and limits:** T = 1.0; 50 turns / 24k tokens.
+- **Update:** LoRA r 16 / α 32 on all linear layers, lr 2e-5, token-mean loss, TIS cap 2, clip 1.0.
+- **Layout:** vLLM on GPU0 (`swe-serve`, 0.88 memory, rollout concurrency 8), trainer on GPU1 (`swe-train`).
+- **Started** 08:20:33 PDT.
+
+**Result (08:20–14:29 PDT, 30 steps, about 12.3 min per step; records in `runs/grpo-minicoder-v1/`):**
+
+| Steps | Resolved | Rate |
+|---|---|---|
+| 1–10 | 49/160 | 31 % |
+| 11–20 | 48/160 | 30 % |
+| 21–30 | 56/160 | 35 % |
+| **All** | **153/480** | **32 %** (pre-GRPO probe on these 3 tasks: 15/48 = 31 %) |
+
+Per task, over the run:
+- pydicom-1694: 68/159 (43 %); probe 8/16.
+- astroid-1614: 59/144 (41 %); probe 6/16.
+- pydicom-1256: 26/176 (15 %); probe 1/16.
+
+**The mechanism works:**
+- Rewards were non-zero on every step, and 53 of 60 groups were mixed; the 7 degenerate groups were all 0/8 on pydicom-1256.
+- The objective rose on 24 of 30 steps.
+- TIS weights averaged 1.000, with none capped. Train/serve mismatch mean was 0.009–0.012.
+- The served adapter moved 0.031–0.082 nats per token from the base. 5 over-long rollouts were truncated, not dropped.
+
+**The outcome did not move.** The success rate is flat within noise (±5 points per block). GRPO v1 did not measurably improve the policy. Likely reasons:
+- small updates: lr 2e-5, grad norm 0.03–0.05 against a clip of 1.0;
+- only 16 rollouts per step for 30 steps;
+- a 3-task pool.
+
+The user chose the next plan: screen more dev tasks for a larger pool, then run v2 with more tasks per step and a higher learning rate.
+
+**A caveat found later, affecting v1 and the probe.** Every turn of an episode sent the same vLLM seed. vLLM re-seeds per request, so token j of every turn used the same random draw and the turns of an episode were correlated. This is fixed from commit `21f4a23` on: the seed now changes per turn.
+
+### Screening for the v2 pool (`scripts/rolling_probe.py`, `experiments/screen-dev-v2.json`)
+
+Setup: 8 episodes per task, same limits (wall clock 1,200 s), both GPUs, images pulled in rolling batches of 10 (no layer cache) and deleted unless the task was mixed. Before it ran, the script got an adversarial review (4 lenses, 25 confirmed findings, all fixed; commit `21f4a23`).
+
+**List 1** (`configs/screen_dev_v2.txt`: the 40 smallest single-file fixes; 14:32–16:05):
+
+| Outcome | Tasks |
+|---|---|
+| Usable (image present, gate passed) | 22 |
+| Mixed | 5: astroid-1719 7/8, astroid-1903 4/8, marshmallow-1343 3/8, pydicom-1192 2/8, astroid-1262 1/8 |
+| Base success on the usable ones | 17/176 (10 %) |
+| Gate negative | 9, all pydicom: the gold patch passes its fail-to-pass tests but some pass-to-pass tests fail offline (likely tests that download pydicom test data) |
+| No image on Docker Hub | 9 ("requested access to the resource is denied"); 34 of the 39 remaining sqlfluff dev images are missing too |
+
+**Incident.** During list 1, a grading run (an astroid test suite on a policy patch) grew to 61.7 GB RSS on node08's 62 GB and stalled the node. I killed that process. The fixes:
+- a watchdog in tmux `swe-watchdog` that kills any `testbed` process above 16 GB;
+- `ulimit -v` 12 GB on every sandbox command and grading run (commit `8dc7586`).
+
+**List 2** (`configs/screen_dev_v2b.txt`, 64 more candidates that do have images) runs with `--stop-after-usable 18`. That gives 40 usable tasks in total, as the user asked.
+
+**List 2 result** (16:07–17:15; `experiments/screen-dev-v2b.json`):
+- It stopped as designed after 2 batches, at 20 usable tasks.
+- Mixed: 3 — marshmallow-1164 3/8, sqlfluff-884 1/8, astroid-984 1/8.
+- Base success: 5/160 (3 %). These tasks are larger fixes.
+- 0 gate failures, because astroid, marshmallow and sqlfluff come first in the list.
+- The 10 prefetched but unscreened images were deleted.
+- The watchdog log stayed empty: the 12 GB `ulimit -v` held.
+
+**Screening total:** 42 usable dev tasks, 8 mixed. With v1's 3 mixed tasks, the v2 pool is 11 tasks (`configs/pool_minicoder_v2.txt`). Their images are in node08 `/var/tmp/swe/sif-dev`: 8 files plus 3 symlinks into `/tmp/swe-sif`.
+
+GRPO_V2_PENDING
+
+---
+
 ## 2026-09-24 s9-qwen3-1.7b-v1 — S9: the diagram's tool-call protocol with a model that follows it
 
 - Gate: S9 (`docs/02-phase2-roadmap.md`). Format part **passes**; reward part (≥ 1 non-oracle rollout earns reward) **fails**.
