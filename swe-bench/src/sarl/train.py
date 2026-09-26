@@ -18,6 +18,7 @@ import gzip
 import json
 import re
 import random
+import shutil
 import threading
 import time
 from collections import Counter
@@ -330,6 +331,38 @@ def _update(trainer, batch, ros, cfg, tr, truncate, adapter_root, step):
     return upd, mm_pooled, before, after, h
 
 
+def resume_point(recs: list[dict]) -> tuple[int, int | None, str | None]:
+    """(last recorded step, newest step whose update produced an adapter, that adapter's hash).
+
+    A step whose groups were all degenerate records no sync and saves no adapter, so the adapter to reload is the
+    newest *stepped* one, not necessarily step-{last}. (None, None) when no step has updated yet: keep serving the base."""
+    last = max((r["step"] for r in recs), default=0)
+    stepped = [r for r in recs if (r.get("sync") or {}).get("adapter_hash")]
+    if not stepped:
+        return last, None, None
+    ref = max(stepped, key=lambda r: r["step"])
+    return last, ref["step"], ref["sync"]["adapter_hash"]
+
+
+def prune_adapters(adapter_root: Path, keep_last: int | None, protect=()) -> list[Path]:
+    """Delete all but the newest `keep_last` step-* adapter directories, never one in `protect` (the served adapter).
+
+    None keeps everything (the old behaviour). Resume reloads only the newest stepped adapter, so any keep_last >= 1
+    stays resumable; 2 also keeps the previous step while the new one is being synced. A Gemma adapter is ~134 MB, so
+    keeping all 30 steps costs ~4 GB of node08's 40 GB /var partition."""
+    if keep_last is None:
+        return []
+    if int(keep_last) < 1:
+        raise ValueError("keep_adapters must be >= 1: resume needs the newest adapter")
+    steps = sorted((p for p in Path(adapter_root).glob("step-*") if p.is_dir() and p.name[5:].isdigit()),
+                   key=lambda p: int(p.name[5:]))
+    keep = set(steps[-int(keep_last):]) | {Path(p) for p in protect if p is not None}
+    gone = [p for p in steps if p not in keep]
+    for p in gone:
+        shutil.rmtree(p)
+    return gone
+
+
 def _grade(ro: Rollout, cfg: dict) -> Rollout:
     if ro.traj is None:
         return ro
@@ -427,16 +460,17 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     start = 1
     if resume and (run_dir / "metrics.jsonl").exists():
         recs = [json.loads(line) for line in open(run_dir / "metrics.jsonl")]
-        last = max(r["step"] for r in recs) if recs else 0
+        last, ref, want = resume_point(recs)
         if last:
-            want = next((r.get("sync") or {}).get("adapter_hash") for r in recs if r["step"] == last)
-            got = trainer.load_adapter(adapter_root / f"step-{last}")
-            if want and got != want:
-                raise RuntimeError(f"adapter step-{last} hash {got} != recorded {want}")
+            got = None
+            if ref is not None:  # the newest step that saved an adapter (a no-update step saves none)
+                got = trainer.load_adapter(adapter_root / f"step-{ref}")
+                if want and got != want:
+                    raise RuntimeError(f"adapter step-{ref} hash {got} != recorded {want}")
+                sync.load(f"{cfg['served_model']}-{run_tag}-s{ref}", adapter_root / f"step-{ref}")
             for _ in range(last):  # the only per-step use of rng: the task draw
                 rng.sample(pool, min(cfg["tasks_per_step"], len(pool)))
-            sync.load(f"{cfg['served_model']}-{run_tag}-s{last}", adapter_root / f"step-{last}")
-            log(f"resumed after step {last}: adapter {got} (matches the record), task draws replayed, "
+            log(f"resumed after step {last}: adapter {got} from step {ref} (matches the record), task draws replayed, "
                 f"serving {sync.current} on {len(router.urls)} server(s); AdamW moments restart from zero")
             start = last + 1
     for step in range(start, cfg["steps"] + 1):
@@ -550,6 +584,10 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
         summary["policy_mean_turns"] = float(np.mean([len(r.traj.turns) for r in pol if r.traj])) if pol else None
         summary["policy_nonempty_patches"] = sum(1 for r in pol if r.traj and r.traj.patch)
         metrics.write(summary)
+        # only after the step is on record: resume reloads the newest stepped adapter, which pruning always keeps
+        pruned = prune_adapters(adapter_root, cfg.get("keep_adapters"), protect=[sync.paths.get(sync.current)])
+        if pruned:
+            log(f"pruned {len(pruned)} old adapter(s): {', '.join(p.name for p in pruned)}")
         log(f"step {step}: policy reward {summary['policy_reward_mean']}, resolved {summary['policy_resolved']}/{len(pol)}, "
             f"oracle {summary['oracle_resolved']}, degenerate {n_degenerate}/{len(tasks)}, train {len(batch)}, "
             f"loss {upd.get('loss')}, gn {upd.get('grad_norm')}, J gain {summary['objective_gain']}, sync {sync_rec}, oracle Δlogp {summary['oracle_dlogp']}, "

@@ -175,3 +175,31 @@ def test_adapter_save_load_roundtrip(tiny_qwen, tmp_path):
     fresh = LoRATrainer("tiny", model=copy.deepcopy(tiny_qwen), cfg=TrainConfig(lora_r=4, lora_alpha=8), device="cpu")
     assert fresh.adapter_hash() != h
     assert fresh.load_adapter(tmp_path / "step-1") == h
+
+
+def test_prune_adapters_keeps_newest_and_served(tmp_path):
+    """keep_adapters: only the newest N step dirs survive, plus the served one; None keeps all; 0 is refused."""
+    import pytest
+
+    from sarl.train import prune_adapters
+
+    for k in (1, 2, 3, 5, 10, 11):
+        (tmp_path / f"step-{k}").mkdir()
+        (tmp_path / f"step-{k}" / "adapter_model.safetensors").write_bytes(b"x")
+    (tmp_path / "notes").mkdir()  # not an adapter dir: never touched
+    assert prune_adapters(tmp_path, None) == []
+    gone = prune_adapters(tmp_path, 2, protect=[tmp_path / "step-3", None])
+    assert sorted(p.name for p in gone) == ["step-1", "step-2", "step-5"]  # numeric order: 10, 11 are the newest
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["notes", "step-10", "step-11", "step-3"]
+    with pytest.raises(ValueError):
+        prune_adapters(tmp_path, 0)
+
+
+def test_resume_point_skips_no_update_steps():
+    """resume reloads the newest step that saved an adapter; a trailing all-degenerate step saved none."""
+    from sarl.train import resume_point
+
+    recs = [{"step": 1, "sync": {"adapter_hash": "a1"}}, {"step": 2, "sync": {"adapter_hash": "a2"}}, {"step": 3, "sync": None}]
+    assert resume_point(recs) == (3, 2, "a2")
+    assert resume_point([{"step": 1, "sync": None}]) == (1, None, None)
+    assert resume_point([]) == (0, None, None)

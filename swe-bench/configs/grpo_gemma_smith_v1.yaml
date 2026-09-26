@@ -16,6 +16,7 @@ served_model: policy
 pool: configs/pool_smith_v1.txt                       # mixed tasks from experiments/screen-smith-v1.json (never always-solved)
 split: smith
 steps: 30
+keep_adapters: 2                                      # prune older step-* adapters (134 MB each); resume needs only the newest
 tasks_per_step: 4
 group_size: 8
 oracle_per_group: 0

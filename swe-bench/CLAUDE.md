@@ -34,6 +34,22 @@ The target is the repo's diagram (`reference/_upstream/swe_agent_env_interface.p
   node04 also holds the probe images (`/var/tmp/swe/sif-dev`) and runs the probe harness, sandboxes and grading, which
   keeps that CPU and RAM load off node08. Measured layout for probes: `--servers node08:8001 node08:8002 node04:8003
   --per-server 12 12 8` = ×1.78 rollout throughput over node08 alone at 8+8 (`experiments/ab-serving/`).
+  Launch it exactly like this (without `SARL_SERVE_MORE` the Inductor compile tries to copy the 5.25 GiB table onto the
+  8 GB card and start-up fails with a CUDA OOM, seen 2026-09-26):
+  ```
+  cd swe-bench && tmux new -d -s swe-serve4 "HF_HOME=/var/tmp/swe/hf-cache CUDA_HOME=/cm/shared/apps/cuda12.8/toolkit/12.8.1 \
+    SARL_EAGER=0 SARL_PLE_OFFLOAD=1 SARL_SERVE_OOM_SCORE_ADJ=1000 SARL_SERVE_MORE='-cc.mode=none -cc.cudagraph_mode=FULL_DECODE_ONLY' \
+    SARL_MAX_NUM_SEQS=8 SARL_MAX_BATCHED=2048 bash scripts/22_serve_gemma4.sh 0 8003 0.935 2>&1 | tee /var/tmp/swe/serve-gemma-node04.log"
+  ```
+  `OOM_SCORE_ADJ=1000` makes the server, not the sandboxes, the kernel's victim when node04's 14 GB run out; the engine
+  then dies silently ("engine core exited unexpectedly", no traceback), as on 2026-09-26 04:56 during the SWE-smith
+  screen. Probes fence the dead server and re-admit it once restarted.
+- **node08 disk (`/var`, 40 GB) after the 2026-09-26 cleanup:** `hf-cache` (bf16 Gemma, 15 GB, kept by user decision:
+  the trainer reads it at every start), `sif-smith` (5.1 GB), `adapters` (grpo-gemma-v1 keeps only step-30). The dev-pool
+  images live only on node04 `/var/tmp/swe/sif-dev` now (`rsync -a node04:/var/tmp/swe/sif-dev/ /var/tmp/swe/sif-dev/`
+  before any dev-pool work on node08); grpo-gemma-v1 steps 1–29 are archived on node04
+  `/var/tmp/swe/adapters-archive/grpo-gemma-v1`. New run configs set `keep_adapters: 2` so a run keeps only its newest
+  two adapters (resume needs only the newest).
 
 ## Facts learned the hard way (2026-09-24)
 

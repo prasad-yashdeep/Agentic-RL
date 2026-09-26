@@ -620,6 +620,24 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   is drafted (identical to v1 except `split: smith`, `pool: configs/pool_smith_v1.txt`); the pool comes from
   `scripts/gemma_pool.py <screen> --split smith --sif-dir /var/tmp/swe/sif-smith --host node08`; the trainer needs
   `SARL_SIF_DIR=/var/tmp/swe/sif-smith`.
+- **node08 disk cleanup (2026-09-26 10:45–10:53, user: "do whatever is best"):** `/var` 94 % (2.8 GB free) → **58 %
+  (17 GB free)**. Two candidates, each checked read-only by two independent verifiers (live use: processes, open fds,
+  tmux, watchdogs, crons, the next config; recoverability: copies, records, plans; all four "safe"):
+  (1) grpo-gemma-v1 `step-1..29` (28 dirs, no step-4 because step 4 had no update; 3.7 GB) copied to node04
+  `/var/tmp/swe/adapters-archive/grpo-gemma-v1` (84 files, sha256 equal) and then removed from node08; step-30 stays.
+  (2) node08 `sif-dev` regular images (11 files, ~10.5 GB) removed: node04 `/var/tmp/swe/sif-dev` holds sha256-identical
+  copies; the 3 symlinks into `/tmp/swe-sif` stay. Kept: the bf16 Gemma copy in `hf-cache` (15 GB; the trainer loads it
+  at start; user decision), `sif-smith`, the grader venv, the small older adapters (~0.5 GB), `/tmp` (27 % used).
+  Prevention: `train.keep_adapters` (`prune_adapters` in `sarl/train.py`, after each step's record is written; the
+  served adapter is never pruned) and `resume_point` (resume reloads the newest *stepped* adapter; the old code tried
+  `step-{last}`, which does not exist when the last step had no update). `grpo_gemma_smith_v1.yaml` sets
+  `keep_adapters: 2`. Tests: 57 pass on node08.
+- **node04 server crash during the screen:** the node04 engine exited silently at 04:56 (no traceback; the server runs
+  with `oom_score_adj=1000` so it is the kernel's first victim when node04's 14 GB fill up), and the screen ran on
+  node08:8001 alone from then on. A restart at 10:55 with an older command line failed (Inductor tried to allocate the
+  5.25 GiB PLE table on the 8 GB GPU); restarted at 11:05 with the recorded flags (`-cc.mode=none
+  -cc.cudagraph_mode=FULL_DECODE_ONLY`, 0.935), serving at 11:08; the screen re-admits it at its next retry round.
+  Crash log kept: node04 `/var/tmp/swe/serve-gemma-node04.crash-20260926-0456.log`.
 
 ---
 
