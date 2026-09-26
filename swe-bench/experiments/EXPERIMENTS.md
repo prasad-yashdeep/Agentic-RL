@@ -547,6 +547,15 @@ bug diff is not recoverable from git. Tests: `tests/test_swe_smith.py` (5) pass 
   the 179 gated tasks; a P2P-exclusion calibration for pydicom (drop the tests that fail under gold offline) is the
   follow-up if pydicom's diversity is wanted.
 
+- **P2P calibration** (`scripts/smith_p2p_calibrate.py`, node04): 18 of the 21 pydicom failures pass every F2P test
+  under gold; their offline-failing P2P tests are written to `experiments/smith-p2p-exclusions.json`, which the loader
+  subtracts; the 3 tasks whose F2P also fail stay excluded. Re-gate of the 18: `experiments/gate-smith-v1-pydicom-regate.json`.
+- **G2 smoke** (`experiments/smoke-smith-v1.json`, node04:8003, 2 tasks × 1 episode, 107 s): both gated; Gemma solved
+  `marshmallow…combine_file__ngnyfe96` (4 turns, 5,910 tokens, F2P 2/2) and failed `…func_basic__8v17v0qg` (10 turns,
+  no patch). The sandbox setup, patch extraction, grader pre-step and synthesized pytest script all work end to end.
+- **Next:** G3, the Gemma screen of the 179+ gated tasks (8 episodes each), queued behind `grpo-gemma-v1` and its
+  Verified evaluation (both need the serving GPUs).
+
 **grpo-gemma-v1 progress** (steps 1–7, 16:50–18:43; 13–22 min per step): policy reward 0.19, 0.16, 0.00, 0.16, 0.06,
 0.16 (steps 2–7: 6, 5, 0, 5, 2, 5 of 32); degenerate groups 2 of 4 on every step but step 4 (4 of 4, no update);
 16 trajectories trained per informative step; loss −0.05 to −0.20, grad norm 0.065–0.072, objective gain +0.0005 to
