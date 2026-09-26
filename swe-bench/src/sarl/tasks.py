@@ -118,13 +118,22 @@ def snapshot_dir(repo: str, revision: str, cache: Path = HF_CACHE) -> Path:
     return d
 
 
+@lru_cache(maxsize=1)
+def _smith_p2p_exclusions() -> dict:
+    p = Path(__file__).resolve().parents[2] / "experiments" / "smith-p2p-exclusions.json"
+    return json.loads(p.read_text()) if p.exists() else {}
+
+
 def _smith_row_to_task(r: dict, split: str) -> Task:
     """A SWE-smith row: bug patch -> gold by reversal; F2P test files hidden from the agent; PASS_TO_PASS restricted to
     tests in those files (what the synthesized eval script runs)."""
     bug = r["patch"] if r["patch"].endswith("\n") else r["patch"] + "\n"
     f2p = tuple(_as_list(r.get("FAIL_TO_PASS")))
     files = test_files(f2p)
-    p2p = tuple(t for t in _as_list(r.get("PASS_TO_PASS")) if t.split("::", 1)[0] in files)
+    # P2P tests that fail offline even under the gold patch (network-dependent data) carry no signal: calibrated out
+    # per task by scripts/smith_p2p_calibrate.py
+    excl = set(_smith_p2p_exclusions().get(r["instance_id"], ()))
+    p2p = tuple(t for t in _as_list(r.get("PASS_TO_PASS")) if t.split("::", 1)[0] in files and t not in excl)
     image = r["image_name"] if ":" in r["image_name"] else r["image_name"] + ":latest"
     return Task(
         instance_id=r["instance_id"], repo=r["repo"], base_commit=base_sha8(r["repo"]),

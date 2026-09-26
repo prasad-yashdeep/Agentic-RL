@@ -391,7 +391,7 @@ node08 12+12 + node04 8; 494 s for the batch):
   task solved sometimes and never always): **11 tasks**, pooled 30/264 episodes solved (11 %): marshmallow-1164,
   marshmallow-1343, pydicom-1192, pydicom-1562, pydicom-1694, pydicom-965, astroid-1614, astroid-1719, astroid-1903,
   sqlfluff-884, sqlfluff-905. Images copied to node08 (`/var/tmp/swe/sif-dev`, 14 SIFs). The run: `grpo-gemma-v1`
-  (`configs/grpo_gemma_v1.yaml`, 30 steps × 4 tasks × 8, launched 16:55 in tmux `swe-train` on node08).
+  (`configs/grpo_gemma_v1.yaml`, 30 steps × 4 tasks × 8, launched 16:50 in tmux `swe-train` on node08).
 
 ### Trainer port to Gemma 4 E4B (`src/sarl/gemma.py`, `configs/grpo_gemma_v1.yaml`, `tests/test_swe_gemma.py`)
 
@@ -540,7 +540,17 @@ bug diff is not recoverable from git. Tests: `tests/test_swe_smith.py` (5) pass 
   against Verified; against dev, only the repositories are shared (no ids, commits or issue text).
 - **G0 (node04, all four images):** one commit at the mirror's main, clean tree, one remote (`origin`, removed by our
   setup), every sampled bug patch applies (`git apply --check`), testbed python 3.10/3.11, pytest 8.3.
-- **G1 launched 17:08** on node04 (`rolling_probe --episodes 0`, 4 gate workers, `experiments/gate-smith-v1.json`).
+- **G1 grading gate** (node04, 17:03–18:27, `rolling_probe --episodes 0`, 4 workers; `experiments/gate-smith-v1.json`):
+  **179 of 200 pass** (gold = 1 with every F2P and P2P test, empty = 0). marshmallow 50/50, astroid 50/50, sqlfluff
+  50/50, **pydicom 29/50**: in all 21 failures the gold patch passes its F2P tests but a few P2P tests fail offline
+  (e.g. 389/394, 500/511, 42/43), the same network-dependent pydicom tests seen on the dev split. The screen will run on
+  the 179 gated tasks; a P2P-exclusion calibration for pydicom (drop the tests that fail under gold offline) is the
+  follow-up if pydicom's diversity is wanted.
+
+**grpo-gemma-v1 progress** (steps 1–7, 16:50–18:43; 13–22 min per step): policy reward 0.19, 0.16, 0.00, 0.16, 0.06,
+0.16 (steps 2–7: 6, 5, 0, 5, 2, 5 of 32); degenerate groups 2 of 4 on every step but step 4 (4 of 4, no update);
+16 trajectories trained per informative step; loss −0.05 to −0.20, grad norm 0.065–0.072, objective gain +0.0005 to
++0.0010 on every trained step; served drift vs base 0.07–0.12 nats per token; mismatch mean ≈ 0.03 on 46k–62k tokens.
 
 ---
 
