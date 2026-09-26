@@ -601,6 +601,17 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   chain took its run tag from the first (aborted) attempt in the same log; both names load the same
   `adapters/grpo-gemma-v1/step-30` directory on both servers (sha256 checked). 50 tasks × 4 episodes × 2 arms on 12 + 8
   slots; the SWE-smith screen (`experiments/screen-smith-v1.json`) starts automatically after it.
+- **Verified eval result (02:22 → 04:17, 1 h 55 min):** 49 tasks scored; `scikit-learn__scikit-learn-25931` failed its
+  gold gate on node04 (gold 0/1 F2P, 0/21 P2P — it passed on node08 in the v1 eval, so this is the eval node's
+  environment, most likely the 4 GB `ulimit -v` on a scikit-learn rebuild; both arms 0/0, excluded from the pairing).
+  **base 14/196 (7.1 %) vs step-30 19/196 (9.7 %)**; per-task mean difference **+2.6 pp, 95 % bootstrap CI [−1.5, +7.1],
+  sign-flip p = 0.39** (11 tasks with a difference); same-seed pairs: adapter-only 14, base-only 9, both 5, neither 168
+  (McNemar p = 0.41). Per arm: valid actions **94.7 % → 91.1 %**, turns 8.4 → 8.6, tokens 10.5k → 11.0k, patches
+  124 → 119 of 196, exits 194 submitted each (base 2 format, grpo 1 format + 1 context), wall 208 → 204 s. Per repo
+  (tasks, base, grpo): django 23: 7 → 11; sympy 6: 3 → 3; scikit-learn 5: 1 → 2; sphinx 6: 1 → 1; matplotlib 3: 2 → 2;
+  pytest/pallets/psf/astropy/pylint 0 → 0. **Verdict: a second clean null.** Gemma's base rate on this subset (7.1 %) is
+  far below mini-coder's (19.0 %); the adapter's only measurable effect is a 3.6 pp drop in protocol compliance. Next
+  change goes to the training signal (pool size via SWE-smith, pass-to-pass shaping), not the pipeline.
 
 ---
 
