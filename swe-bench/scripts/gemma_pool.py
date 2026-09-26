@@ -23,6 +23,7 @@ def main(argv=None) -> int:
     p.add_argument("--sif-dir", default="/var/tmp/swe/sif-dev")
     p.add_argument("--host", default=None, help="check image presence on this host (ssh)")
     p.add_argument("--min-solved", type=int, default=1)
+    p.add_argument("--split", default="dev", help="task split the ids belong to (dev | smith); decides the SIF names checked on --host")
     a = p.parse_args(argv)
 
     tally: dict[str, list[tuple[str, int, int]]] = defaultdict(list)
@@ -54,11 +55,19 @@ def main(argv=None) -> int:
     for iid, solved, n, runs in keep:
         print(f"  {iid:40} {solved:2}/{n:<3} {runs}")
     if a.host:
-        names = [iid for iid, *_ in keep]
-        cmd = "for f in " + " ".join(names) + f"; do [ -e {a.sif_dir}/$f.sif ] && echo \"$f present\" || echo \"$f MISSING\"; done"
-        out = subprocess.run(["ssh", "-o", "BatchMode=yes", a.host, cmd], capture_output=True, text=True, timeout=60).stdout
-        missing = [l.split()[0] for l in out.splitlines() if l.endswith("MISSING")]
-        print(f"{a.host}: {len(names) - len(missing)} images present, {len(missing)} missing: {missing}")
+        ids = [iid for iid, *_ in keep]
+        if a.split == "dev":
+            sifs = {iid: f"{iid}.sif" for iid in ids}  # dev images are one per task
+        else:  # SWE-smith: one image per repository, named after the image, so ask the loader
+            from sarl.tasks import get_task
+
+            sifs = {iid: get_task(iid, (a.split,)).sif_name for iid in ids}
+        uniq = sorted(set(sifs.values()))
+        cmd = "for f in " + " ".join(uniq) + f"; do [ -e {a.sif_dir}/$f ] && echo \"$f present\" || echo \"$f MISSING\"; done"
+        out = subprocess.run(["ssh", "-o", "BatchMode=yes", a.host, cmd], capture_output=True, text=True, timeout=120).stdout
+        missing = {l.split()[0] for l in out.splitlines() if l.endswith("MISSING")}
+        tasks_missing = [iid for iid, s in sifs.items() if s in missing]
+        print(f"{a.host}:{a.sif_dir}: {len(uniq) - len(missing)} of {len(uniq)} images present; {len(tasks_missing)} tasks without an image: {tasks_missing[:10]}")
     return 0
 
 

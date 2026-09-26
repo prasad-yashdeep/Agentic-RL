@@ -1,0 +1,46 @@
+# GRPO on Gemma 4 E4B with the SWE-smith pool (drafted 2026-09-26 after grpo-gemma-v1: +2.0 ± 2.2 pp on its 11 training
+# tasks and Verified 7.1 % -> 9.7 %, p = 0.39, both null). Everything is identical to grpo_gemma_v1.yaml except the task
+# source: `split: smith` and a pool written from the Gemma screen of the 200 pre-registered SWE-smith tasks
+# (experiments/screen-smith-v1.json -> configs/pool_smith_v1.txt via scripts/gemma_pool.py --split smith).
+# Images are one per repository (4 SIFs, 5.3 GB): run the trainer with SARL_SIF_DIR=/var/tmp/swe/sif-smith on node08.
+# Serving: node08 GPU0 :8001 (12 in flight) + node04 :8003 (8); trainer on node08 GPU1 (fp8 base, PLE table on the CPU).
+name: grpo-gemma-smith-v1
+model: google/gemma-4-E4B-it
+revision: ee0ef6023621cff504d758262d4e04895a5af4a2
+chat_template_kwargs: {enable_thinking: false}
+serve_url: http://node08:8001
+servers:
+  - {url: http://node08:8001, slots: 12}
+  - {url: http://node04:8003, slots: 8}
+served_model: policy
+pool: configs/pool_smith_v1.txt                       # mixed tasks from experiments/screen-smith-v1.json (never always-solved)
+split: smith
+steps: 30
+tasks_per_step: 4
+group_size: 8
+oracle_per_group: 0
+protocol: mswea
+seed: 0
+sampling: {temperature: 1.0, top_p: 1.0, top_k: -1, repetition_penalty: 1.0}
+limits: {max_turns: 50, max_context_tokens: 24576, max_new_tokens: 4096, wall_clock_s: 1200, command_timeout_s: 60, max_obs_chars: 10000, max_format_errors: 3}
+train:
+  base: fp8
+  base_snapshot: gemma4-e4b-fp8
+  ple_on_cpu: true
+  attn: sdpa
+  save_on_cpu: true
+  lr: 5.0e-5
+  lora_r: 16
+  lora_alpha: 32
+  targets: '.*\.language_model\.layers\.\d+\.(self_attn\.(q_proj|k_proj|v_proj|o_proj)|mlp\.(gate_proj|up_proj|down_proj))'
+  clip: 1.0
+  max_train_tokens: 16384
+  truncate_overlong: true
+  chunk: 512
+  loss_agg: token_mean
+  tis_cap: 2.0
+diagnostics: {mismatch: batch}
+advantage: {eps: 1.0e-4, skip_degenerate: true}
+concurrency: {rollouts: 20, grading: 8}
+grading: {timeout_s: 1800, network: false}
+env: {network: false}

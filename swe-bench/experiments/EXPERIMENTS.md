@@ -612,6 +612,14 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   pytest/pallets/psf/astropy/pylint 0 → 0. **Verdict: a second clean null.** Gemma's base rate on this subset (7.1 %) is
   far below mini-coder's (19.0 %); the adapter's only measurable effect is a 3.6 pp drop in protocol compliance. Next
   change goes to the training signal (pool size via SWE-smith, pass-to-pass shaping), not the pipeline.
+- **SWE-smith run prep (04:30):** the Gemma screen of the 200 pre-registered tasks started at 04:17 on node04 (tmux
+  `swe-screen-smith`, `experiments/screen-smith-v1.json`, 8 episodes per task, 12 + 8 slots; ~5 h). The four SWE-smith
+  images (5.3 GB) are copied to node08 `/var/tmp/swe/sif-smith` (sha256 equal on both nodes), which leaves node08 `/var`
+  at 94 % (2.8 GB free): the next run's 30 adapters (~4.2 GB) need the intermediate `adapters/grpo-gemma-v1/step-1..29`
+  (~4.1 GB) removed first, or `sif-dev` (11 GB) if the dev pool is no longer needed. `configs/grpo_gemma_smith_v1.yaml`
+  is drafted (identical to v1 except `split: smith`, `pool: configs/pool_smith_v1.txt`); the pool comes from
+  `scripts/gemma_pool.py <screen> --split smith --sif-dir /var/tmp/swe/sif-smith --host node08`; the trainer needs
+  `SARL_SIF_DIR=/var/tmp/swe/sif-smith`.
 
 ---
 
