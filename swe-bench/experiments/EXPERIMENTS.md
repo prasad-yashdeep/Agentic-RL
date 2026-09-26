@@ -581,6 +581,27 @@ pydicom-1192 6/24 → 3/8, astroid-1903 1/32 → 5/48, marshmallow-1343 2/24 →
 2/40 → 3/32, sqlfluff-905 0/24 → 1/48, marshmallow-1164 1/16 → 1/16, pydicom-1694 1/40 → 0/16, astroid-1614 10/24 →
 6/16, pydicom-1562 2/16 → 1/24. The Verified eval (queued in the post-run chain) decides.
 
+**Final (steps 1–30, 16:50 → 02:19, 9.5 h; `experiments/tracker-gemma-v1.json`, explainer section 12).** 145/960 solved
+(**15.1 %**); pooled by thirds 12.8 % → 15.0 % → 17.5 %, but that is mostly task mix (sqlfluff-884, 35 % solve rate, was
+drawn 24× in steps 1–15 and 56× in 16–30). **Task-stratified late−early (16–30 vs 1–15, 11 tasks): +2.0 ± 2.2 pp** =
+0.9 SE, a null. The running estimate peaked at +6.9 ± 3.1 (step 15), read +4.8 ± 2.7 at step 19 and faded, the same shape
+as v2's (+8.8 ± 5.0 at step 10 → −1.2 ± 2.6). Per task (1–15 → 16–30): astroid-1719 4/64 → 7/32, marshmallow-1343 5/56 →
+8/56, pydicom-965 13/56 → 13/48, sqlfluff-884 8/24 → 20/56, marshmallow-1164 2/32 → 2/24, sqlfluff-905 1/56 → 1/40,
+astroid-1903 4/56 → 3/40, astroid-1614 14/32 → 14/32, pydicom-1562 3/32 → 5/56, pydicom-1694 1/40 → 0/56, pydicom-1192
+9/32 → 8/40. Mechanism: objective gain > 0 on 29/29 updates (+0.0002 to +0.0014; step 4 had no update); loss −0.20 to
++0.05; grad norm 0.046–0.088; mismatch mean 0.022–0.033 / p99 0.26–0.34; TIS mean 0.9992–1.0010, cap on 0.014 % of
+tokens; drift 0.070–0.166, ending 0.111, no trend. Behaviour: mixed groups 70/120 (all four on steps 8, 13, 19, 22, 30);
+valid 90–98 % (mean 93.4 %); 5.9–9.1 turns; 3.6k sampled tokens per episode; 21 trajectories truncated at 16,384; exits
+951 submitted / 8 format / 1 context; patch outcomes 145 fixed / 134 harmless / 384 broke-or-failed-to-apply / 297 empty.
+Cost: median step 1,058 s, update phase 58 % of wall time, 1.78 M trained tokens. Final adapter `policy-58db5d-s30`
+(`/var/tmp/swe/adapters/grpo-gemma-v1/step-30`), served on node08:8001 and node04:8003. **Verdict on the training
+tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-30, 50 × 4 paired) decides.**
+- **Verified eval started 02:22 (post-run chain, node04 tmux `swe-eval-gemma`, `experiments/eval-verified-gemma-v1.json`):**
+  arms `base=policy`, `grpo=policy-ffefc1-s30`. The alias differs from the trainer's `policy-58db5d-s30` only because the
+  chain took its run tag from the first (aborted) attempt in the same log; both names load the same
+  `adapters/grpo-gemma-v1/step-30` directory on both servers (sha256 checked). 50 tasks × 4 episodes × 2 arms on 12 + 8
+  slots; the SWE-smith screen (`experiments/screen-smith-v1.json`) starts automatically after it.
+
 ---
 
 ## 2026-09-24 s9-qwen3-1.7b-v1 — S9: the diagram's tool-call protocol with a model that follows it
