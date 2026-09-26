@@ -549,7 +549,8 @@ bug diff is not recoverable from git. Tests: `tests/test_swe_smith.py` (5) pass 
 
 - **P2P calibration** (`scripts/smith_p2p_calibrate.py`, node04): 18 of the 21 pydicom failures pass every F2P test
   under gold; their offline-failing P2P tests are written to `experiments/smith-p2p-exclusions.json`, which the loader
-  subtracts; the 3 tasks whose F2P also fail stay excluded. Re-gate of the 18: `experiments/gate-smith-v1-pydicom-regate.json`.
+  subtracts (18 tasks, 51 tests); the 3 tasks whose F2P also fail stay excluded. Re-gate of the 18
+  (`experiments/gate-smith-v1-pydicom-regate.json`): **18/18 pass** → the SWE-smith gate stands at **197 of 200**.
 - **G2 smoke** (`experiments/smoke-smith-v1.json`, node04:8003, 2 tasks × 1 episode, 107 s): both gated; Gemma solved
   `marshmallow…combine_file__ngnyfe96` (4 turns, 5,910 tokens, F2P 2/2) and failed `…func_basic__8v17v0qg` (10 turns,
   no patch). The sandbox setup, patch extraction, grader pre-step and synthesized pytest script all work end to end.

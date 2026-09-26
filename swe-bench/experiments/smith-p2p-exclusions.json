@@ -1,0 +1,89 @@
+{
+ "pydicom__pydicom.7d361b3d.combine_file__0ghggoro": [
+  "tests/test_dataset.py::TestDatasetOverlayArray::test_possible_not_available",
+  "tests/test_filewriter.py::TestDCMWrite::test_convert_rgb_from_implicit_to_explicit_vr",
+  "tests/test_filewriter.py::TestDCMWrite::test_raw_elements_preserved_explicit_vr",
+  "tests/test_filewriter.py::TestScratchWriteDateTime::test_write_removes_grouplength",
+  "tests/test_filewriter.py::TestWriteFile::test_write_removes_grouplength"
+ ],
+ "pydicom__pydicom.7d361b3d.combine_file__ra4ksl2m": [
+  "tests/test_rle_pixel_data.py::TestNoNumpy_NoRLEHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/SC_rgb.dcm-data1]",
+  "tests/test_rle_pixel_data.py::TestNoNumpy_NoRLEHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/SC_rgb_expb_2frame.dcm-data3]",
+  "tests/test_rle_pixel_data.py::TestNoNumpy_NoRLEHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/emri_small_jpeg_2k_lossless.dcm-data8]",
+  "tests/test_rle_pixel_data.py::TestNoNumpy_RLEHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/SC_rgb.dcm-data1]",
+  "tests/test_rle_pixel_data.py::TestNoNumpy_RLEHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/SC_rgb_expb_2frame.dcm-data3]",
+  "tests/test_rle_pixel_data.py::TestNoNumpy_RLEHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/emri_small_jpeg_2k_lossless.dcm-data8]"
+ ],
+ "pydicom__pydicom.7d361b3d.func_basic__08yjg4v1": [
+  "tests/test_data_manager.py::test_fetch_data_files"
+ ],
+ "pydicom__pydicom.7d361b3d.func_basic__1vhsr18x": [
+  "tests/pixels/test_common.py::TestRunnerBase::test_set_options_ds"
+ ],
+ "pydicom__pydicom.7d361b3d.func_basic__2drd0i5j": [
+  "tests/test_dataelem.py::TestDataElement::test_reading_ds_with_known_tags_with_UN_VR"
+ ],
+ "pydicom__pydicom.7d361b3d.func_basic__2xdfkin2": [
+  "tests/test_dataelem.py::TestDataElement::test_reading_ds_with_known_tags_with_UN_VR"
+ ],
+ "pydicom__pydicom.7d361b3d.func_basic__5us1xvif": [
+  "tests/test_dataset.py::TestDatasetOverlayArray::test_possible_not_available"
+ ],
+ "pydicom__pydicom.7d361b3d.func_basic__b02kpban": [
+  "tests/pixels/test_common.py::TestRunnerBase::test_set_options_ds",
+  "tests/pixels/test_decoder_base.py::TestDecoder::test_buffer"
+ ],
+ "pydicom__pydicom.7d361b3d.func_basic__wgzbxapa": [
+  "tests/test_dataset.py::TestDatasetOverlayArray::test_possible_not_available",
+  "tests/test_filereader.py::TestReader::test_correct_ambiguous_vr_compressed",
+  "tests/test_filereader.py::TestReader::test_planar_config",
+  "tests/test_filereader.py::TestReader::test_sequence_with_implicit_vr",
+  "tests/test_filereader.py::TestReader::test_specific_tags_with_unknown_length_tag",
+  "tests/test_filereader.py::TestReader::test_tag_with_unknown_length_tag_too_short",
+  "tests/test_filereader.py::TestReader::test_tag_with_unknown_length_tag_too_short_strict",
+  "tests/test_filewriter.py::TestDCMWrite::test_convert_rgb_from_implicit_to_explicit_vr",
+  "tests/test_filewriter.py::TestDCMWrite::test_raw_elements_preserved_explicit_vr",
+  "tests/test_filewriter.py::TestScratchWriteDateTime::test_write_removes_grouplength",
+  "tests/test_filewriter.py::TestWriteFile::test_write_removes_grouplength"
+ ],
+ "pydicom__pydicom.7d361b3d.func_basic__z6p3o0nj": [
+  "tests/test_dataelem.py::TestDataElement::test_reading_ds_with_known_tags_with_UN_VR"
+ ],
+ "pydicom__pydicom.7d361b3d.func_pm_ctrl_invert_if__rw7kryoi": [
+  "tests/pixels/test_decoder_base.py::TestDecoder::test_buffer"
+ ],
+ "pydicom__pydicom.7d361b3d.func_pm_ctrl_shuffle__t4448pcb": [
+  "tests/pixels/test_utils.py::TestGetJpgParameters::test_jls_ilv0",
+  "tests/pixels/test_utils.py::TestGetJpgParameters::test_jls_ilv1",
+  "tests/pixels/test_utils.py::TestGetJpgParameters::test_jls_ilv2"
+ ],
+ "pydicom__pydicom.7d361b3d.func_pm_remove_assign__87vusoy5": [
+  "tests/pixels/test_utils.py::TestGetJpgParameters::test_jls_ilv0",
+  "tests/pixels/test_utils.py::TestGetJpgParameters::test_jls_ilv1",
+  "tests/pixels/test_utils.py::TestGetJpgParameters::test_jls_ilv2",
+  "tests/test_numpy_pixel_data.py::TestNoNumpy_NoNumpyHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/emri_small_jpeg_2k_lossless.dcm-data4]",
+  "tests/test_numpy_pixel_data.py::TestNoNumpy_NumpyHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/emri_small_jpeg_2k_lossless.dcm-data4]",
+  "tests/test_pillow_pixel_data.py::TestNoNumpy_NoPillowHandler::test_can_access_supported_dataset",
+  "tests/test_pillow_pixel_data.py::TestNoNumpy_NoPillowHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/JPGLosslessP14SV1_1s_1f_8b.dcm-data5]",
+  "tests/test_pillow_pixel_data.py::TestNoNumpy_NoPillowHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/OBXXXX1A.dcm-data1]",
+  "tests/test_pillow_pixel_data.py::TestNoNumpy_NoPillowHandler::test_can_access_unsupported_dataset[/root/.pydicom/data/OBXXXX1A_expb.dcm-data2]"
+ ],
+ "pydicom__pydicom.7d361b3d.func_pm_remove_assign__bl5dhiq4": [
+  "tests/test_dataset.py::TestDatasetOverlayArray::test_possible_not_available"
+ ],
+ "pydicom__pydicom.7d361b3d.func_pm_remove_cond__ri8utuyh": [
+  "tests/test_dataelem.py::TestDataElement::test_reading_ds_with_known_tags_with_UN_VR"
+ ],
+ "pydicom__pydicom.7d361b3d.func_pm_remove_cond__u7k3vnt4": [
+  "tests/pixels/test_common.py::TestRunnerBase::test_set_options_ds"
+ ],
+ "pydicom__pydicom.7d361b3d.func_pm_remove_wrapper__hj5nxlu3": [
+  "tests/test_filewriter.py::TestDCMWrite::test_convert_rgb_from_implicit_to_explicit_vr",
+  "tests/test_filewriter.py::TestDCMWrite::test_raw_elements_preserved_explicit_vr",
+  "tests/test_filewriter.py::TestScratchWriteDateTime::test_write_removes_grouplength",
+  "tests/test_filewriter.py::TestWriteFile::test_write_removes_grouplength"
+ ],
+ "pydicom__pydicom.7d361b3d.lm_rewrite__qdcbunva": [
+  "tests/test_dataset.py::TestDatasetOverlayArray::test_possible_not_available"
+ ]
+}

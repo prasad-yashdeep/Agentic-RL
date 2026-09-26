@@ -1,0 +1,309 @@
+{
+ "meta": {
+  "tasks_file": "configs/regate_smith_pydicom.txt",
+  "split": "smith",
+  "model": "ricdomolm/mini-coder-1.7b",
+  "revision": "5b7fbc90b6c4684c546de7f811865cff4414a96c",
+  "arms": {
+   "gemma": "policy"
+  },
+  "episodes": 0,
+  "protocol": "mswea",
+  "limits": {
+   "max_turns": 50,
+   "max_context_tokens": 24576,
+   "max_new_tokens": 1024,
+   "wall_clock_s": 1800,
+   "command_timeout_s": 60
+  },
+  "sampling": {
+   "temperature": 1.0,
+   "top_p": 1.0,
+   "top_k": -1
+  },
+  "seeds": "per turn: 1000 + episode index, then + 1000003 x turn (paired across arms)",
+  "server_weights": null
+ },
+ "tasks": {
+  "pydicom__pydicom.7d361b3d.combine_file__0ghggoro": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "389/389"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.combine_file__ra4ksl2m": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "20/20"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_basic__08yjg4v1": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "11/11"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_basic__1vhsr18x": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "42/42"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_basic__2drd0i5j": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "349/349"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_basic__2xdfkin2": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "367/367"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_basic__5us1xvif": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "191/191"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_basic__b02kpban": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "5/5",
+    "gold_p2p": "116/116"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_basic__wgzbxapa": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "4/4",
+    "gold_p2p": "500/500"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_basic__z6p3o0nj": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "350/350"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_pm_ctrl_invert_if__rw7kryoi": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "14/14"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_pm_ctrl_shuffle__t4448pcb": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "2/2",
+    "gold_p2p": "252/252"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_pm_remove_assign__87vusoy5": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "5/5",
+    "gold_p2p": "262/262"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_pm_remove_assign__bl5dhiq4": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "191/191"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_pm_remove_cond__ri8utuyh": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "3/3",
+    "gold_p2p": "367/367"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_pm_remove_cond__u7k3vnt4": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "42/42"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.func_pm_remove_wrapper__hj5nxlu3": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "4/4",
+    "gold_p2p": "242/242"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  },
+  "pydicom__pydicom.7d361b3d.lm_rewrite__qdcbunva": {
+   "repo": "swesmith/pydicom__pydicom.7d361b3d",
+   "arms": {},
+   "gate": {
+    "ok": true,
+    "gold": 1.0,
+    "empty": 0.0,
+    "gold_f2p": "1/1",
+    "gold_p2p": "191/191"
+   },
+   "mixed": false,
+   "final": {
+    "gemma": "0/0"
+   }
+  }
+ },
+ "timing": [
+  {
+   "batch": 0,
+   "servers": {
+    "http://localhost:8001": 8
+   },
+   "gate_s": 2928.4,
+   "episodes_s": 0.0
+  }
+ ]
+}
