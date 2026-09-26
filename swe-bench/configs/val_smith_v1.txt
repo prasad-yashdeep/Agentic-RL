@@ -1,0 +1,23 @@
+# SWE-smith in-distribution validation set (never trained on): 20 tasks from configs/pool_smith_all_v1.txt, hashed per repository (salt 'smith-v1-val', 5 per repo held out);
+# written by scripts/holdout_split.py before any training on this pool.
+
+marshmallow-code__marshmallow.9716fc62.func_basic__r1b5oad2  # 2/8: screen-smith-v1 2/8
+marshmallow-code__marshmallow.9716fc62.func_basic__kzgb66gr  # 1/8: screen-smith-v1 1/8
+marshmallow-code__marshmallow.9716fc62.func_basic__sdsba2vp  # 3/8: screen-smith-v1 3/8
+marshmallow-code__marshmallow.9716fc62.func_basic__nl4m53vv  # 6/8: screen-smith-v1 6/8
+marshmallow-code__marshmallow.9716fc62.func_basic__qx9k0oz7  # 1/8: screen-smith-v1 1/8
+pydicom__pydicom.7d361b3d.func_pm_ctrl_shuffle__t4448pcb  # 3/8: screen-smith-v1 3/8
+pydicom__pydicom.7d361b3d.func_basic__wxzyhqh7  # 5/8: screen-smith-v1 5/8
+pydicom__pydicom.7d361b3d.func_basic__z6p3o0nj  # 5/8: screen-smith-v1 5/8
+pydicom__pydicom.7d361b3d.func_pm_remove_cond__obu1wg4l  # 2/8: screen-smith-v1 2/8
+pydicom__pydicom.7d361b3d.combine_file__fhz8t5fa  # 1/8: screen-smith-v1 1/8
+pylint-dev__astroid.b114f6b5.lm_rewrite__kxxx3vrz  # 1/8: screen-smith-v1 1/8
+pylint-dev__astroid.b114f6b5.func_pm_remove_cond__wy2mwcij  # 3/8: screen-smith-v1 3/8
+pylint-dev__astroid.b114f6b5.func_basic__kyin62my  # 1/8: screen-smith-v1 1/8
+pylint-dev__astroid.b114f6b5.func_basic__mpzve0y8  # 6/8: screen-smith-v1 6/8
+pylint-dev__astroid.b114f6b5.func_basic__3lcv6a6y  # 1/8: screen-smith-v1 1/8
+sqlfluff__sqlfluff.50a1c4b6.func_basic__wy3cwbrv  # 5/8: screen-smith-v1 5/8
+sqlfluff__sqlfluff.50a1c4b6.combine_file__zmyfnz6i  # 2/8: screen-smith-v1 2/8
+sqlfluff__sqlfluff.50a1c4b6.func_basic__eqj85268  # 4/8: screen-smith-v1 4/8
+sqlfluff__sqlfluff.50a1c4b6.func_basic__15g0w59m  # 3/8: screen-smith-v1 3/8
+sqlfluff__sqlfluff.50a1c4b6.func_basic__roaq6qet  # 2/8: screen-smith-v1 2/8

@@ -13,7 +13,8 @@ servers:
   - {url: http://node08:8001, slots: 12}
   - {url: http://node04:8003, slots: 8}
 served_model: policy
-pool: configs/pool_smith_v1.txt                       # mixed tasks from experiments/screen-smith-v1.json (never always-solved)
+pool: configs/pool_smith_v1.txt                       # 53 train tasks: the 73 mixed tasks of experiments/screen-smith-v1.json
+                                                      # minus 20 held out in configs/val_smith_v1.txt (scripts/holdout_split.py)
 split: smith
 steps: 30
 keep_adapters: 2                                      # prune older step-* adapters (134 MB each); resume needs only the newest
