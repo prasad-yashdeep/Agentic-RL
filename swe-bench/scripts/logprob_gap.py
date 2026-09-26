@@ -50,7 +50,7 @@ def cmd_sample(a, cfg) -> int:
 
     def one(job):
         t, i = job
-        with ApptainerEnv(sif_for(t), prefix="gap-", command_timeout=lim.command_timeout_s) as env:
+        with ApptainerEnv(sif_for(t), prefix="gap-", command_timeout=lim.command_timeout_s, setup=t.sandbox_setup) as env:
             tr = run_episode(VLLMPolicy(a.url, a.model, Sampling(**{**cfg["sampling"], "seed": 4000 + i}), stop_token_ids=stops),
                              env, t, fmt, lim, protocol=cfg["protocol"])
         rec = tr.to_json(with_tokens=True) if "with_tokens" in tr.to_json.__code__.co_varnames else tr.to_json()

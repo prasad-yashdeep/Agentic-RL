@@ -526,6 +526,22 @@ PASS_TO_PASS, image_name, repo, problem_statement):
   serving GPUs: run after the dev-pool GRPO run or at reduced slots); G4 two-step training smoke.
 - **Plan:** implement and gate G0–G2 while `grpo-gemma-v1` trains on the dev pool (CPU work on node04); screen after.
 
+**Implemented (2026-09-25 evening, commit below):** `src/sarl/smith.py` (mirror-name parsing, `reverse_unidiff` = the
+gold, `setup_script` for sandbox and grader, `eval_script_for`), `DATASETS["smith"]` + `SMITH_REPOS` (`paths.py`), the
+loader (`load_split("smith")`: pyarrow filter on the four repos, `pr_` mirrors dropped; 4,662 tasks), `Task.bug_patch`
+/ `hidden_files` / image-keyed `sif_name` / `sandbox_setup` / `grader_setup`, `ApptainerEnv(setup=…)` (runs the setup
+before the diff base is pinned), the grader pre-step (`/sarl_in/setup.sh`, `>>>>> Reset Failed` on failure), the
+contamination guard mapping mirrors back to `owner/repo` and matching copied issue text, `scripts/smith_pool.py`.
+The sandbox setup ends with `rm -rf .git; git init; git add -A; git commit`: one commit, no remote, no reflog, so the
+bug diff is not recoverable from git. Tests: `tests/test_swe_smith.py` (5) pass with the rest of the suite.
+- **Screen list** `configs/screen_smith_v1.txt`: 1,303 candidates after the filter (marshmallow 103, astroid 380,
+  sqlfluff 484, pydicom 336), hashed 50 per repo (salt `smith-v1`) → 200 tasks, sha256 `339b5c42…`; strategies:
+  func_basic 105, func_pm_* 65, combine_file 15, lm_rewrite 15. Guard (`experiments/smith-v1-guard.json`): clean
+  against Verified; against dev, only the repositories are shared (no ids, commits or issue text).
+- **G0 (node04, all four images):** one commit at the mirror's main, clean tree, one remote (`origin`, removed by our
+  setup), every sampled bug patch applies (`git apply --check`), testbed python 3.10/3.11, pytest 8.3.
+- **G1 launched 17:08** on node04 (`rolling_probe --episodes 0`, 4 gate workers, `experiments/gate-smith-v1.json`).
+
 ---
 
 ## 2026-09-24 s9-qwen3-1.7b-v1 — S9: the diagram's tool-call protocol with a model that follows it

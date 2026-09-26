@@ -1,8 +1,9 @@
 """SWE-bench tasks: loading the pinned datasets offline, the Task record, pools and the contamination guard.
 
-Training draws only from the SWE-bench **dev** split (225 tasks from marshmallow, pvlib, pydicom, astroid, pyvista and
-sqlfluff), whose repos, instance ids and base commits are disjoint from SWE-bench **Verified** (500 tasks from 12
-other repos), which stays evaluation-only. The reference lecture trains on a Verified task "for illustrative
+Training draws from the SWE-bench **dev** split (225 tasks from marshmallow, pvlib, pydicom, astroid, pyvista and
+sqlfluff) and, since 2026-09-25, from SWE-smith's mirrors of the same four repos (`sarl.smith`); both are disjoint in
+repos, instance ids and base commits from SWE-bench **Verified** (500 tasks from 12 other repos), which stays
+evaluation-only. The reference lecture trains on a Verified task "for illustrative
 purposes" (0:15); we reproduce that only in the phase-1 replica, tagged `contaminates_eval`.
 """
 
@@ -15,7 +16,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Iterable, Sequence
 
-from sarl.paths import DATASETS, HF_CACHE
+from sarl.paths import DATASETS, HF_CACHE, SMITH_REPOS
+from sarl.smith import (base_sha8, eval_script_for, is_pr_mirror, is_smith_row, reverse_unidiff, setup_script, test_files,
+                        upstream_repo)
 
 VERIFIED_REPOS = frozenset({
     "astropy/astropy", "django/django", "matplotlib/matplotlib", "mwaskom/seaborn", "pallets/flask", "psf/requests",
@@ -49,6 +52,13 @@ class Task:
     # held out from the agent: the gold fix and the grader's test patch
     patch: str = field(default="", repr=False)
     test_patch: str = field(default="", repr=False)
+    # SWE-smith only: the diff that creates the bug (gold = its reverse) and the test files the agent must not see
+    bug_patch: str = field(default="", repr=False)
+    hidden_files: tuple[str, ...] = ()
+
+    @property
+    def is_smith(self) -> bool:
+        return bool(self.bug_patch)
 
     @property
     def docker_ref(self) -> str:
@@ -56,7 +66,21 @@ class Task:
 
     @property
     def sif_name(self) -> str:
+        if self.is_smith:  # one image per repository: key the file by the image, not the instance
+            return self.image.rsplit("/", 1)[-1].split(":", 1)[0] + ".sif"
         return f"{self.instance_id}.sif"
+
+    @property
+    def upstream_repo(self) -> str:
+        return upstream_repo(self.repo)
+
+    @property
+    def sandbox_setup(self) -> str | None:
+        """Bash run in a fresh sandbox before the agent starts (None for SWE-bench tasks: the image is the task state)."""
+        return setup_script(self.bug_patch, self.hidden_files, keep_tests=False) if self.is_smith else None
+
+    def grader_setup(self, patch_path: str) -> str | None:
+        return setup_script(self.bug_patch, self.hidden_files, keep_tests=True, patch_path=patch_path) if self.is_smith else None
 
     @property
     def n_patch_files(self) -> int:
@@ -64,7 +88,7 @@ class Task:
 
     @property
     def contaminates_eval(self) -> bool:
-        return self.repo in VERIFIED_REPOS
+        return self.upstream_repo in VERIFIED_REPOS
 
     def grader_row(self) -> dict:
         """The dict swebench.harness.utils.make_test_spec() needs (v5 field names)."""
@@ -94,7 +118,25 @@ def snapshot_dir(repo: str, revision: str, cache: Path = HF_CACHE) -> Path:
     return d
 
 
+def _smith_row_to_task(r: dict, split: str) -> Task:
+    """A SWE-smith row: bug patch -> gold by reversal; F2P test files hidden from the agent; PASS_TO_PASS restricted to
+    tests in those files (what the synthesized eval script runs)."""
+    bug = r["patch"] if r["patch"].endswith("\n") else r["patch"] + "\n"
+    f2p = tuple(_as_list(r.get("FAIL_TO_PASS")))
+    files = test_files(f2p)
+    p2p = tuple(t for t in _as_list(r.get("PASS_TO_PASS")) if t.split("::", 1)[0] in files)
+    image = r["image_name"] if ":" in r["image_name"] else r["image_name"] + ":latest"
+    return Task(
+        instance_id=r["instance_id"], repo=r["repo"], base_commit=base_sha8(r["repo"]),
+        problem_statement=r.get("problem_statement") or "", image=image, fail_to_pass=f2p, pass_to_pass=p2p,
+        eval_script=eval_script_for(files), log_parser="parse_log_pytest", eval_type="pass_and_fail", version="smith",
+        split=split, patch=reverse_unidiff(bug), test_patch="", bug_patch=bug, hidden_files=files,
+    )
+
+
 def _row_to_task(r: dict, split: str) -> Task:
+    if is_smith_row(r):
+        return _smith_row_to_task(r, split)
     image = r.get("image") or image_for(r["instance_id"])
     return Task(
         instance_id=r["instance_id"], repo=r["repo"], base_commit=r["base_commit"],
@@ -114,7 +156,13 @@ def load_split(name: str) -> tuple[Task, ...]:
     files = sorted(glob.glob(str(snapshot_dir(repo, rev) / "data" / f"{split}-*.parquet")))
     if not files:
         raise FileNotFoundError(f"no {split} parquet in {repo}@{rev[:8]}")
-    rows = pd.concat([pd.read_parquet(f) for f in files]).to_dict("records")
+    if name == "smith":  # 59k rows / 4 GB of test lists: read only our repos' rows, and never the PR mirrors
+        import pyarrow.parquet as pq
+
+        tables = [pq.read_table(f, filters=[("repo", "in", list(SMITH_REPOS))]) for f in files]
+        rows = [r for t in tables for r in t.to_pylist() if not is_pr_mirror(r["instance_id"])]
+    else:
+        rows = pd.concat([pd.read_parquet(f) for f in files]).to_dict("records")
     return tuple(_row_to_task(r, name) for r in rows)
 
 
@@ -148,15 +196,19 @@ def select_pool(tasks: Iterable[Task], n: int, *, max_patch_chars: int = 700, ma
 
 
 def contamination_report(train: Iterable[Task], evaluation: Iterable[Task]) -> dict:
-    """Structural leakage guard (the semantic MiniLM check lives in scripts/pool_guard.py)."""
+    """Structural leakage guard: shared repository (SWE-smith mirrors mapped back to owner/repo), instance id, base
+    commit, or an identical problem statement (SWE-smith's `pr_` mirrors copy real issues). A semantic near-duplicate
+    check is not implemented."""
     train, evaluation = list(train), list(evaluation)
-    ev_repos = {t.repo for t in evaluation} | set(VERIFIED_REPOS)
+    ev_repos = {t.upstream_repo for t in evaluation} | set(VERIFIED_REPOS)
     ev_ids = {t.instance_id for t in evaluation}
     ev_commits = {t.base_commit for t in evaluation}
+    ev_text = {t.problem_statement.strip() for t in evaluation if t.problem_statement.strip()}
     hits = {
-        "repo": sorted({t.instance_id for t in train if t.repo in ev_repos}),
+        "repo": sorted({t.instance_id for t in train if t.upstream_repo in ev_repos}),
         "instance_id": sorted({t.instance_id for t in train if t.instance_id in ev_ids}),
-        "base_commit": sorted({t.instance_id for t in train if t.base_commit in ev_commits}),
+        "base_commit": sorted({t.instance_id for t in train if t.base_commit and t.base_commit in ev_commits}),
+        "problem_statement": sorted({t.instance_id for t in train if t.problem_statement.strip() in ev_text}),
     }
     return {"n_train": len(train), "n_eval": len(evaluation), "hits": hits, "clean": not any(hits.values())}
 

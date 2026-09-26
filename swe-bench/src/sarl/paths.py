@@ -71,7 +71,12 @@ DATASETS = {
     "dev": ("SWE-bench/SWE-bench", "c6fe717fd7a4c3ac1daa4055a4fd082c6a1d28a2", "dev"),  # training (repos disjoint from Verified)
     "verified": ("SWE-bench/SWE-bench_Verified", "78f471bf655a3137b2e8a75af1501690ec009ec3", "test"),  # eval only
     "verified_princeton": ("princeton-nlp/SWE-bench_Verified", "c104f840cc67f8b6eec6f759ebc8b2693d585d4a", "test"),  # the reference's copy
+    # SWE-smith (MIT): synthetic bugs in real repos, one image per repo; training only, loaded for SMITH_REPOS only
+    "smith": ("SWE-bench/SWE-smith", "ea6d7173829c7ec8fa16c22055699ff2e9188091", "train"),
 }
+# the SWE-smith mirrors of our four dev repos (4,780 tasks behind 4 images); pvlib/pyvista have none
+SMITH_REPOS = ("swesmith/pylint-dev__astroid.b114f6b5", "swesmith/pydicom__pydicom.7d361b3d",
+               "swesmith/sqlfluff__sqlfluff.50a1c4b6", "swesmith/marshmallow-code__marshmallow.9716fc62")
 
 
 def refuse_on_home(path: Path, what: str) -> Path:

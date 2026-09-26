@@ -42,6 +42,7 @@ echo 1000 > /proc/self/oom_score_adj 2>/dev/null
 cd /testbed
 ulimit -v %d 2>/dev/null
 ulimit -f %d 2>/dev/null
+if [ -f /sarl_in/setup.sh ]; then bash /sarl_in/setup.sh >/dev/null 2>&1 || { echo ">>>>> Reset Failed"; exit 1; }; fi
 ok=0
 for c in "git apply --verbose" "git apply --verbose --reject" "patch --batch --fuzz=5 -p1 -i"; do
     if $c /sarl_in/patch.diff; then ok=1; echo ">>>>> Applied Patch ($c)"; break; fi
@@ -136,6 +137,9 @@ def grade(task, patch: str, *, sif: str | Path, workdir_root: str | Path = SCRAT
                                report={"note": "empty patch, not run"})
         (host / "instance.json").write_text(json.dumps(task.grader_row()))
         (inp / "patch.diff").write_text(patch if patch.endswith("\n") or not patch else patch + "\n")
+        if getattr(task, "is_smith", False):  # rebuild the buggy state (tests kept) before the agent patch is applied
+            (inp / "bug.diff").write_text(task.bug_patch)
+            (inp / "setup.sh").write_text(task.grader_setup("/sarl_in/bug.diff"))
         _grader("spec", "--instance", str(host / "instance.json"), "--out", str(inp / "eval.sh"))
         net = [] if network else ["--net", "--network", "none"]
         cmd = [str(APPTAINER), "exec", "--fakeroot", "--containall", "--writable-tmpfs", *net, "--pwd", "/testbed",

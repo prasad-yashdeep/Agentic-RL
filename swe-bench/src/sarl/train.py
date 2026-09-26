@@ -243,7 +243,7 @@ def _run_rollout(ro: Rollout, cfg: dict, fmt: ChatFormat, policy_model: str, tok
             j = router.acquire()
             ro.server = j
         lim = Limits(**cfg["limits"])
-        with ApptainerEnv(sif_for(ro.task), prefix=prefix, command_timeout=lim.command_timeout_s,
+        with ApptainerEnv(sif_for(ro.task), prefix=prefix, command_timeout=lim.command_timeout_s, setup=ro.task.sandbox_setup,
                           network=cfg.get("env", {}).get("network", False)) as env:
             protocol = cfg.get("protocol", "tool_call")
             if ro.kind == "oracle":

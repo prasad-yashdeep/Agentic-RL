@@ -123,7 +123,7 @@ class ApptainerEnv:
     """One persistent sandbox. Use as a context manager: `with ApptainerEnv(sif) as env: env.run("ls")`."""
 
     def __init__(self, sif: str | Path, *, name: str | None = None, prefix: str = "sarl-", workdir: str = "/testbed",
-                 command_timeout: float = 120, network: bool = False, max_output_chars: int = 200_000,
+                 command_timeout: float = 120, network: bool = False, max_output_chars: int = 200_000, setup: str | None = None,
                  activate: str = ACTIVATE):
         # network=False by default: a sandbox that shares the host network can reach the vLLM LoRA admin API on
         # localhost, the cluster, and the internet (upstream fix commits = a solution lookup). --network none gives
@@ -131,6 +131,7 @@ class ApptainerEnv:
         self.sif = Path(sif)
         self.name = name or f"{prefix}{_safe_name(self.sif.stem)}-{uuid.uuid4().hex[:8]}"
         self.base_sha: str | None = None
+        self.setup = setup  # bash run once after start, before the diff base is pinned (SWE-smith: build the bug state)
         self.workdir = workdir
         self.command_timeout = command_timeout
         self.network = network
@@ -156,6 +157,11 @@ class ApptainerEnv:
             self._force_stop()  # a half-started instance must not leak
             raise RuntimeError(f"apptainer instance start failed ({r.returncode}): {(r.stderr or r.stdout)[-600:]}")
         self._started = True
+        if self.setup:
+            p = self._exec(self.setup, host_timeout=600)
+            if p.returncode != 0:
+                self.stop()
+                raise RuntimeError(f"task setup failed in {self.name} ({p.returncode}): {p.stdout.decode(errors='replace')[-800:]}")
         # pin the diff base now: an agent that commits would otherwise move HEAD and hide its own changes
         p = self._exec("git rev-parse HEAD", host_timeout=60)
         self.base_sha = p.stdout.decode().strip() if p.returncode == 0 else None

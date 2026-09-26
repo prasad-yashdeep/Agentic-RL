@@ -69,7 +69,7 @@ def cmd_episode(a) -> int:
     sif = ensure_sif(t.docker_ref, sif_for(t))
     pol = (ScriptedPolicy(tok, oracle_replies(t), im_end_id=fmt.im_end_id) if a.policy == "oracle"
            else VLLMPolicy(a.url, a.model, stop_token_ids=stop_ids(fmt, MODEL_ID, MODEL_REVISION)))
-    with ApptainerEnv(sif) as env:
+    with ApptainerEnv(sif, setup=t.sandbox_setup) as env:
         tr = run_episode(pol, env, t, fmt, Limits(max_turns=a.max_turns), policy_name=a.policy)
     for turn in tr.turns:
         print(f"turn {turn['turn']:2}  {turn.get('command', turn.get('format_error', ''))[:110]!r}  rc={turn.get('returncode')}")

@@ -276,7 +276,7 @@ def main(argv=None) -> int:
         r = {"i": i, "server": s}
         tr = None
         try:
-            with ApptainerEnv(sif_for(t, sif_dir), prefix=prefix, command_timeout=lim.command_timeout_s) as env:
+            with ApptainerEnv(sif_for(t, sif_dir), prefix=prefix, command_timeout=lim.command_timeout_s, setup=t.sandbox_setup) as env:
                 tr = run_episode(VLLMPolicy(a.servers[s], arms[arm], Sampling(temperature=a.temperature, seed=1000 + i),
                                             stop_token_ids=stops),
                                  env, t, fmt, lim, protocol=a.protocol)
