@@ -61,6 +61,21 @@ The target is the repo's diagram (`reference/_upstream/swe_agent_env_interface.p
 - **Stragglers.** The loop is synchronous, so one rollout that re-runs a slow test suite holds the whole step. A single rollout rerunning `pytest /testbed` 15 times cost 30 min in `s8-basic-v3b`. `basic_run.yaml` now uses 60 s commands and a 600 s episode clock.
 - **Offline dataset loading:** `load_dataset(revision=…)` still calls the Hub, and huggingface_hub rejects partial snapshots offline. `sarl.tasks` therefore reads the pinned parquet files straight from the HF cache.
 
+## SWE-smith as a second task source (2026-09-25)
+
+- `sarl.smith` + `load_split("smith")`: the four dev-repo mirrors only (`SMITH_REPOS`, 4,662 tasks after dropping the
+  `pr_` mirrors, which copy real dev issues byte for byte). MIT data and code; none of the 12 Verified repos has rows.
+- A row's `patch` *introduces* the bug; `Task.patch` is its reverse (the gold), `Task.bug_patch` the original.
+  `ApptainerEnv(setup=task.sandbox_setup)` applies the bug, deletes the FAIL_TO_PASS test files and leaves a
+  one-commit repository (no remote, no reflog: the fix is not recoverable from git). The grader rebuilds the bug with
+  the tests kept (`/sarl_in/setup.sh`) and runs a synthesized `pytest -rA` script over the F2P files, parsed by
+  swebench's `parse_log_pytest`; PASS_TO_PASS is restricted to tests in those files, minus the offline-failing ones in
+  `experiments/smith-p2p-exclusions.json` (pydicom's network-dependent tests).
+- One image per repository (`swesmith.x86_64.<owner>_1776_<repo>.<sha8>.sif`, 1.3–1.6 GB); screens must run with
+  `--keep-all` because `rolling_probe` deletes per task. Images live in node04 `/var/tmp/swe/sif-smith`.
+- Pre-registered screen list `configs/screen_smith_v1.txt` (200 tasks, hashed 50 per repo); gate record
+  `experiments/gate-smith-v1.json` (179 pass; pydicom re-gated after calibration).
+
 ## Commands
 
 ```bash
