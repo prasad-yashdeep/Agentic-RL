@@ -639,6 +639,31 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   -cc.cudagraph_mode=FULL_DECODE_ONLY`, 0.935), serving at 11:08; the screen re-admits it at its next retry round.
   Crash log kept: node04 `/var/tmp/swe/serve-gemma-node04.crash-20260926-0456.log`.
 
+## 2026-09-26 SWE-smith screen → pool → grpo-gemma-smith-v1
+
+- **Screen (G3)** `experiments/screen-smith-v1.json`: Gemma base, 197 gated tasks × 8 episodes (04:17 → 11:36; node04's
+  server down 04:56–11:08, so most of it ran on node08:8001 alone). **282/1,576 solved (17.9 %)**; 3 pydicom gate
+  negatives (the F2P-failing ones). Solve-count histogram over 8: 0 → 119 tasks, 1–7 → **73 mixed**, 8 → 5.
+  Per repo: marshmallow 24 % (23 mixed), sqlfluff 20 % (18), astroid 14 % (18), pydicom 14 % (14). Per bug strategy:
+  func_basic 26 % (54 of the 73 mixed), combine_file 25 %, func_pm_* and lm_rewrite 0–7 % (Gemma rarely undoes a
+  removed assignment, an inverted condition or a whole rewrite). Valid actions 94.4 %, 9.1 turns; exits 1,564
+  submitted / 9 format / 3 context. The Gemma rate here (17.9 %) is higher than on the dev pool screen: generated bugs
+  are local and single-file.
+- **Pool + pre-registered validation set** (`scripts/gemma_pool.py --split smith`, then `scripts/holdout_split.py`, salt
+  `smith-v1-val`, 5 per repo; committed in 3133c77 before training): `configs/pool_smith_all_v1.txt` (73 mixed) →
+  **`configs/pool_smith_v1.txt` 53 train** (sha256 `ad6199d4b11c…`) + **`configs/val_smith_v1.txt` 20 held out**
+  (`f2dc5fa3ce61…`). Guard `experiments/pool-smith-v1-guard.json`: train vs Verified clean; train vs val share
+  repositories and base commits by design (same four mirrors) but no instance id or issue text. Why a val set: Gemma's
+  Verified base rate is 7.1 %, so a ±4 pp CI hides small gains; mixed tasks start near 40 %, where a paired base-vs-
+  trained comparison on never-trained tasks is far more sensitive. Both arms are re-run with fresh seeds (the screen's
+  numbers selected the tasks and are biased).
+- **Run `grpo-gemma-smith-v1`** (`configs/grpo_gemma_smith_v1.yaml`: identical recipe to grpo-gemma-v1, so the only
+  change is the task source, 11 dev tasks → 53 SWE-smith tasks; `keep_adapters: 2`): launched 11:42 on node08
+  (`SARL_SIF_DIR=/var/tmp/swe/sif-smith`, tmux `swe-train`, log `/var/tmp/swe/train-gemma-smith-v1.log`); same initial
+  adapter hash `eb0de89dc16e` as v1. Expected ~9–10 h. Post-run chain (headnode, ssh only): final adapter from
+  `runs/grpo-gemma-smith-v1/summary.json` → val eval (`experiments/eval-val-smith-v1.json`, 20 × 8 × 2 arms) → Verified
+  eval (`experiments/eval-verified-gemma-smith-v1.json`, 50 × 4 × 2 arms).
+
 ---
 
 ## 2026-09-24 s9-qwen3-1.7b-v1 — S9: the diagram's tool-call protocol with a model that follows it
