@@ -113,6 +113,23 @@ svg .arrow-blue{stroke:var(--accent);stroke-width:1.8;fill:none}
 svg .arrow-amber{stroke:var(--amber);stroke-width:1.8;fill:none}
 svg .mask1{fill:var(--teal)} svg .mask0{fill:var(--line)}
 svg .bar{fill:var(--accent)} svg .bar-soft{fill:var(--accent-soft)} svg .bar-teal{fill:var(--teal)} svg .grid{stroke:var(--line);stroke-width:1}
+/* tracker charts */svg .grid{stroke:var(--line);stroke-width:1}
+svg .zero{stroke:var(--line-strong);stroke-width:1.2}
+svg .refline{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
+svg .l-main{stroke:var(--accent);stroke-width:2;fill:none} svg .l-main-dot{fill:var(--accent)}
+svg .l-cmp{stroke:var(--muted);stroke-width:1.6;fill:none} svg .l-cmp-dot{fill:var(--muted)}
+svg .l-teal{stroke:var(--teal);stroke-width:2;fill:none} svg .l-teal-dot{fill:var(--teal)}
+svg .l-amber{stroke:var(--amber);stroke-width:2;fill:none} svg .l-amber-dot{fill:var(--amber)}
+svg .l-green{stroke:var(--green);stroke-width:2;fill:none} svg .l-green-dot{fill:var(--green)}
+svg .l-red{stroke:var(--red);stroke-width:2;fill:none} svg .l-red-dot{fill:var(--red)}
+svg .band{fill:var(--accent);opacity:.14}
+svg .ex-submitted{fill:var(--teal)} svg .ex-turns{fill:var(--amber)} svg .ex-context{fill:var(--accent)}
+svg .ex-wall{fill:var(--red)} svg .ex-format{fill:var(--line-strong)} svg .ex-error{fill:var(--muted)} svg .ex-other{fill:var(--line)}
+svg .po-fixed{fill:var(--green)} svg .po-green{fill:var(--teal)} svg .po-broke{fill:var(--amber)} svg .po-empty{fill:var(--line-strong)}
+svg .heat{fill:var(--accent)} svg .heat-n{fill:#ffffff;font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:600}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem 1.4rem;margin:1rem 0 1.2rem}
+.charts figure.fig{margin:0}
+.charts figure.fig svg{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.35rem .4rem}
 details{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 1rem;margin:.6rem 0}
 summary{cursor:pointer;font-weight:600;padding:.65rem 0;list-style:none}
 summary::before{content:"▸";color:var(--accent-ink);margin-right:.5rem;display:inline-block;transition:transform .15s}
@@ -155,10 +172,11 @@ footer{margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem;font-si
 <li><a href="#models">09 · The model journey: Qwen, then Gemma</a></li>
 <li><a href="#hardware">10 · Hardware and serving</a></li>
 <li><a href="#results">11 · Results</a></li>
-<li><a href="#challenges">12 · Challenges</a></li>
-<li><a href="#tradeoffs">13 · Trade-offs, in one table</a></li>
+<li><a href="#curves">12 · Training curves, step by step</a></li>
+<li><a href="#challenges">13 · Challenges</a></li>
+<li><a href="#tradeoffs">14 · Trade-offs, in one table</a></li>
 <li><a href="#probes">Where the interviewer will dig · 53 Q&amp;A</a></li>
-<li><a href="#talk">Talk track · 15 minutes</a></li>
+<li><a href="#talk">Talk track · 60 minutes</a></li>
 <li class="sub"><a href="#a-math">A · The math, compactly</a></li>
 <li class="sub"><a href="#b-draw">B · Drawing the diagram by hand</a></li>
 <li class="sub"><a href="#c-glossary">C · Glossary</a></li>
@@ -183,11 +201,11 @@ footer{margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem;font-si
     <li>Qwen-based SFT model (mini-coder-1.7b): GRPO mechanism clean over 60 steps, but no measurable gain (Verified 19.0 % → 20.5 %, p = 0.71).</li>
     <li>Gemma 4 E4B served on all three GPUs; solves about 7 % of the training pool before any RL (19 of 264 episodes over three probes); 4–6 of 11 pool tasks give mixed groups; 95 % valid actions after two harness fixes.</li>
     <li>Serving layout ×1.78 rollout throughput after adding an 8 GB laptop GPU.</li>
+    <li>Gemma trainer port gated (G0–G5) and GRPO on Gemma running: 19 of 30 steps by 22:40 on 09-25, 85 of 608 rollouts solved (14.0 %), objective up on 18 of 18 updates, training tasks +4.8 ± 2.7 pp late against early (section 12).</li>
   </ul></div>
   <div class="pending"><p class="h">Pending</p><ul>
-    <li>Go/no-go on Gemma against the pre-registered rule (solve rate 5–30 %, ≥ 4 mixed tasks, ≥ 90 % valid): two of three bars met on the last probe, all three on the pooled probes.</li>
-    <li>Gemma trainer port (logit soft-cap, LoRA on the language model only, embedding table off the GPU).</li>
-    <li>GRPO on Gemma, then the 50-task Verified evaluation.</li>
+    <li>Steps 20–30 of the Gemma run (about 17 minutes each), then the 50-task Verified evaluation, queued to start on its own when the run ends.</li>
+    <li>The SWE-smith screen (200 generated tasks, 197 gated) that would grow the pool from 11 tasks.</li>
   </ul></div>
 </div>
 
@@ -1069,7 +1087,7 @@ turn t+1  prompt: [system+issue][reply 1][obs 1][reply 2][obs 2]    → only [re
 <div class="callout metric"><span class="tag">Throughput, end to end</span><p>One GRPO step is 4 tasks × 8 rollouts, grading included. On mini-coder with the two-server layout, a step took a median of 12.6 minutes. The middle half of steps took 11–16 minutes (the interquartile range). For Gemma the balance flips: the update takes a larger share of the step. The rollouts for a 32-rollout step take about 8 minutes on the two serving GPUs. The update was measured at 66 s per 16k-token trajectory on the trainer GPU. It adds 5–15 minutes, depending on how many groups were mixed, because degenerate groups are skipped. So a Gemma step is 15–25 minutes.</p></div>
 
 <h2 id="results"><span class="num">11</span>Results <span class="star">R</span></h2>
-<p>Every number below is measured. Appendix D names the record file for each one. The Gemma training results are pending. This section will change when they land.</p>
+<p>Every number below is measured. Appendix D names the record file for each one. The Gemma training run is in progress; section 12 tracks its curves. This section will change when the run and its Verified evaluation land.</p>
 <p>The Verified row of the table uses three statistics words. Here is each one, on its own, before the table.</p>
 <ol class="steps">
   <li><b>Paired.</b> We ran the base model and the GRPO model on the same 50 tasks with the same 4 seeds. A seed is the starting number for the random draws the model makes while it samples tokens. Same task, same seed, two models: that is one pair. 50 tasks × 4 seeds gives 200 attempts per model, and every attempt has a twin on the other side. This means the two models face the same tasks under the same random draws, so only the model differs.</li>
@@ -1097,7 +1115,7 @@ turn t+1  prompt: [system+issue][reply 1][obs 1][reply 2][obs 2]    → only [re
 <tr><td>Gemma 4 E4B probe 2</td><td>same, parse after &lt;channel|&gt;</td><td>9/88 resolved (10 %), 6 mixed tasks, 86 % valid actions</td><td><span class="measured">measured</span></td></tr>
 <tr><td>Gemma 4 E4B probe 3</td><td>same, reply cap 4,096 tokens</td><td>4/88 resolved, 4 mixed tasks, <b>94.9 % valid actions</b>; 87 of 88 episodes submitted. Pooled over the three probes: 19/264 (7.2 %) resolved</td><td><span class="measured">measured</span></td></tr>
 <tr><td>Serving A/B</td><td>88-episode probe, 4 layouts</td><td>node04 added: ×1.34; node08 slots 8→12: ×1.24; both: ×1.78 turns/min</td><td><span class="measured">measured</span></td></tr>
-<tr><td>GRPO on Gemma</td><td>—</td><td>—</td><td><span class="pending">pending</span></td></tr>
+<tr><td>GRPO on Gemma</td><td>30 steps × 4 tasks × 8, lr 5e-5, 11-task pool, FP8 base + LoRA r16</td><td>Step 19 of 30: 85/608 (14.0 %) on training tasks; late vs early +4.8 ± 2.7 pp (task-stratified, 1 SE); objective up 18/18 updates; details in section 12</td><td><span class="interim">running</span></td></tr>
 <tr><td>Verified evaluation, Gemma</td><td>same 50 tasks</td><td>—</td><td><span class="pending">pending</span></td></tr>
 </table></div>
 <p>How to read the mini-coder result honestly. Four facts sit together.</p>
@@ -1110,7 +1128,972 @@ turn t+1  prompt: [system+issue][reply 1][obs 1][reply 2][obs 2]    → only [re
 <div class="callout"><span class="tag">Impact, as of today</span><p>A reproducible, safe, three-GPU RL pipeline for SWE-bench that a lab can actually run. It uses real containers and real tests. Every weight sync is verified. Training resumes from its last step after a crash. A laptop GPU added ×1.78 rollout throughput. The train and eval splits do not overlap. The model-quality result is the next thing it will measure.</p></div>
 <div class="callout say"><span class="tag">Interview version</span><p>"On the Qwen-based model we got a clean null result: the harness reproduces the model's published score, the trainer passes its checks on every step, and 60 GRPO steps moved Verified from 19.0 % to 20.5 % with p = 0.71, which is noise. Gemma now serves on all three GPUs and solves about 7 % of the pool before any RL; its training result is pending."</p></div>
 
-<h2 id="challenges"><span class="num">12</span>Challenges, and what each one taught</h2>
+<h2 id="curves"><span class="num">12</span>Training curves, step by step <span class="star">R</span></h2>
+<p>A <b>training curve</b> is one number recorded at every step and drawn against the step number. This section shows the curves of the Gemma run while it runs. The charts and the per-task table refresh from the run's records. The prose under them is written by hand and says which step it describes.</p>
+<p>Five terms first, each on its own.</p>
+<ul>
+  <li><b>Step.</b> One turn of the outer loop: draw 4 tasks, run 8 rollouts of each (32 episodes), grade them, make one gradient update, load the new weights into the servers. On Gemma a step takes about 17 minutes.</li>
+  <li><b>Success per step.</b> How many of the 32 episodes passed the tests. 4 of 32 is 12.5 %.</li>
+  <li><b>Early versus late.</b> Split the steps so far into a first half and a second half. If the model is learning, it should solve the same tasks more often in the second half.</li>
+  <li><b>Standard error (SE).</b> How much an estimate would wobble if the same experiment were re-run with new random draws. ±1 SE is the band drawn on the chart. An effect is usually called significant only when it is about 2 SE away from zero.</li>
+  <li><b>Task-stratified.</b> Compare each task with itself first, then average the per-task changes. This is needed because different steps draw different tasks, and the tasks differ a lot: astroid-1614 is solved 40 % of the time, pydicom-1694 2 %. A pooled rate would rise or fall with the task mix alone.</li>
+</ul>
+<div class="callout"><span class="tag">If you only look at two charts</span><p>Look at "Success per step" and "Running late-minus-early". The first is what happened. The second is the fair reading of whether it is improving.</p></div>
+
+<!-- tracker:auto:start -->
+<p class="tiny">Generated by <code>scripts/run_tracker.py</code> from <code>runs/grpo-gemma-v1/metrics.jsonl</code> and <code>rollouts.jsonl</code>, refreshed 2026-09-25 22:45 PDT: step 19 of 30. Hover a point for its value.</p>
+<div class="charts">
+<figure class="fig" id="fig-tr-reward"><svg viewBox="0 0 560 210" role="img" aria-label="Line chart of the share of rollouts that passed the tests, per training step">
+<text x="46" y="10" class="tb">Success on training tasks per step (resolved / 32)</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0 %</text>
+<line x1="46" x2="546" y1="138.0" y2="138.0" class="grid"/>
+<text x="40" y="141.5" class="tm" text-anchor="end">10 %</text>
+<line x1="46" x2="546" y1="96.0" y2="96.0" class="grid"/>
+<text x="40" y="99.5" class="tm" text-anchor="end">20 %</text>
+<line x1="46" x2="546" y1="54.0" y2="54.0" class="grid"/>
+<text x="40" y="57.5" class="tm" text-anchor="end">30 %</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 140.6 L 63.2 101.3 L 80.5 114.4 L 97.7 180.0 L 115.0 114.4 L 132.2 153.8 L 149.4 114.4 L 166.7 75.0 L 183.9 166.9 L 201.2 101.3 L 218.4 101.3 L 235.7 166.9 L 252.9 75.0 L 270.1 140.6 L 287.4 114.4 L 304.6 153.8 L 321.9 127.5 L 339.1 127.5 L 356.3 35.7" class="l-main"/>
+<circle cx="46.0" cy="140.6" r="3.2" class="l-main-dot"><title>per step · step 1: 9 %</title></circle>
+<circle cx="63.2" cy="101.3" r="3.2" class="l-main-dot"><title>per step · step 2: 19 %</title></circle>
+<circle cx="80.5" cy="114.4" r="3.2" class="l-main-dot"><title>per step · step 3: 16 %</title></circle>
+<circle cx="97.7" cy="180.0" r="3.2" class="l-main-dot"><title>per step · step 4: 0 %</title></circle>
+<circle cx="115.0" cy="114.4" r="3.2" class="l-main-dot"><title>per step · step 5: 16 %</title></circle>
+<circle cx="132.2" cy="153.8" r="3.2" class="l-main-dot"><title>per step · step 6: 6 %</title></circle>
+<circle cx="149.4" cy="114.4" r="3.2" class="l-main-dot"><title>per step · step 7: 16 %</title></circle>
+<circle cx="166.7" cy="75.0" r="3.2" class="l-main-dot"><title>per step · step 8: 25 %</title></circle>
+<circle cx="183.9" cy="166.9" r="3.2" class="l-main-dot"><title>per step · step 9: 3 %</title></circle>
+<circle cx="201.2" cy="101.3" r="3.2" class="l-main-dot"><title>per step · step 10: 19 %</title></circle>
+<circle cx="218.4" cy="101.3" r="3.2" class="l-main-dot"><title>per step · step 11: 19 %</title></circle>
+<circle cx="235.7" cy="166.9" r="3.2" class="l-main-dot"><title>per step · step 12: 3 %</title></circle>
+<circle cx="252.9" cy="75.0" r="3.2" class="l-main-dot"><title>per step · step 13: 25 %</title></circle>
+<circle cx="270.1" cy="140.6" r="3.2" class="l-main-dot"><title>per step · step 14: 9 %</title></circle>
+<circle cx="287.4" cy="114.4" r="3.2" class="l-main-dot"><title>per step · step 15: 16 %</title></circle>
+<circle cx="304.6" cy="153.8" r="3.2" class="l-main-dot"><title>per step · step 16: 6 %</title></circle>
+<circle cx="321.9" cy="127.5" r="3.2" class="l-main-dot"><title>per step · step 17: 12 %</title></circle>
+<circle cx="339.1" cy="127.5" r="3.2" class="l-main-dot"><title>per step · step 18: 12 %</title></circle>
+<circle cx="356.3" cy="35.7" r="3.2" class="l-main-dot"><title>per step · step 19: 34 %</title></circle>
+<path d="M 97.7 134.1 L 115.0 127.5 L 132.2 140.6 L 149.4 140.6 L 166.7 114.4 L 183.9 127.5 L 201.2 114.4 L 218.4 111.1 L 235.7 134.1 L 252.9 111.1 L 270.1 120.9 L 287.4 124.2 L 304.6 120.9 L 321.9 134.1 L 339.1 130.8 L 356.3 111.1" class="l-teal" stroke-dasharray="5 4"/>
+<line x1="50" x2="66" y1="22" y2="22" class="l-main"/>
+<text x="70" y="25.5" class="tm">per step</text>
+<line x1="141.6" x2="157.6" y1="22" y2="22" class="l-teal" stroke-dasharray="5 4"/>
+<text x="161.6" y="25.5" class="tm">4-step mean</text>
+</svg><figcaption>Share of the step's 32 rollouts that passed the tests. The dashed line is the mean of the last 4 steps.</figcaption></figure>
+<figure class="fig" id="fig-tr-delta"><svg viewBox="0 0 560 210" role="img" aria-label="Line chart of the task-stratified difference between the second and first half of the steps so far, with a one standard error band">
+<text x="46" y="10" class="tb">Running late-minus-early success, task by task (pp, ±1 SE)</text>
+<line x1="46" x2="546" y1="162.6" y2="162.6" class="grid"/>
+<text x="40" y="166.1" class="tm" text-anchor="end">-10</text>
+<line x1="46" x2="546" y1="107.7" y2="107.7" class="grid"/>
+<text x="40" y="111.2" class="tm" text-anchor="end">+0</text>
+<line x1="46" x2="546" y1="52.9" y2="52.9" class="grid"/>
+<text x="40" y="56.4" class="tm" text-anchor="end">+10</text>
+<line x1="46" x2="546" y1="107.7" y2="107.7" class="zero"/>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 97.7 107.7 L 115.0 108.2 L 132.2 115.6 L 149.4 120.0 L 166.7 63.7 L 183.9 71.7 L 201.2 67.3 L 218.4 61.8 L 235.7 65.9 L 252.9 59.7 L 270.1 53.9 L 287.4 52.9 L 304.6 67.7 L 321.9 67.6 L 339.1 66.5 L 356.3 66.2 L 356.3 96.2 L 339.1 96.0 L 321.9 98.3 L 304.6 99.0 L 287.4 86.5 L 270.1 88.4 L 252.9 96.2 L 235.7 102.7 L 218.4 102.3 L 201.2 108.7 L 183.9 112.4 L 166.7 110.2 L 149.4 168.6 L 132.2 162.7 L 115.0 134.7 L 97.7 107.7 Z" class="band"/>
+<path d="M 97.7 107.7 L 115.0 121.4 L 132.2 139.2 L 149.4 144.3 L 166.7 87.0 L 183.9 92.0 L 201.2 88.0 L 218.4 82.0 L 235.7 84.3 L 252.9 78.0 L 270.1 71.2 L 287.4 69.7 L 304.6 83.4 L 321.9 83.0 L 339.1 81.2 L 356.3 81.2" class="l-main"/>
+<circle cx="97.7" cy="107.7" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 4: +0</title></circle>
+<circle cx="115.0" cy="121.4" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 5: -2</title></circle>
+<circle cx="132.2" cy="139.2" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 6: -6</title></circle>
+<circle cx="149.4" cy="144.3" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 7: -7</title></circle>
+<circle cx="166.7" cy="87.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 8: +4</title></circle>
+<circle cx="183.9" cy="92.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 9: +3</title></circle>
+<circle cx="201.2" cy="88.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 10: +4</title></circle>
+<circle cx="218.4" cy="82.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 11: +5</title></circle>
+<circle cx="235.7" cy="84.3" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 12: +4</title></circle>
+<circle cx="252.9" cy="78.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 13: +5</title></circle>
+<circle cx="270.1" cy="71.2" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 14: +7</title></circle>
+<circle cx="287.4" cy="69.7" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 15: +7</title></circle>
+<circle cx="304.6" cy="83.4" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 16: +4</title></circle>
+<circle cx="321.9" cy="83.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 17: +5</title></circle>
+<circle cx="339.1" cy="81.2" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 18: +5</title></circle>
+<circle cx="356.3" cy="81.2" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 19: +5</title></circle>
+<path d="M 97.7 25.4 L 115.0 52.9 L 132.2 67.7 L 149.4 43.7 L 166.7 87.0 L 183.9 67.3 L 201.2 59.4 L 218.4 70.8 L 235.7 84.1 L 252.9 95.4 L 270.1 121.8 L 287.4 116.8 L 304.6 111.3 L 321.9 108.7 L 339.1 122.5 L 356.3 129.8" class="l-cmp"/>
+<line x1="50" x2="66" y1="22" y2="22" class="l-main"/>
+<text x="70" y="25.5" class="tm">grpo-gemma-v1</text>
+<line x1="172.60000000000002" x2="188.60000000000002" y1="22" y2="22" class="l-cmp"/>
+<text x="192.60000000000002" y="25.5" class="tm">grpo-minicoder-v2</text>
+</svg><figcaption>At step k the steps so far are split in half and each task's late success rate minus its early rate is averaged across tasks (weighted by rollout counts). The band is ±1 standard error. Grey: the same statistic for mini-coder v2, which read positive early and ended at −1.2 pp.</figcaption></figure>
+<figure class="fig" id="fig-tr-heat"><svg viewBox="0 0 560 202" role="img" aria-label="Solved per task and step (of 8 rollouts; darker = more)">
+<text x="150" y="10" class="tb">Solved per task and step (of 8 rollouts; darker = more)</text>
+<text x="144" y="32.5" class="tm" text-anchor="end">astroid-1614</text>
+<rect x="150.5" y="22.5" width="12.2" height="13.0" class="heat" fill-opacity="0.34"><title>astroid-1614 · step 1: 2/8 solved</title></rect>
+<text x="156.6" y="32.5" class="heat-n" text-anchor="middle">2</text>
+<rect x="163.7" y="22.5" width="12.2" height="13.0" class="heat" fill-opacity="0.67"><title>astroid-1614 · step 2: 5/8 solved</title></rect>
+<text x="169.8" y="32.5" class="heat-n" text-anchor="middle">5</text>
+<rect x="229.7" y="22.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>astroid-1614 · step 7: 3/8 solved</title></rect>
+<text x="235.8" y="32.5" class="heat-n" text-anchor="middle">3</text>
+<rect x="269.3" y="22.5" width="12.2" height="13.0" class="heat" fill-opacity="0.56"><title>astroid-1614 · step 10: 4/8 solved</title></rect>
+<text x="275.4" y="32.5" class="heat-n" text-anchor="middle">4</text>
+<rect x="388.1" y="22.5" width="12.2" height="13.0" class="heat" fill-opacity="0.34"><title>astroid-1614 · step 19: 2/8 solved</title></rect>
+<text x="394.2" y="32.5" class="heat-n" text-anchor="middle">2</text>
+<text x="144" y="46.5" class="tm" text-anchor="end">sqlfluff-884</text>
+<rect x="203.3" y="36.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>sqlfluff-884 · step 5: 3/8 solved</title></rect>
+<text x="209.4" y="46.5" class="heat-n" text-anchor="middle">3</text>
+<rect x="242.9" y="36.5" width="12.2" height="13.0" class="heat" fill-opacity="0.34"><title>sqlfluff-884 · step 8: 2/8 solved</title></rect>
+<text x="249.0" y="46.5" class="heat-n" text-anchor="middle">2</text>
+<rect x="308.9" y="36.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>sqlfluff-884 · step 13: 3/8 solved</title></rect>
+<text x="315.0" y="46.5" class="heat-n" text-anchor="middle">3</text>
+<rect x="374.9" y="36.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>sqlfluff-884 · step 18: 3/8 solved</title></rect>
+<text x="381.0" y="46.5" class="heat-n" text-anchor="middle">3</text>
+<rect x="388.1" y="36.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>sqlfluff-884 · step 19: 3/8 solved</title></rect>
+<text x="394.2" y="46.5" class="heat-n" text-anchor="middle">3</text>
+<text x="144" y="60.5" class="tm" text-anchor="end">pydicom-1192</text>
+<rect x="176.9" y="50.5" width="12.2" height="13.0" class="heat" fill-opacity="0.56"><title>pydicom-1192 · step 3: 4/8 solved</title></rect>
+<text x="183.0" y="60.5" class="heat-n" text-anchor="middle">4</text>
+<rect x="190.1" y="50.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1192 · step 4: 0/8 solved</title></rect>
+<rect x="203.3" y="50.5" width="12.2" height="13.0" class="heat" fill-opacity="0.34"><title>pydicom-1192 · step 5: 2/8 solved</title></rect>
+<text x="209.4" y="60.5" class="heat-n" text-anchor="middle">2</text>
+<rect x="308.9" y="50.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>pydicom-1192 · step 13: 3/8 solved</title></rect>
+<text x="315.0" y="60.5" class="heat-n" text-anchor="middle">3</text>
+<text x="144" y="74.5" class="tm" text-anchor="end">pydicom-965</text>
+<rect x="176.9" y="64.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>pydicom-965 · step 3: 1/8 solved</title></rect>
+<text x="183.0" y="74.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="216.5" y="64.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>pydicom-965 · step 6: 1/8 solved</title></rect>
+<text x="222.6" y="74.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="229.7" y="64.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-965 · step 7: 0/8 solved</title></rect>
+<rect x="242.9" y="64.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>pydicom-965 · step 8: 3/8 solved</title></rect>
+<text x="249.0" y="74.5" class="heat-n" text-anchor="middle">3</text>
+<rect x="282.5" y="64.5" width="12.2" height="13.0" class="heat" fill-opacity="0.56"><title>pydicom-965 · step 11: 4/8 solved</title></rect>
+<text x="288.6" y="74.5" class="heat-n" text-anchor="middle">4</text>
+<rect x="295.7" y="64.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-965 · step 12: 0/8 solved</title></rect>
+<rect x="335.3" y="64.5" width="12.2" height="13.0" class="heat" fill-opacity="0.56"><title>pydicom-965 · step 15: 4/8 solved</title></rect>
+<text x="341.4" y="74.5" class="heat-n" text-anchor="middle">4</text>
+<rect x="361.7" y="64.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>pydicom-965 · step 17: 3/8 solved</title></rect>
+<text x="367.8" y="74.5" class="heat-n" text-anchor="middle">3</text>
+<rect x="388.1" y="64.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>pydicom-965 · step 19: 3/8 solved</title></rect>
+<text x="394.2" y="74.5" class="heat-n" text-anchor="middle">3</text>
+<text x="144" y="88.5" class="tm" text-anchor="end">marshmallow-1343</text>
+<rect x="190.1" y="78.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>marshmallow-1343 · step 4: 0/8 solved</title></rect>
+<rect x="216.5" y="78.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>marshmallow-1343 · step 6: 0/8 solved</title></rect>
+<rect x="229.7" y="78.5" width="12.2" height="13.0" class="heat" fill-opacity="0.34"><title>marshmallow-1343 · step 7: 2/8 solved</title></rect>
+<text x="235.8" y="88.5" class="heat-n" text-anchor="middle">2</text>
+<rect x="269.3" y="78.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>marshmallow-1343 · step 10: 0/8 solved</title></rect>
+<rect x="295.7" y="78.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>marshmallow-1343 · step 12: 1/8 solved</title></rect>
+<text x="301.8" y="88.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="322.1" y="78.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>marshmallow-1343 · step 14: 1/8 solved</title></rect>
+<text x="328.2" y="88.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="335.3" y="78.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>marshmallow-1343 · step 15: 1/8 solved</title></rect>
+<text x="341.4" y="88.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="348.5" y="78.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>marshmallow-1343 · step 16: 1/8 solved</title></rect>
+<text x="354.6" y="88.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="388.1" y="78.5" width="12.2" height="13.0" class="heat" fill-opacity="0.45"><title>marshmallow-1343 · step 19: 3/8 solved</title></rect>
+<text x="394.2" y="88.5" class="heat-n" text-anchor="middle">3</text>
+<text x="144" y="102.5" class="tm" text-anchor="end">astroid-1903</text>
+<rect x="163.7" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>astroid-1903 · step 2: 1/8 solved</title></rect>
+<text x="169.8" y="102.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="203.3" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1903 · step 5: 0/8 solved</title></rect>
+<rect x="229.7" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1903 · step 7: 0/8 solved</title></rect>
+<rect x="256.1" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1903 · step 9: 0/8 solved</title></rect>
+<rect x="269.3" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>astroid-1903 · step 10: 1/8 solved</title></rect>
+<text x="275.4" y="102.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="322.1" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.34"><title>astroid-1903 · step 14: 2/8 solved</title></rect>
+<text x="328.2" y="102.5" class="heat-n" text-anchor="middle">2</text>
+<rect x="335.3" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1903 · step 15: 0/8 solved</title></rect>
+<rect x="348.5" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>astroid-1903 · step 16: 1/8 solved</title></rect>
+<text x="354.6" y="102.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="361.7" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>astroid-1903 · step 17: 1/8 solved</title></rect>
+<text x="367.8" y="102.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="374.9" y="92.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1903 · step 18: 0/8 solved</title></rect>
+<text x="144" y="116.5" class="tm" text-anchor="end">pydicom-1562</text>
+<rect x="176.9" y="106.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1562 · step 3: 0/8 solved</title></rect>
+<rect x="242.9" y="106.5" width="12.2" height="13.0" class="heat" fill-opacity="0.34"><title>pydicom-1562 · step 8: 2/8 solved</title></rect>
+<text x="249.0" y="116.5" class="heat-n" text-anchor="middle">2</text>
+<rect x="295.7" y="106.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1562 · step 12: 0/8 solved</title></rect>
+<rect x="308.9" y="106.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>pydicom-1562 · step 13: 1/8 solved</title></rect>
+<text x="315.0" y="116.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="361.7" y="106.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1562 · step 17: 0/8 solved</title></rect>
+<text x="144" y="130.5" class="tm" text-anchor="end">astroid-1719</text>
+<rect x="163.7" y="120.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1719 · step 2: 0/8 solved</title></rect>
+<rect x="176.9" y="120.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1719 · step 3: 0/8 solved</title></rect>
+<rect x="216.5" y="120.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>astroid-1719 · step 6: 1/8 solved</title></rect>
+<text x="222.6" y="130.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="242.9" y="120.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>astroid-1719 · step 8: 1/8 solved</title></rect>
+<text x="249.0" y="130.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="256.1" y="120.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1719 · step 9: 0/8 solved</title></rect>
+<rect x="282.5" y="120.5" width="12.2" height="13.0" class="heat" fill-opacity="0.34"><title>astroid-1719 · step 11: 2/8 solved</title></rect>
+<text x="288.6" y="130.5" class="heat-n" text-anchor="middle">2</text>
+<rect x="322.1" y="120.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1719 · step 14: 0/8 solved</title></rect>
+<rect x="335.3" y="120.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>astroid-1719 · step 15: 0/8 solved</title></rect>
+<rect x="374.9" y="120.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>astroid-1719 · step 18: 1/8 solved</title></rect>
+<text x="381.0" y="130.5" class="heat-n" text-anchor="middle">1</text>
+<text x="144" y="144.5" class="tm" text-anchor="end">marshmallow-1164</text>
+<rect x="150.5" y="134.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>marshmallow-1164 · step 1: 1/8 solved</title></rect>
+<text x="156.6" y="144.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="256.1" y="134.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>marshmallow-1164 · step 9: 0/8 solved</title></rect>
+<rect x="269.3" y="134.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>marshmallow-1164 · step 10: 1/8 solved</title></rect>
+<text x="275.4" y="144.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="282.5" y="134.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>marshmallow-1164 · step 11: 0/8 solved</title></rect>
+<text x="144" y="158.5" class="tm" text-anchor="end">pydicom-1694</text>
+<rect x="150.5" y="148.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1694 · step 1: 0/8 solved</title></rect>
+<rect x="163.7" y="148.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1694 · step 2: 0/8 solved</title></rect>
+<rect x="190.1" y="148.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1694 · step 4: 0/8 solved</title></rect>
+<rect x="203.3" y="148.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1694 · step 5: 0/8 solved</title></rect>
+<rect x="256.1" y="148.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>pydicom-1694 · step 9: 1/8 solved</title></rect>
+<text x="262.2" y="158.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="348.5" y="148.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1694 · step 16: 0/8 solved</title></rect>
+<rect x="374.9" y="148.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>pydicom-1694 · step 18: 0/8 solved</title></rect>
+<text x="144" y="172.5" class="tm" text-anchor="end">sqlfluff-905</text>
+<rect x="150.5" y="162.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>sqlfluff-905 · step 1: 0/8 solved</title></rect>
+<rect x="190.1" y="162.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>sqlfluff-905 · step 4: 0/8 solved</title></rect>
+<rect x="216.5" y="162.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>sqlfluff-905 · step 6: 0/8 solved</title></rect>
+<rect x="282.5" y="162.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>sqlfluff-905 · step 11: 0/8 solved</title></rect>
+<rect x="295.7" y="162.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>sqlfluff-905 · step 12: 0/8 solved</title></rect>
+<rect x="308.9" y="162.5" width="12.2" height="13.0" class="heat" fill-opacity="0.23"><title>sqlfluff-905 · step 13: 1/8 solved</title></rect>
+<text x="315.0" y="172.5" class="heat-n" text-anchor="middle">1</text>
+<rect x="322.1" y="162.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>sqlfluff-905 · step 14: 0/8 solved</title></rect>
+<rect x="348.5" y="162.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>sqlfluff-905 · step 16: 0/8 solved</title></rect>
+<rect x="361.7" y="162.5" width="12.2" height="13.0" class="heat" fill-opacity="0.12"><title>sqlfluff-905 · step 17: 0/8 solved</title></rect>
+<text x="156.6" y="194" class="tm" text-anchor="middle">1</text>
+<text x="209.4" y="194" class="tm" text-anchor="middle">5</text>
+<text x="275.4" y="194" class="tm" text-anchor="middle">10</text>
+<text x="341.4" y="194" class="tm" text-anchor="middle">15</text>
+<text x="407.4" y="194" class="tm" text-anchor="middle">20</text>
+<text x="473.4" y="194" class="tm" text-anchor="middle">25</text>
+<text x="539.4" y="194" class="tm" text-anchor="middle">30</text>
+<text x="144" y="194" class="tm" text-anchor="end">step →</text>
+</svg><figcaption>Each cell is one task at one step: how many of its 8 rollouts passed. Blank cells: the task was not drawn that step.</figcaption></figure>
+<figure class="fig" id="fig-tr-patches"><svg viewBox="0 0 560 210" role="img" aria-label="Stacked bars per step: patches that fixed the bug, patches that changed nothing the tests notice, patches that broke tests or did not apply, and empty patches">
+<text x="46" y="10" class="tb">What the submitted patches did (share of the step's rollouts)</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0 %</text>
+<line x1="46" x2="546" y1="138.5" y2="138.5" class="grid"/>
+<text x="40" y="142.0" class="tm" text-anchor="end">25 %</text>
+<line x1="46" x2="546" y1="97.0" y2="97.0" class="grid"/>
+<text x="40" y="100.5" class="tm" text-anchor="end">50 %</text>
+<line x1="46" x2="546" y1="55.5" y2="55.5" class="grid"/>
+<text x="40" y="59.0" class="tm" text-anchor="end">75 %</text>
+<line x1="46" x2="546" y1="14.0" y2="14.0" class="grid"/>
+<text x="40" y="17.5" class="tm" text-anchor="end">100 %</text>
+<rect x="40.2" y="164.4" width="11.7" height="14.6" class="po-fixed"><title>fixed · step 1: 3/32</title></rect>
+<rect x="40.2" y="143.7" width="11.7" height="19.8" class="po-green"><title>no fix, tests still green · step 1: 4/32</title></rect>
+<rect x="40.2" y="65.9" width="11.7" height="76.8" class="po-broke"><title>broke tests or did not apply · step 1: 15/32</title></rect>
+<rect x="40.2" y="14.0" width="11.7" height="50.9" class="po-empty"><title>empty patch · step 1: 10/32</title></rect>
+<rect x="57.4" y="148.9" width="11.7" height="30.1" class="po-fixed"><title>fixed · step 2: 6/32</title></rect>
+<rect x="57.4" y="133.3" width="11.7" height="14.6" class="po-green"><title>no fix, tests still green · step 2: 3/32</title></rect>
+<rect x="57.4" y="50.3" width="11.7" height="82.0" class="po-broke"><title>broke tests or did not apply · step 2: 16/32</title></rect>
+<rect x="57.4" y="14.0" width="11.7" height="35.3" class="po-empty"><title>empty patch · step 2: 7/32</title></rect>
+<rect x="74.6" y="154.1" width="11.7" height="24.9" class="po-fixed"><title>fixed · step 3: 5/32</title></rect>
+<rect x="74.6" y="122.9" width="11.7" height="30.1" class="po-green"><title>no fix, tests still green · step 3: 6/32</title></rect>
+<rect x="74.6" y="45.1" width="11.7" height="76.8" class="po-broke"><title>broke tests or did not apply · step 3: 15/32</title></rect>
+<rect x="74.6" y="14.0" width="11.7" height="30.1" class="po-empty"><title>empty patch · step 3: 6/32</title></rect>
+<rect x="91.9" y="159.2" width="11.7" height="19.8" class="po-green"><title>no fix, tests still green · step 4: 4/32</title></rect>
+<rect x="91.9" y="71.1" width="11.7" height="87.2" class="po-broke"><title>broke tests or did not apply · step 4: 17/32</title></rect>
+<rect x="91.9" y="14.0" width="11.7" height="56.1" class="po-empty"><title>empty patch · step 4: 11/32</title></rect>
+<rect x="109.1" y="154.1" width="11.7" height="24.9" class="po-fixed"><title>fixed · step 5: 5/32</title></rect>
+<rect x="109.1" y="143.7" width="11.7" height="9.4" class="po-green"><title>no fix, tests still green · step 5: 2/32</title></rect>
+<rect x="109.1" y="76.2" width="11.7" height="66.4" class="po-broke"><title>broke tests or did not apply · step 5: 13/32</title></rect>
+<rect x="109.1" y="14.0" width="11.7" height="61.2" class="po-empty"><title>empty patch · step 5: 12/32</title></rect>
+<rect x="126.4" y="169.6" width="11.7" height="9.4" class="po-fixed"><title>fixed · step 6: 2/32</title></rect>
+<rect x="126.4" y="164.4" width="11.7" height="4.2" class="po-green"><title>no fix, tests still green · step 6: 1/32</title></rect>
+<rect x="126.4" y="71.1" width="11.7" height="92.4" class="po-broke"><title>broke tests or did not apply · step 6: 18/32</title></rect>
+<rect x="126.4" y="14.0" width="11.7" height="56.1" class="po-empty"><title>empty patch · step 6: 11/32</title></rect>
+<rect x="143.6" y="154.1" width="11.7" height="24.9" class="po-fixed"><title>fixed · step 7: 5/32</title></rect>
+<rect x="143.6" y="133.3" width="11.7" height="19.8" class="po-green"><title>no fix, tests still green · step 7: 4/32</title></rect>
+<rect x="143.6" y="81.4" width="11.7" height="50.9" class="po-broke"><title>broke tests or did not apply · step 7: 10/32</title></rect>
+<rect x="143.6" y="14.0" width="11.7" height="66.4" class="po-empty"><title>empty patch · step 7: 13/32</title></rect>
+<rect x="160.9" y="138.5" width="11.7" height="40.5" class="po-fixed"><title>fixed · step 8: 8/32</title></rect>
+<rect x="160.9" y="112.6" width="11.7" height="24.9" class="po-green"><title>no fix, tests still green · step 8: 5/32</title></rect>
+<rect x="160.9" y="45.1" width="11.7" height="66.4" class="po-broke"><title>broke tests or did not apply · step 8: 13/32</title></rect>
+<rect x="160.9" y="14.0" width="11.7" height="30.1" class="po-empty"><title>empty patch · step 8: 6/32</title></rect>
+<rect x="178.1" y="174.8" width="11.7" height="4.2" class="po-fixed"><title>fixed · step 9: 1/32</title></rect>
+<rect x="178.1" y="133.3" width="11.7" height="40.5" class="po-green"><title>no fix, tests still green · step 9: 8/32</title></rect>
+<rect x="178.1" y="71.1" width="11.7" height="61.2" class="po-broke"><title>broke tests or did not apply · step 9: 12/32</title></rect>
+<rect x="178.1" y="14.0" width="11.7" height="56.1" class="po-empty"><title>empty patch · step 9: 11/32</title></rect>
+<rect x="195.3" y="148.9" width="11.7" height="30.1" class="po-fixed"><title>fixed · step 10: 6/32</title></rect>
+<rect x="195.3" y="128.1" width="11.7" height="19.8" class="po-green"><title>no fix, tests still green · step 10: 4/32</title></rect>
+<rect x="195.3" y="71.1" width="11.7" height="56.1" class="po-broke"><title>broke tests or did not apply · step 10: 11/32</title></rect>
+<rect x="195.3" y="14.0" width="11.7" height="56.1" class="po-empty"><title>empty patch · step 10: 11/32</title></rect>
+<rect x="212.6" y="148.9" width="11.7" height="30.1" class="po-fixed"><title>fixed · step 11: 6/32</title></rect>
+<rect x="212.6" y="102.2" width="11.7" height="45.7" class="po-green"><title>no fix, tests still green · step 11: 9/32</title></rect>
+<rect x="212.6" y="55.5" width="11.7" height="45.7" class="po-broke"><title>broke tests or did not apply · step 11: 9/32</title></rect>
+<rect x="212.6" y="14.0" width="11.7" height="40.5" class="po-empty"><title>empty patch · step 11: 8/32</title></rect>
+<rect x="229.8" y="174.8" width="11.7" height="4.2" class="po-fixed"><title>fixed · step 12: 1/32</title></rect>
+<rect x="229.8" y="143.7" width="11.7" height="30.1" class="po-green"><title>no fix, tests still green · step 12: 6/32</title></rect>
+<rect x="229.8" y="55.5" width="11.7" height="87.2" class="po-broke"><title>broke tests or did not apply · step 12: 17/32</title></rect>
+<rect x="229.8" y="14.0" width="11.7" height="40.5" class="po-empty"><title>empty patch · step 12: 8/32</title></rect>
+<rect x="247.1" y="138.5" width="11.7" height="40.5" class="po-fixed"><title>fixed · step 13: 8/32</title></rect>
+<rect x="247.1" y="133.3" width="11.7" height="4.2" class="po-green"><title>no fix, tests still green · step 13: 1/32</title></rect>
+<rect x="247.1" y="65.9" width="11.7" height="66.4" class="po-broke"><title>broke tests or did not apply · step 13: 13/32</title></rect>
+<rect x="247.1" y="14.0" width="11.7" height="50.9" class="po-empty"><title>empty patch · step 13: 10/32</title></rect>
+<rect x="264.3" y="164.4" width="11.7" height="14.6" class="po-fixed"><title>fixed · step 14: 3/32</title></rect>
+<rect x="264.3" y="148.9" width="11.7" height="14.6" class="po-green"><title>no fix, tests still green · step 14: 3/32</title></rect>
+<rect x="264.3" y="55.5" width="11.7" height="92.4" class="po-broke"><title>broke tests or did not apply · step 14: 18/32</title></rect>
+<rect x="264.3" y="14.0" width="11.7" height="40.5" class="po-empty"><title>empty patch · step 14: 8/32</title></rect>
+<rect x="281.5" y="154.1" width="11.7" height="24.9" class="po-fixed"><title>fixed · step 15: 5/32</title></rect>
+<rect x="281.5" y="133.3" width="11.7" height="19.8" class="po-green"><title>no fix, tests still green · step 15: 4/32</title></rect>
+<rect x="281.5" y="60.7" width="11.7" height="71.6" class="po-broke"><title>broke tests or did not apply · step 15: 14/32</title></rect>
+<rect x="281.5" y="14.0" width="11.7" height="45.7" class="po-empty"><title>empty patch · step 15: 9/32</title></rect>
+<rect x="298.8" y="169.6" width="11.7" height="9.4" class="po-fixed"><title>fixed · step 16: 2/32</title></rect>
+<rect x="298.8" y="133.3" width="11.7" height="35.3" class="po-green"><title>no fix, tests still green · step 16: 7/32</title></rect>
+<rect x="298.8" y="76.2" width="11.7" height="56.1" class="po-broke"><title>broke tests or did not apply · step 16: 11/32</title></rect>
+<rect x="298.8" y="14.0" width="11.7" height="61.2" class="po-empty"><title>empty patch · step 16: 12/32</title></rect>
+<rect x="316.0" y="159.2" width="11.7" height="19.8" class="po-fixed"><title>fixed · step 17: 4/32</title></rect>
+<rect x="316.0" y="143.7" width="11.7" height="14.6" class="po-green"><title>no fix, tests still green · step 17: 3/32</title></rect>
+<rect x="316.0" y="55.5" width="11.7" height="87.2" class="po-broke"><title>broke tests or did not apply · step 17: 17/32</title></rect>
+<rect x="316.0" y="14.0" width="11.7" height="40.5" class="po-empty"><title>empty patch · step 17: 8/32</title></rect>
+<rect x="333.3" y="159.2" width="11.7" height="19.8" class="po-fixed"><title>fixed · step 18: 4/32</title></rect>
+<rect x="333.3" y="133.3" width="11.7" height="24.9" class="po-green"><title>no fix, tests still green · step 18: 5/32</title></rect>
+<rect x="333.3" y="81.4" width="11.7" height="50.9" class="po-broke"><title>broke tests or did not apply · step 18: 10/32</title></rect>
+<rect x="333.3" y="14.0" width="11.7" height="66.4" class="po-empty"><title>empty patch · step 18: 13/32</title></rect>
+<rect x="350.5" y="122.9" width="11.7" height="56.1" class="po-fixed"><title>fixed · step 19: 11/32</title></rect>
+<rect x="350.5" y="91.8" width="11.7" height="30.1" class="po-green"><title>no fix, tests still green · step 19: 6/32</title></rect>
+<rect x="350.5" y="71.1" width="11.7" height="19.8" class="po-broke"><title>broke tests or did not apply · step 19: 4/32</title></rect>
+<rect x="350.5" y="14.0" width="11.7" height="56.1" class="po-empty"><title>empty patch · step 19: 11/32</title></rect>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<rect x="50" y="16" width="10" height="10" class="po-fixed"/>
+<text x="64" y="25" class="tm">fixed</text>
+<rect x="111.0" y="16" width="10" height="10" class="po-green"/>
+<text x="125.0" y="25" class="tm">no fix, tests still green</text>
+<rect x="296.0" y="16" width="10" height="10" class="po-broke"/>
+<text x="310.0" y="25" class="tm">broke tests or did not apply</text>
+<rect x="50" y="30" width="10" height="10" class="po-empty"/>
+<text x="64" y="39" class="tm">empty patch</text>
+</svg><figcaption>Every rollout ends with a patch. Green fixed the bug. Teal changed nothing the tests notice. Amber broke a pass-to-pass test or did not apply. Grey was empty.</figcaption></figure>
+<figure class="fig" id="fig-tr-objective"><svg viewBox="0 0 560 210" role="img" aria-label="Line chart of the objective gain per step; above zero means the update moved probability toward high-advantage tokens">
+<text x="46" y="10" class="tb">Objective gain per step (mean A·Δlog p after the update)</text>
+<line x1="46" x2="546" y1="168.6" y2="168.6" class="grid"/>
+<text x="40" y="172.1" class="tm" text-anchor="end">0</text>
+<line x1="46" x2="546" y1="118.9" y2="118.9" class="grid"/>
+<text x="40" y="122.4" class="tm" text-anchor="end">0.001</text>
+<line x1="46" x2="546" y1="69.2" y2="69.2" class="grid"/>
+<text x="40" y="72.7" class="tm" text-anchor="end">0.001</text>
+<line x1="46" x2="546" y1="19.5" y2="19.5" class="grid"/>
+<text x="40" y="23.0" class="tm" text-anchor="end">0.002</text>
+<line x1="46" x2="546" y1="168.6" y2="168.6" class="zero"/>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 72.1 L 63.2 98.4 L 80.5 69.7" class="l-main"/>
+<path d="M 115.0 123.6 L 132.2 94.8 L 149.4 100.6 L 166.7 126.1 L 183.9 102.9 L 201.2 125.5 L 218.4 62.7 L 235.7 25.4 L 252.9 138.1 L 270.1 86.0 L 287.4 114.7 L 304.6 100.0 L 321.9 108.3 L 339.1 92.1 L 356.3 151.1" class="l-main"/>
+<circle cx="46.0" cy="72.1" r="3.2" class="l-main-dot"><title>gain · step 1: 0.001</title></circle>
+<circle cx="63.2" cy="98.4" r="3.2" class="l-main-dot"><title>gain · step 2: 0.001</title></circle>
+<circle cx="80.5" cy="69.7" r="3.2" class="l-main-dot"><title>gain · step 3: 0.001</title></circle>
+<circle cx="115.0" cy="123.6" r="3.2" class="l-main-dot"><title>gain · step 5: 0</title></circle>
+<circle cx="132.2" cy="94.8" r="3.2" class="l-main-dot"><title>gain · step 6: 0.001</title></circle>
+<circle cx="149.4" cy="100.6" r="3.2" class="l-main-dot"><title>gain · step 7: 0.001</title></circle>
+<circle cx="166.7" cy="126.1" r="3.2" class="l-main-dot"><title>gain · step 8: 0</title></circle>
+<circle cx="183.9" cy="102.9" r="3.2" class="l-main-dot"><title>gain · step 9: 0.001</title></circle>
+<circle cx="201.2" cy="125.5" r="3.2" class="l-main-dot"><title>gain · step 10: 0</title></circle>
+<circle cx="218.4" cy="62.7" r="3.2" class="l-main-dot"><title>gain · step 11: 0.001</title></circle>
+<circle cx="235.7" cy="25.4" r="3.2" class="l-main-dot"><title>gain · step 12: 0.001</title></circle>
+<circle cx="252.9" cy="138.1" r="3.2" class="l-main-dot"><title>gain · step 13: 0</title></circle>
+<circle cx="270.1" cy="86.0" r="3.2" class="l-main-dot"><title>gain · step 14: 0.001</title></circle>
+<circle cx="287.4" cy="114.7" r="3.2" class="l-main-dot"><title>gain · step 15: 0.001</title></circle>
+<circle cx="304.6" cy="100.0" r="3.2" class="l-main-dot"><title>gain · step 16: 0.001</title></circle>
+<circle cx="321.9" cy="108.3" r="3.2" class="l-main-dot"><title>gain · step 17: 0.001</title></circle>
+<circle cx="339.1" cy="92.1" r="3.2" class="l-main-dot"><title>gain · step 18: 0.001</title></circle>
+<circle cx="356.3" cy="151.1" r="3.2" class="l-main-dot"><title>gain · step 19: 0</title></circle>
+</svg><figcaption>Mean advantage-weighted change in log-probability on the trained tokens, measured after the update. Above zero on every step means each update moved the policy the way the rewards asked.</figcaption></figure>
+<figure class="fig" id="fig-tr-loss"><svg viewBox="0 0 560 210" role="img" aria-label="Line chart of the training loss per step">
+<text x="46" y="10" class="tb">Loss per step (token mean of −A·w·log p)</text>
+<line x1="46" x2="546" y1="165.4" y2="165.4" class="grid"/>
+<text x="40" y="168.9" class="tm" text-anchor="end">-0.2</text>
+<line x1="46" x2="546" y1="96.1" y2="96.1" class="grid"/>
+<text x="40" y="99.6" class="tm" text-anchor="end">-0.1</text>
+<line x1="46" x2="546" y1="26.8" y2="26.8" class="grid"/>
+<text x="40" y="30.3" class="tm" text-anchor="end">0</text>
+<line x1="46" x2="546" y1="26.8" y2="26.8" class="zero"/>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 117.5 L 63.2 128.6 L 80.5 79.1" class="l-main"/>
+<path d="M 115.0 58.1 L 132.2 62.7 L 149.4 168.6 L 166.7 25.4 L 183.9 68.5 L 201.2 98.7 L 218.4 73.5 L 235.7 120.1 L 252.9 34.7 L 270.1 105.4 L 287.4 80.6 L 304.6 56.7 L 321.9 53.4 L 339.1 76.8 L 356.3 49.2" class="l-main"/>
+<circle cx="46.0" cy="117.5" r="3.2" class="l-main-dot"><title>loss · step 1: -0.131</title></circle>
+<circle cx="63.2" cy="128.6" r="3.2" class="l-main-dot"><title>loss · step 2: -0.147</title></circle>
+<circle cx="80.5" cy="79.1" r="3.2" class="l-main-dot"><title>loss · step 3: -0.076</title></circle>
+<circle cx="115.0" cy="58.1" r="3.2" class="l-main-dot"><title>loss · step 5: -0.045</title></circle>
+<circle cx="132.2" cy="62.7" r="3.2" class="l-main-dot"><title>loss · step 6: -0.052</title></circle>
+<circle cx="149.4" cy="168.6" r="3.2" class="l-main-dot"><title>loss · step 7: -0.205</title></circle>
+<circle cx="166.7" cy="25.4" r="3.2" class="l-main-dot"><title>loss · step 8: 0.002</title></circle>
+<circle cx="183.9" cy="68.5" r="3.2" class="l-main-dot"><title>loss · step 9: -0.06</title></circle>
+<circle cx="201.2" cy="98.7" r="3.2" class="l-main-dot"><title>loss · step 10: -0.104</title></circle>
+<circle cx="218.4" cy="73.5" r="3.2" class="l-main-dot"><title>loss · step 11: -0.067</title></circle>
+<circle cx="235.7" cy="120.1" r="3.2" class="l-main-dot"><title>loss · step 12: -0.135</title></circle>
+<circle cx="252.9" cy="34.7" r="3.2" class="l-main-dot"><title>loss · step 13: -0.011</title></circle>
+<circle cx="270.1" cy="105.4" r="3.2" class="l-main-dot"><title>loss · step 14: -0.113</title></circle>
+<circle cx="287.4" cy="80.6" r="3.2" class="l-main-dot"><title>loss · step 15: -0.078</title></circle>
+<circle cx="304.6" cy="56.7" r="3.2" class="l-main-dot"><title>loss · step 16: -0.043</title></circle>
+<circle cx="321.9" cy="53.4" r="3.2" class="l-main-dot"><title>loss · step 17: -0.038</title></circle>
+<circle cx="339.1" cy="76.8" r="3.2" class="l-main-dot"><title>loss · step 18: -0.072</title></circle>
+<circle cx="356.3" cy="49.2" r="3.2" class="l-main-dot"><title>loss · step 19: -0.032</title></circle>
+</svg><figcaption>The number the optimizer minimises. It is not a progress meter: its sign follows the advantage mix of that step's sample, so read the objective gain instead.</figcaption></figure>
+<figure class="fig" id="fig-tr-grad"><svg viewBox="0 0 560 210" role="img" aria-label="Gradient norm before clipping (clip at 1.0)">
+<text x="46" y="10" class="tb">Gradient norm before clipping (clip at 1.0)</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0</text>
+<line x1="46" x2="546" y1="132.7" y2="132.7" class="grid"/>
+<text x="40" y="136.2" class="tm" text-anchor="end">0.025</text>
+<line x1="46" x2="546" y1="85.5" y2="85.5" class="grid"/>
+<text x="40" y="89.0" class="tm" text-anchor="end">0.05</text>
+<line x1="46" x2="546" y1="38.2" y2="38.2" class="grid"/>
+<text x="40" y="41.7" class="tm" text-anchor="end">0.075</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 58.0 L 63.2 44.5 L 80.5 57.7" class="l-main"/>
+<path d="M 115.0 50.8 L 132.2 55.4 L 149.4 55.0 L 166.7 88.7 L 183.9 49.9 L 201.2 77.1 L 218.4 41.4 L 235.7 26.3 L 252.9 92.9 L 270.1 34.5 L 287.4 30.4 L 304.6 40.8 L 321.9 29.1 L 339.1 26.4 L 356.3 82.6" class="l-main"/>
+<circle cx="46.0" cy="58.0" r="3.2" class="l-main-dot"><title>grad norm · step 1: 0.065</title></circle>
+<circle cx="63.2" cy="44.5" r="3.2" class="l-main-dot"><title>grad norm · step 2: 0.072</title></circle>
+<circle cx="80.5" cy="57.7" r="3.2" class="l-main-dot"><title>grad norm · step 3: 0.065</title></circle>
+<circle cx="115.0" cy="50.8" r="3.2" class="l-main-dot"><title>grad norm · step 5: 0.068</title></circle>
+<circle cx="132.2" cy="55.4" r="3.2" class="l-main-dot"><title>grad norm · step 6: 0.066</title></circle>
+<circle cx="149.4" cy="55.0" r="3.2" class="l-main-dot"><title>grad norm · step 7: 0.066</title></circle>
+<circle cx="166.7" cy="88.7" r="3.2" class="l-main-dot"><title>grad norm · step 8: 0.048</title></circle>
+<circle cx="183.9" cy="49.9" r="3.2" class="l-main-dot"><title>grad norm · step 9: 0.069</title></circle>
+<circle cx="201.2" cy="77.1" r="3.2" class="l-main-dot"><title>grad norm · step 10: 0.054</title></circle>
+<circle cx="218.4" cy="41.4" r="3.2" class="l-main-dot"><title>grad norm · step 11: 0.073</title></circle>
+<circle cx="235.7" cy="26.3" r="3.2" class="l-main-dot"><title>grad norm · step 12: 0.081</title></circle>
+<circle cx="252.9" cy="92.9" r="3.2" class="l-main-dot"><title>grad norm · step 13: 0.046</title></circle>
+<circle cx="270.1" cy="34.5" r="3.2" class="l-main-dot"><title>grad norm · step 14: 0.077</title></circle>
+<circle cx="287.4" cy="30.4" r="3.2" class="l-main-dot"><title>grad norm · step 15: 0.079</title></circle>
+<circle cx="304.6" cy="40.8" r="3.2" class="l-main-dot"><title>grad norm · step 16: 0.074</title></circle>
+<circle cx="321.9" cy="29.1" r="3.2" class="l-main-dot"><title>grad norm · step 17: 0.08</title></circle>
+<circle cx="339.1" cy="26.4" r="3.2" class="l-main-dot"><title>grad norm · step 18: 0.081</title></circle>
+<circle cx="356.3" cy="82.6" r="3.2" class="l-main-dot"><title>grad norm · step 19: 0.052</title></circle>
+</svg><figcaption>Norm of the LoRA gradient before clipping at 1.0. Flat and far below the clip: no step was clipped.</figcaption></figure>
+<figure class="fig" id="fig-tr-mismatch"><svg viewBox="0 0 560 210" role="img" aria-label="Line chart of the mean and 99th percentile absolute log-probability gap between the trainer and the server">
+<text x="46" y="10" class="tb">Trainer vs server log-prob gap (nats per token)</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0</text>
+<line x1="46" x2="546" y1="133.8" y2="133.8" class="grid"/>
+<text x="40" y="137.3" class="tm" text-anchor="end">0.1</text>
+<line x1="46" x2="546" y1="87.7" y2="87.7" class="grid"/>
+<text x="40" y="91.2" class="tm" text-anchor="end">0.2</text>
+<line x1="46" x2="546" y1="41.5" y2="41.5" class="grid"/>
+<text x="40" y="45.0" class="tm" text-anchor="end">0.3</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 168.8 L 63.2 167.9 L 80.5 168.3" class="l-main"/>
+<path d="M 115.0 166.6 L 132.2 166.6 L 149.4 169.0 L 166.7 167.8 L 183.9 166.8 L 201.2 168.5 L 218.4 167.0 L 235.7 165.8 L 252.9 168.4 L 270.1 167.5 L 287.4 166.9 L 304.6 168.1 L 321.9 168.4 L 339.1 166.1 L 356.3 167.1" class="l-main"/>
+<circle cx="46.0" cy="168.8" r="3.2" class="l-main-dot"><title>mean · step 1: 0.024</title></circle>
+<circle cx="63.2" cy="167.9" r="3.2" class="l-main-dot"><title>mean · step 2: 0.026</title></circle>
+<circle cx="80.5" cy="168.3" r="3.2" class="l-main-dot"><title>mean · step 3: 0.025</title></circle>
+<circle cx="115.0" cy="166.6" r="3.2" class="l-main-dot"><title>mean · step 5: 0.029</title></circle>
+<circle cx="132.2" cy="166.6" r="3.2" class="l-main-dot"><title>mean · step 6: 0.029</title></circle>
+<circle cx="149.4" cy="169.0" r="3.2" class="l-main-dot"><title>mean · step 7: 0.024</title></circle>
+<circle cx="166.7" cy="167.8" r="3.2" class="l-main-dot"><title>mean · step 8: 0.026</title></circle>
+<circle cx="183.9" cy="166.8" r="3.2" class="l-main-dot"><title>mean · step 9: 0.029</title></circle>
+<circle cx="201.2" cy="168.5" r="3.2" class="l-main-dot"><title>mean · step 10: 0.025</title></circle>
+<circle cx="218.4" cy="167.0" r="3.2" class="l-main-dot"><title>mean · step 11: 0.028</title></circle>
+<circle cx="235.7" cy="165.8" r="3.2" class="l-main-dot"><title>mean · step 12: 0.031</title></circle>
+<circle cx="252.9" cy="168.4" r="3.2" class="l-main-dot"><title>mean · step 13: 0.025</title></circle>
+<circle cx="270.1" cy="167.5" r="3.2" class="l-main-dot"><title>mean · step 14: 0.027</title></circle>
+<circle cx="287.4" cy="166.9" r="3.2" class="l-main-dot"><title>mean · step 15: 0.028</title></circle>
+<circle cx="304.6" cy="168.1" r="3.2" class="l-main-dot"><title>mean · step 16: 0.026</title></circle>
+<circle cx="321.9" cy="168.4" r="3.2" class="l-main-dot"><title>mean · step 17: 0.025</title></circle>
+<circle cx="339.1" cy="166.1" r="3.2" class="l-main-dot"><title>mean · step 18: 0.03</title></circle>
+<circle cx="356.3" cy="167.1" r="3.2" class="l-main-dot"><title>mean · step 19: 0.028</title></circle>
+<path d="M 46.0 53.5 L 63.2 44.3 L 80.5 48.7" class="l-amber" stroke-dasharray="5 4"/>
+<path d="M 115.0 35.4 L 132.2 36.1 L 149.4 61.0 L 166.7 51.2 L 183.9 31.3 L 201.2 51.9 L 218.4 38.2 L 235.7 26.3 L 252.9 47.7 L 270.1 39.6 L 287.4 35.6 L 304.6 39.9 L 321.9 54.3 L 339.1 42.0 L 356.3 37.6" class="l-amber" stroke-dasharray="5 4"/>
+<circle cx="46.0" cy="53.5" r="3.2" class="l-amber-dot"><title>p99 · step 1: 0.274</title></circle>
+<circle cx="63.2" cy="44.3" r="3.2" class="l-amber-dot"><title>p99 · step 2: 0.294</title></circle>
+<circle cx="80.5" cy="48.7" r="3.2" class="l-amber-dot"><title>p99 · step 3: 0.284</title></circle>
+<circle cx="115.0" cy="35.4" r="3.2" class="l-amber-dot"><title>p99 · step 5: 0.313</title></circle>
+<circle cx="132.2" cy="36.1" r="3.2" class="l-amber-dot"><title>p99 · step 6: 0.312</title></circle>
+<circle cx="149.4" cy="61.0" r="3.2" class="l-amber-dot"><title>p99 · step 7: 0.258</title></circle>
+<circle cx="166.7" cy="51.2" r="3.2" class="l-amber-dot"><title>p99 · step 8: 0.279</title></circle>
+<circle cx="183.9" cy="31.3" r="3.2" class="l-amber-dot"><title>p99 · step 9: 0.322</title></circle>
+<circle cx="201.2" cy="51.9" r="3.2" class="l-amber-dot"><title>p99 · step 10: 0.277</title></circle>
+<circle cx="218.4" cy="38.2" r="3.2" class="l-amber-dot"><title>p99 · step 11: 0.307</title></circle>
+<circle cx="235.7" cy="26.3" r="3.2" class="l-amber-dot"><title>p99 · step 12: 0.333</title></circle>
+<circle cx="252.9" cy="47.7" r="3.2" class="l-amber-dot"><title>p99 · step 13: 0.287</title></circle>
+<circle cx="270.1" cy="39.6" r="3.2" class="l-amber-dot"><title>p99 · step 14: 0.304</title></circle>
+<circle cx="287.4" cy="35.6" r="3.2" class="l-amber-dot"><title>p99 · step 15: 0.313</title></circle>
+<circle cx="304.6" cy="39.9" r="3.2" class="l-amber-dot"><title>p99 · step 16: 0.303</title></circle>
+<circle cx="321.9" cy="54.3" r="3.2" class="l-amber-dot"><title>p99 · step 17: 0.272</title></circle>
+<circle cx="339.1" cy="42.0" r="3.2" class="l-amber-dot"><title>p99 · step 18: 0.299</title></circle>
+<circle cx="356.3" cy="37.6" r="3.2" class="l-amber-dot"><title>p99 · step 19: 0.308</title></circle>
+<path d="M 46.0 175.5 L 63.2 176.0 L 80.5 175.0 L 97.7 175.5 L 115.0 174.7 L 132.2 175.7 L 149.4 175.5 L 166.7 175.1 L 183.9 175.9 L 201.2 175.8 L 218.4 175.7 L 235.7 175.1 L 252.9 174.6 L 270.1 175.9 L 287.4 175.4 L 304.6 175.7 L 321.9 175.4 L 339.1 175.7 L 356.3 175.1" class="l-cmp"/>
+<line x1="50" x2="66" y1="22" y2="22" class="l-main"/>
+<text x="70" y="25.5" class="tm">mean</text>
+<line x1="116.8" x2="132.8" y1="22" y2="22" class="l-amber" stroke-dasharray="5 4"/>
+<text x="136.8" y="25.5" class="tm">p99</text>
+<line x1="177.4" x2="193.4" y1="22" y2="22" class="l-cmp"/>
+<text x="197.4" y="25.5" class="tm">grpo-minicoder-v2 mean</text>
+</svg><figcaption>Absolute difference between the server's and the trainer's log-probability of the same sampled tokens. The mean is the lecture's mismatch diagnostic; the dashed line is the 99th percentile.</figcaption></figure>
+<figure class="fig" id="fig-tr-tis"><svg viewBox="0 0 560 210" role="img" aria-label="Importance weight w = p_trainer / p_server, mean over tokens (cap 2)">
+<text x="46" y="10" class="tb">Importance weight w = p_trainer / p_server, mean over tokens (cap 2)</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0.995</text>
+<line x1="46" x2="546" y1="138.5" y2="138.5" class="grid"/>
+<text x="40" y="142.0" class="tm" text-anchor="end">0.998</text>
+<line x1="46" x2="546" y1="97.0" y2="97.0" class="grid"/>
+<text x="40" y="100.5" class="tm" text-anchor="end">1</text>
+<line x1="46" x2="546" y1="55.5" y2="55.5" class="grid"/>
+<text x="40" y="59.0" class="tm" text-anchor="end">1</text>
+<line x1="46" x2="546" y1="14.0" y2="14.0" class="grid"/>
+<text x="40" y="17.5" class="tm" text-anchor="end">1</text>
+<line x1="46" x2="546" y1="97.0" y2="97.0" class="refline"/>
+<text x="546" y="93.0" class="tm" text-anchor="end">w = 1</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 94.4 L 63.2 103.4 L 80.5 92.8" class="l-main"/>
+<path d="M 115.0 94.6 L 132.2 104.3 L 149.4 96.3 L 166.7 94.7 L 183.9 95.0 L 201.2 92.0 L 218.4 102.1 L 235.7 80.3 L 252.9 97.7 L 270.1 99.3 L 287.4 99.5 L 304.6 97.7 L 321.9 96.6 L 339.1 109.6 L 356.3 95.6" class="l-main"/>
+<circle cx="46.0" cy="94.4" r="3.2" class="l-main-dot"><title>mean w · step 1: 1</title></circle>
+<circle cx="63.2" cy="103.4" r="3.2" class="l-main-dot"><title>mean w · step 2: 1</title></circle>
+<circle cx="80.5" cy="92.8" r="3.2" class="l-main-dot"><title>mean w · step 3: 1</title></circle>
+<circle cx="115.0" cy="94.6" r="3.2" class="l-main-dot"><title>mean w · step 5: 1</title></circle>
+<circle cx="132.2" cy="104.3" r="3.2" class="l-main-dot"><title>mean w · step 6: 1</title></circle>
+<circle cx="149.4" cy="96.3" r="3.2" class="l-main-dot"><title>mean w · step 7: 1</title></circle>
+<circle cx="166.7" cy="94.7" r="3.2" class="l-main-dot"><title>mean w · step 8: 1</title></circle>
+<circle cx="183.9" cy="95.0" r="3.2" class="l-main-dot"><title>mean w · step 9: 1</title></circle>
+<circle cx="201.2" cy="92.0" r="3.2" class="l-main-dot"><title>mean w · step 10: 1</title></circle>
+<circle cx="218.4" cy="102.1" r="3.2" class="l-main-dot"><title>mean w · step 11: 1</title></circle>
+<circle cx="235.7" cy="80.3" r="3.2" class="l-main-dot"><title>mean w · step 12: 1</title></circle>
+<circle cx="252.9" cy="97.7" r="3.2" class="l-main-dot"><title>mean w · step 13: 1</title></circle>
+<circle cx="270.1" cy="99.3" r="3.2" class="l-main-dot"><title>mean w · step 14: 1</title></circle>
+<circle cx="287.4" cy="99.5" r="3.2" class="l-main-dot"><title>mean w · step 15: 1</title></circle>
+<circle cx="304.6" cy="97.7" r="3.2" class="l-main-dot"><title>mean w · step 16: 1</title></circle>
+<circle cx="321.9" cy="96.6" r="3.2" class="l-main-dot"><title>mean w · step 17: 1</title></circle>
+<circle cx="339.1" cy="109.6" r="3.2" class="l-main-dot"><title>mean w · step 18: 0.999</title></circle>
+<circle cx="356.3" cy="95.6" r="3.2" class="l-main-dot"><title>mean w · step 19: 1</title></circle>
+</svg><figcaption>The truncated importance weight applied per token. A mean of 1.000 means the trainer scored the tokens almost exactly as the server that sampled them.</figcaption></figure>
+<figure class="fig" id="fig-tr-drift"><svg viewBox="0 0 560 210" role="img" aria-label="Line chart of the mean absolute log-probability difference between the served adapter and the base model on a fixed probe">
+<text x="46" y="10" class="tb">Drift of the served policy from the base (nats per token)</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0</text>
+<line x1="46" x2="546" y1="125.7" y2="125.7" class="grid"/>
+<text x="40" y="129.2" class="tm" text-anchor="end">0.05</text>
+<line x1="46" x2="546" y1="71.4" y2="71.4" class="grid"/>
+<text x="40" y="74.9" class="tm" text-anchor="end">0.1</text>
+<line x1="46" x2="546" y1="17.1" y2="17.1" class="grid"/>
+<text x="40" y="20.6" class="tm" text-anchor="end">0.15</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 85.0 L 63.2 49.0 L 80.5 87.5" class="l-main"/>
+<path d="M 115.0 104.2 L 132.2 55.6 L 149.4 66.1 L 166.7 78.2 L 183.9 56.9 L 201.2 69.6 L 218.4 59.6 L 235.7 55.3 L 252.9 43.7 L 270.1 82.0 L 287.4 57.0 L 304.6 26.3 L 321.9 56.7 L 339.1 75.6 L 356.3 60.2" class="l-main"/>
+<circle cx="46.0" cy="85.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 1: 0.088</title></circle>
+<circle cx="63.2" cy="49.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 2: 0.121</title></circle>
+<circle cx="80.5" cy="87.5" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 3: 0.085</title></circle>
+<circle cx="115.0" cy="104.2" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 5: 0.07</title></circle>
+<circle cx="132.2" cy="55.6" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 6: 0.115</title></circle>
+<circle cx="149.4" cy="66.1" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 7: 0.105</title></circle>
+<circle cx="166.7" cy="78.2" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 8: 0.094</title></circle>
+<circle cx="183.9" cy="56.9" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 9: 0.113</title></circle>
+<circle cx="201.2" cy="69.6" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 10: 0.102</title></circle>
+<circle cx="218.4" cy="59.6" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 11: 0.111</title></circle>
+<circle cx="235.7" cy="55.3" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 12: 0.115</title></circle>
+<circle cx="252.9" cy="43.7" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 13: 0.126</title></circle>
+<circle cx="270.1" cy="82.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 14: 0.09</title></circle>
+<circle cx="287.4" cy="57.0" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 15: 0.113</title></circle>
+<circle cx="304.6" cy="26.3" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 16: 0.142</title></circle>
+<circle cx="321.9" cy="56.7" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 17: 0.114</title></circle>
+<circle cx="339.1" cy="75.6" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 18: 0.096</title></circle>
+<circle cx="356.3" cy="60.2" r="3.2" class="l-main-dot"><title>grpo-gemma-v1 · step 19: 0.11</title></circle>
+<path d="M 46.0 132.0 L 63.2 126.2 L 80.5 140.2 L 97.7 138.0 L 115.0 136.1 L 132.2 125.1 L 149.4 123.8 L 166.7 122.8 L 183.9 102.0 L 201.2 104.8 L 218.4 116.4 L 235.7 121.7 L 252.9 99.2 L 270.1 125.8 L 287.4 102.3 L 304.6 106.9 L 321.9 105.0 L 339.1 109.5 L 356.3 104.4" class="l-cmp"/>
+<line x1="50" x2="66" y1="22" y2="22" class="l-main"/>
+<text x="70" y="25.5" class="tm">grpo-gemma-v1</text>
+<line x1="172.60000000000002" x2="188.60000000000002" y1="22" y2="22" class="l-cmp"/>
+<text x="192.60000000000002" y="25.5" class="tm">grpo-minicoder-v2</text>
+</svg><figcaption>How far the served adapter has moved from the base model on a fixed probe prompt, in nats per token. Grey: mini-coder v2, which drifted steadily; Gemma jumped after step 1 and then held.</figcaption></figure>
+<figure class="fig" id="fig-tr-degenerate"><svg viewBox="0 0 560 210" role="img" aria-label="Groups with a gradient (mixed) out of 4 per step">
+<text x="46" y="10" class="tb">Groups with a gradient (mixed) out of 4 per step</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0</text>
+<line x1="46" x2="546" y1="106.2" y2="106.2" class="grid"/>
+<text x="40" y="109.7" class="tm" text-anchor="end">2</text>
+<line x1="46" x2="546" y1="32.4" y2="32.4" class="grid"/>
+<text x="40" y="35.9" class="tm" text-anchor="end">4</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 106.2 L 63.2 106.2 L 80.5 106.2 L 97.7 180.0 L 115.0 106.2 L 132.2 106.2 L 149.4 106.2 L 166.7 32.4 L 183.9 143.1 L 201.2 69.3 L 218.4 106.2 L 235.7 143.1 L 252.9 32.4 L 270.1 106.2 L 287.4 106.2 L 304.6 106.2 L 321.9 106.2 L 339.1 106.2 L 356.3 32.4" class="l-main"/>
+<circle cx="46.0" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 1: 2</title></circle>
+<circle cx="63.2" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 2: 2</title></circle>
+<circle cx="80.5" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 3: 2</title></circle>
+<circle cx="97.7" cy="180.0" r="3.2" class="l-main-dot"><title>mixed groups · step 4: 0</title></circle>
+<circle cx="115.0" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 5: 2</title></circle>
+<circle cx="132.2" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 6: 2</title></circle>
+<circle cx="149.4" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 7: 2</title></circle>
+<circle cx="166.7" cy="32.4" r="3.2" class="l-main-dot"><title>mixed groups · step 8: 4</title></circle>
+<circle cx="183.9" cy="143.1" r="3.2" class="l-main-dot"><title>mixed groups · step 9: 1</title></circle>
+<circle cx="201.2" cy="69.3" r="3.2" class="l-main-dot"><title>mixed groups · step 10: 3</title></circle>
+<circle cx="218.4" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 11: 2</title></circle>
+<circle cx="235.7" cy="143.1" r="3.2" class="l-main-dot"><title>mixed groups · step 12: 1</title></circle>
+<circle cx="252.9" cy="32.4" r="3.2" class="l-main-dot"><title>mixed groups · step 13: 4</title></circle>
+<circle cx="270.1" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 14: 2</title></circle>
+<circle cx="287.4" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 15: 2</title></circle>
+<circle cx="304.6" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 16: 2</title></circle>
+<circle cx="321.9" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 17: 2</title></circle>
+<circle cx="339.1" cy="106.2" r="3.2" class="l-main-dot"><title>mixed groups · step 18: 2</title></circle>
+<circle cx="356.3" cy="32.4" r="3.2" class="l-main-dot"><title>mixed groups · step 19: 4</title></circle>
+</svg><figcaption>Groups are 8 rollouts of one task. Only mixed groups (some pass, some fail) carry a gradient. Four tasks per step, so the most possible is 4.</figcaption></figure>
+<figure class="fig" id="fig-tr-valid"><svg viewBox="0 0 560 210" role="img" aria-label="Valid actions (share of replies with exactly one bash block)">
+<text x="46" y="10" class="tb">Valid actions (share of replies with exactly one bash block)</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">80 %</text>
+<line x1="46" x2="546" y1="138.5" y2="138.5" class="grid"/>
+<text x="40" y="142.0" class="tm" text-anchor="end">85 %</text>
+<line x1="46" x2="546" y1="97.0" y2="97.0" class="grid"/>
+<text x="40" y="100.5" class="tm" text-anchor="end">90 %</text>
+<line x1="46" x2="546" y1="55.5" y2="55.5" class="grid"/>
+<text x="40" y="59.0" class="tm" text-anchor="end">95 %</text>
+<line x1="46" x2="546" y1="14.0" y2="14.0" class="grid"/>
+<text x="40" y="17.5" class="tm" text-anchor="end">100 %</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 68.3 L 63.2 54.9 L 80.5 49.4 L 97.7 86.5 L 115.0 48.3 L 132.2 96.4 L 149.4 36.6 L 166.7 66.5 L 183.9 83.0 L 201.2 45.3 L 218.4 70.9 L 235.7 76.2 L 252.9 89.3 L 270.1 74.3 L 287.4 69.9 L 304.6 81.2 L 321.9 73.1 L 339.1 61.5 L 356.3 66.9" class="l-main"/>
+<circle cx="46.0" cy="68.3" r="3.2" class="l-main-dot"><title>valid · step 1: 93 %</title></circle>
+<circle cx="63.2" cy="54.9" r="3.2" class="l-main-dot"><title>valid · step 2: 95 %</title></circle>
+<circle cx="80.5" cy="49.4" r="3.2" class="l-main-dot"><title>valid · step 3: 96 %</title></circle>
+<circle cx="97.7" cy="86.5" r="3.2" class="l-main-dot"><title>valid · step 4: 91 %</title></circle>
+<circle cx="115.0" cy="48.3" r="3.2" class="l-main-dot"><title>valid · step 5: 96 %</title></circle>
+<circle cx="132.2" cy="96.4" r="3.2" class="l-main-dot"><title>valid · step 6: 90 %</title></circle>
+<circle cx="149.4" cy="36.6" r="3.2" class="l-main-dot"><title>valid · step 7: 97 %</title></circle>
+<circle cx="166.7" cy="66.5" r="3.2" class="l-main-dot"><title>valid · step 8: 94 %</title></circle>
+<circle cx="183.9" cy="83.0" r="3.2" class="l-main-dot"><title>valid · step 9: 92 %</title></circle>
+<circle cx="201.2" cy="45.3" r="3.2" class="l-main-dot"><title>valid · step 10: 96 %</title></circle>
+<circle cx="218.4" cy="70.9" r="3.2" class="l-main-dot"><title>valid · step 11: 93 %</title></circle>
+<circle cx="235.7" cy="76.2" r="3.2" class="l-main-dot"><title>valid · step 12: 93 %</title></circle>
+<circle cx="252.9" cy="89.3" r="3.2" class="l-main-dot"><title>valid · step 13: 91 %</title></circle>
+<circle cx="270.1" cy="74.3" r="3.2" class="l-main-dot"><title>valid · step 14: 93 %</title></circle>
+<circle cx="287.4" cy="69.9" r="3.2" class="l-main-dot"><title>valid · step 15: 93 %</title></circle>
+<circle cx="304.6" cy="81.2" r="3.2" class="l-main-dot"><title>valid · step 16: 92 %</title></circle>
+<circle cx="321.9" cy="73.1" r="3.2" class="l-main-dot"><title>valid · step 17: 93 %</title></circle>
+<circle cx="339.1" cy="61.5" r="3.2" class="l-main-dot"><title>valid · step 18: 94 %</title></circle>
+<circle cx="356.3" cy="66.9" r="3.2" class="l-main-dot"><title>valid · step 19: 94 %</title></circle>
+</svg><figcaption>Share of replies that held exactly one bash block. Below 100 % is the price of sampling at temperature 1.</figcaption></figure>
+<figure class="fig" id="fig-tr-turns"><svg viewBox="0 0 560 210" role="img" aria-label="Mean turns per episode">
+<text x="46" y="10" class="tb">Mean turns per episode</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0</text>
+<line x1="46" x2="546" y1="136.4" y2="136.4" class="grid"/>
+<text x="40" y="139.9" class="tm" text-anchor="end">2.5</text>
+<line x1="46" x2="546" y1="92.8" y2="92.8" class="grid"/>
+<text x="40" y="96.3" class="tm" text-anchor="end">5</text>
+<line x1="46" x2="546" y1="49.2" y2="49.2" class="grid"/>
+<text x="40" y="52.7" class="tm" text-anchor="end">7.5</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 77.0 L 63.2 69.9 L 80.5 55.2 L 97.7 55.7 L 115.0 47.0 L 132.2 49.2 L 149.4 54.6 L 166.7 26.3 L 183.9 62.8 L 201.2 67.2 L 218.4 44.8 L 235.7 38.8 L 252.9 33.9 L 270.1 60.6 L 287.4 70.4 L 304.6 68.3 L 321.9 46.5 L 339.1 45.9 L 356.3 33.4" class="l-main"/>
+<circle cx="46.0" cy="77.0" r="3.2" class="l-main-dot"><title>turns · step 1: 5.91</title></circle>
+<circle cx="63.2" cy="69.9" r="3.2" class="l-main-dot"><title>turns · step 2: 6.31</title></circle>
+<circle cx="80.5" cy="55.2" r="3.2" class="l-main-dot"><title>turns · step 3: 7.16</title></circle>
+<circle cx="97.7" cy="55.7" r="3.2" class="l-main-dot"><title>turns · step 4: 7.12</title></circle>
+<circle cx="115.0" cy="47.0" r="3.2" class="l-main-dot"><title>turns · step 5: 7.62</title></circle>
+<circle cx="132.2" cy="49.2" r="3.2" class="l-main-dot"><title>turns · step 6: 7.5</title></circle>
+<circle cx="149.4" cy="54.6" r="3.2" class="l-main-dot"><title>turns · step 7: 7.19</title></circle>
+<circle cx="166.7" cy="26.3" r="3.2" class="l-main-dot"><title>turns · step 8: 8.81</title></circle>
+<circle cx="183.9" cy="62.8" r="3.2" class="l-main-dot"><title>turns · step 9: 6.72</title></circle>
+<circle cx="201.2" cy="67.2" r="3.2" class="l-main-dot"><title>turns · step 10: 6.47</title></circle>
+<circle cx="218.4" cy="44.8" r="3.2" class="l-main-dot"><title>turns · step 11: 7.75</title></circle>
+<circle cx="235.7" cy="38.8" r="3.2" class="l-main-dot"><title>turns · step 12: 8.09</title></circle>
+<circle cx="252.9" cy="33.9" r="3.2" class="l-main-dot"><title>turns · step 13: 8.38</title></circle>
+<circle cx="270.1" cy="60.6" r="3.2" class="l-main-dot"><title>turns · step 14: 6.84</title></circle>
+<circle cx="287.4" cy="70.4" r="3.2" class="l-main-dot"><title>turns · step 15: 6.28</title></circle>
+<circle cx="304.6" cy="68.3" r="3.2" class="l-main-dot"><title>turns · step 16: 6.41</title></circle>
+<circle cx="321.9" cy="46.5" r="3.2" class="l-main-dot"><title>turns · step 17: 7.66</title></circle>
+<circle cx="339.1" cy="45.9" r="3.2" class="l-main-dot"><title>turns · step 18: 7.69</title></circle>
+<circle cx="356.3" cy="33.4" r="3.2" class="l-main-dot"><title>turns · step 19: 8.41</title></circle>
+</svg><figcaption>Commands per episode before submit.</figcaption></figure>
+<figure class="fig" id="fig-tr-tokens"><svg viewBox="0 0 560 210" role="img" aria-label="Sampled tokens per episode (mask-1, mean and max)">
+<text x="46" y="10" class="tb">Sampled tokens per episode (mask-1, mean and max)</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0</text>
+<line x1="46" x2="546" y1="118.1" y2="118.1" class="grid"/>
+<text x="40" y="121.6" class="tm" text-anchor="end">5000</text>
+<line x1="46" x2="546" y1="56.2" y2="56.2" class="grid"/>
+<text x="40" y="59.7" class="tm" text-anchor="end">10000</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 130.6 L 63.2 132.7 L 80.5 138.2 L 97.7 130.6 L 115.0 139.8 L 132.2 134.3 L 149.4 135.4 L 166.7 135.7 L 183.9 136.9 L 201.2 140.3 L 218.4 133.1 L 235.7 124.5 L 252.9 132.6 L 270.1 135.3 L 287.4 141.4 L 304.6 129.7 L 321.9 132.6 L 339.1 137.7 L 356.3 144.4" class="l-main"/>
+<circle cx="46.0" cy="130.6" r="3.2" class="l-main-dot"><title>mean · step 1: 3990</title></circle>
+<circle cx="63.2" cy="132.7" r="3.2" class="l-main-dot"><title>mean · step 2: 3823</title></circle>
+<circle cx="80.5" cy="138.2" r="3.2" class="l-main-dot"><title>mean · step 3: 3373</title></circle>
+<circle cx="97.7" cy="130.6" r="3.2" class="l-main-dot"><title>mean · step 4: 3988</title></circle>
+<circle cx="115.0" cy="139.8" r="3.2" class="l-main-dot"><title>mean · step 5: 3249</title></circle>
+<circle cx="132.2" cy="134.3" r="3.2" class="l-main-dot"><title>mean · step 6: 3690</title></circle>
+<circle cx="149.4" cy="135.4" r="3.2" class="l-main-dot"><title>mean · step 7: 3604</title></circle>
+<circle cx="166.7" cy="135.7" r="3.2" class="l-main-dot"><title>mean · step 8: 3580</title></circle>
+<circle cx="183.9" cy="136.9" r="3.2" class="l-main-dot"><title>mean · step 9: 3484</title></circle>
+<circle cx="201.2" cy="140.3" r="3.2" class="l-main-dot"><title>mean · step 10: 3208</title></circle>
+<circle cx="218.4" cy="133.1" r="3.2" class="l-main-dot"><title>mean · step 11: 3787</title></circle>
+<circle cx="235.7" cy="124.5" r="3.2" class="l-main-dot"><title>mean · step 12: 4480</title></circle>
+<circle cx="252.9" cy="132.6" r="3.2" class="l-main-dot"><title>mean · step 13: 3829</title></circle>
+<circle cx="270.1" cy="135.3" r="3.2" class="l-main-dot"><title>mean · step 14: 3611</title></circle>
+<circle cx="287.4" cy="141.4" r="3.2" class="l-main-dot"><title>mean · step 15: 3117</title></circle>
+<circle cx="304.6" cy="129.7" r="3.2" class="l-main-dot"><title>mean · step 16: 4062</title></circle>
+<circle cx="321.9" cy="132.6" r="3.2" class="l-main-dot"><title>mean · step 17: 3830</title></circle>
+<circle cx="339.1" cy="137.7" r="3.2" class="l-main-dot"><title>mean · step 18: 3417</title></circle>
+<circle cx="356.3" cy="144.4" r="3.2" class="l-main-dot"><title>mean · step 19: 2877</title></circle>
+<path d="M 46.0 69.4 L 63.2 74.4 L 80.5 92.9 L 97.7 83.7 L 115.0 115.5 L 132.2 26.3 L 149.4 83.3 L 166.7 101.3 L 183.9 86.8 L 201.2 101.9 L 218.4 59.9 L 235.7 52.5 L 252.9 80.1 L 270.1 81.2 L 287.4 97.6 L 304.6 63.1 L 321.9 70.9 L 339.1 84.4 L 356.3 116.5" class="l-amber" stroke-dasharray="5 4"/>
+<circle cx="46.0" cy="69.4" r="3.2" class="l-amber-dot"><title>max · step 1: 8932</title></circle>
+<circle cx="63.2" cy="74.4" r="3.2" class="l-amber-dot"><title>max · step 2: 8534</title></circle>
+<circle cx="80.5" cy="92.9" r="3.2" class="l-amber-dot"><title>max · step 3: 7034</title></circle>
+<circle cx="97.7" cy="83.7" r="3.2" class="l-amber-dot"><title>max · step 4: 7779</title></circle>
+<circle cx="115.0" cy="115.5" r="3.2" class="l-amber-dot"><title>max · step 5: 5214</title></circle>
+<circle cx="132.2" cy="26.3" r="3.2" class="l-amber-dot"><title>max · step 6: 12416</title></circle>
+<circle cx="149.4" cy="83.3" r="3.2" class="l-amber-dot"><title>max · step 7: 7811</title></circle>
+<circle cx="166.7" cy="101.3" r="3.2" class="l-amber-dot"><title>max · step 8: 6361</title></circle>
+<circle cx="183.9" cy="86.8" r="3.2" class="l-amber-dot"><title>max · step 9: 7526</title></circle>
+<circle cx="201.2" cy="101.9" r="3.2" class="l-amber-dot"><title>max · step 10: 6312</title></circle>
+<circle cx="218.4" cy="59.9" r="3.2" class="l-amber-dot"><title>max · step 11: 9700</title></circle>
+<circle cx="235.7" cy="52.5" r="3.2" class="l-amber-dot"><title>max · step 12: 10299</title></circle>
+<circle cx="252.9" cy="80.1" r="3.2" class="l-amber-dot"><title>max · step 13: 8070</title></circle>
+<circle cx="270.1" cy="81.2" r="3.2" class="l-amber-dot"><title>max · step 14: 7977</title></circle>
+<circle cx="287.4" cy="97.6" r="3.2" class="l-amber-dot"><title>max · step 15: 6659</title></circle>
+<circle cx="304.6" cy="63.1" r="3.2" class="l-amber-dot"><title>max · step 16: 9446</title></circle>
+<circle cx="321.9" cy="70.9" r="3.2" class="l-amber-dot"><title>max · step 17: 8816</title></circle>
+<circle cx="339.1" cy="84.4" r="3.2" class="l-amber-dot"><title>max · step 18: 7723</title></circle>
+<circle cx="356.3" cy="116.5" r="3.2" class="l-amber-dot"><title>max · step 19: 5133</title></circle>
+<line x1="50" x2="66" y1="22" y2="22" class="l-main"/>
+<text x="70" y="25.5" class="tm">mean</text>
+<line x1="116.8" x2="132.8" y1="22" y2="22" class="l-amber" stroke-dasharray="5 4"/>
+<text x="136.8" y="25.5" class="tm">max</text>
+</svg><figcaption>Tokens the model itself wrote per episode (mask 1). The max shows the longest episode in the step; anything over 16,384 trained tokens is truncated.</figcaption></figure>
+<figure class="fig" id="fig-tr-seconds"><svg viewBox="0 0 560 210" role="img" aria-label="Wall time per step">
+<text x="46" y="10" class="tb">Wall time per step</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0 s</text>
+<line x1="46" x2="546" y1="102.1" y2="102.1" class="grid"/>
+<text x="40" y="105.6" class="tm" text-anchor="end">17 min</text>
+<line x1="46" x2="546" y1="24.2" y2="24.2" class="grid"/>
+<text x="40" y="27.7" class="tm" text-anchor="end">33 min</text>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<text x="546" y="200" class="tm" text-anchor="end">step</text>
+<path d="M 46.0 113.1 L 63.2 96.3 L 80.5 98.8 L 97.7 134.1 L 115.0 108.9 L 132.2 75.6 L 149.4 109.7 L 166.7 26.3 L 183.9 115.6 L 201.2 89.9 L 218.4 78.6 L 235.7 107.2 L 252.9 48.5 L 270.1 106.2 L 287.4 100.5 L 304.6 105.8 L 321.9 94.8 L 339.1 112.2 L 356.3 67.8" class="l-main"/>
+<circle cx="46.0" cy="113.1" r="3.2" class="l-main-dot"><title>whole step · step 1: 14 min</title></circle>
+<circle cx="63.2" cy="96.3" r="3.2" class="l-main-dot"><title>whole step · step 2: 18 min</title></circle>
+<circle cx="80.5" cy="98.8" r="3.2" class="l-main-dot"><title>whole step · step 3: 17 min</title></circle>
+<circle cx="97.7" cy="134.1" r="3.2" class="l-main-dot"><title>whole step · step 4: 10 min</title></circle>
+<circle cx="115.0" cy="108.9" r="3.2" class="l-main-dot"><title>whole step · step 5: 15 min</title></circle>
+<circle cx="132.2" cy="75.6" r="3.2" class="l-main-dot"><title>whole step · step 6: 22 min</title></circle>
+<circle cx="149.4" cy="109.7" r="3.2" class="l-main-dot"><title>whole step · step 7: 15 min</title></circle>
+<circle cx="166.7" cy="26.3" r="3.2" class="l-main-dot"><title>whole step · step 8: 33 min</title></circle>
+<circle cx="183.9" cy="115.6" r="3.2" class="l-main-dot"><title>whole step · step 9: 14 min</title></circle>
+<circle cx="201.2" cy="89.9" r="3.2" class="l-main-dot"><title>whole step · step 10: 19 min</title></circle>
+<circle cx="218.4" cy="78.6" r="3.2" class="l-main-dot"><title>whole step · step 11: 22 min</title></circle>
+<circle cx="235.7" cy="107.2" r="3.2" class="l-main-dot"><title>whole step · step 12: 16 min</title></circle>
+<circle cx="252.9" cy="48.5" r="3.2" class="l-main-dot"><title>whole step · step 13: 28 min</title></circle>
+<circle cx="270.1" cy="106.2" r="3.2" class="l-main-dot"><title>whole step · step 14: 16 min</title></circle>
+<circle cx="287.4" cy="100.5" r="3.2" class="l-main-dot"><title>whole step · step 15: 17 min</title></circle>
+<circle cx="304.6" cy="105.8" r="3.2" class="l-main-dot"><title>whole step · step 16: 16 min</title></circle>
+<circle cx="321.9" cy="94.8" r="3.2" class="l-main-dot"><title>whole step · step 17: 18 min</title></circle>
+<circle cx="339.1" cy="112.2" r="3.2" class="l-main-dot"><title>whole step · step 18: 14 min</title></circle>
+<circle cx="356.3" cy="67.8" r="3.2" class="l-main-dot"><title>whole step · step 19: 24 min</title></circle>
+<path d="M 46.0 145.1 L 63.2 142.7 L 80.5 148.0 L 97.7 134.1 L 115.0 147.1 L 132.2 126.4 L 149.4 146.4 L 166.7 140.8 L 183.9 147.1 L 201.2 145.0 L 218.4 134.6 L 235.7 120.4 L 252.9 141.2 L 270.1 140.5 L 287.4 149.1 L 304.6 138.8 L 321.9 142.8 L 339.1 152.6 L 356.3 153.0" class="l-teal" stroke-dasharray="5 4"/>
+<circle cx="46.0" cy="145.1" r="3.2" class="l-teal-dot"><title>rollouts · step 1: 7 min</title></circle>
+<circle cx="63.2" cy="142.7" r="3.2" class="l-teal-dot"><title>rollouts · step 2: 8 min</title></circle>
+<circle cx="80.5" cy="148.0" r="3.2" class="l-teal-dot"><title>rollouts · step 3: 7 min</title></circle>
+<circle cx="97.7" cy="134.1" r="3.2" class="l-teal-dot"><title>rollouts · step 4: 10 min</title></circle>
+<circle cx="115.0" cy="147.1" r="3.2" class="l-teal-dot"><title>rollouts · step 5: 7 min</title></circle>
+<circle cx="132.2" cy="126.4" r="3.2" class="l-teal-dot"><title>rollouts · step 6: 11 min</title></circle>
+<circle cx="149.4" cy="146.4" r="3.2" class="l-teal-dot"><title>rollouts · step 7: 7 min</title></circle>
+<circle cx="166.7" cy="140.8" r="3.2" class="l-teal-dot"><title>rollouts · step 8: 8 min</title></circle>
+<circle cx="183.9" cy="147.1" r="3.2" class="l-teal-dot"><title>rollouts · step 9: 7 min</title></circle>
+<circle cx="201.2" cy="145.0" r="3.2" class="l-teal-dot"><title>rollouts · step 10: 7 min</title></circle>
+<circle cx="218.4" cy="134.6" r="3.2" class="l-teal-dot"><title>rollouts · step 11: 10 min</title></circle>
+<circle cx="235.7" cy="120.4" r="3.2" class="l-teal-dot"><title>rollouts · step 12: 13 min</title></circle>
+<circle cx="252.9" cy="141.2" r="3.2" class="l-teal-dot"><title>rollouts · step 13: 8 min</title></circle>
+<circle cx="270.1" cy="140.5" r="3.2" class="l-teal-dot"><title>rollouts · step 14: 8 min</title></circle>
+<circle cx="287.4" cy="149.1" r="3.2" class="l-teal-dot"><title>rollouts · step 15: 7 min</title></circle>
+<circle cx="304.6" cy="138.8" r="3.2" class="l-teal-dot"><title>rollouts · step 16: 9 min</title></circle>
+<circle cx="321.9" cy="142.8" r="3.2" class="l-teal-dot"><title>rollouts · step 17: 8 min</title></circle>
+<circle cx="339.1" cy="152.6" r="3.2" class="l-teal-dot"><title>rollouts · step 18: 6 min</title></circle>
+<circle cx="356.3" cy="153.0" r="3.2" class="l-teal-dot"><title>rollouts · step 19: 6 min</title></circle>
+<line x1="50" x2="66" y1="22" y2="22" class="l-main"/>
+<text x="70" y="25.5" class="tm">whole step</text>
+<line x1="154.0" x2="170.0" y1="22" y2="22" class="l-teal" stroke-dasharray="5 4"/>
+<text x="174.0" y="25.5" class="tm">rollouts</text>
+</svg><figcaption>Wall time per step. The gap between the two lines is grading plus the update (16 to 32 trajectories at about 66 s each on the trainer GPU).</figcaption></figure>
+<figure class="fig" id="fig-tr-exits"><svg viewBox="0 0 560 210" role="img" aria-label="How every episode ended, per step">
+<text x="46" y="10" class="tb">How each episode ended (share of the step&#x27;s rollouts)</text>
+<line x1="46" x2="546" y1="180.0" y2="180.0" class="grid"/>
+<text x="40" y="183.5" class="tm" text-anchor="end">0 %</text>
+<line x1="46" x2="546" y1="138.5" y2="138.5" class="grid"/>
+<text x="40" y="142.0" class="tm" text-anchor="end">25 %</text>
+<line x1="46" x2="546" y1="97.0" y2="97.0" class="grid"/>
+<text x="40" y="100.5" class="tm" text-anchor="end">50 %</text>
+<line x1="46" x2="546" y1="55.5" y2="55.5" class="grid"/>
+<text x="40" y="59.0" class="tm" text-anchor="end">75 %</text>
+<line x1="46" x2="546" y1="14.0" y2="14.0" class="grid"/>
+<text x="40" y="17.5" class="tm" text-anchor="end">100 %</text>
+<rect x="40.2" y="24.4" width="11.7" height="154.6" class="ex-submitted"><title>submitted · step 1: 30/32</title></rect>
+<rect x="40.2" y="14.0" width="11.7" height="9.4" class="ex-format"><title>format_errors · step 1: 2/32</title></rect>
+<rect x="57.4" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 2: 32/32</title></rect>
+<rect x="74.6" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 3: 32/32</title></rect>
+<rect x="91.9" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 4: 32/32</title></rect>
+<rect x="109.1" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 5: 32/32</title></rect>
+<rect x="126.4" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 6: 32/32</title></rect>
+<rect x="143.6" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 7: 32/32</title></rect>
+<rect x="160.9" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 8: 32/32</title></rect>
+<rect x="178.1" y="19.2" width="11.7" height="159.8" class="ex-submitted"><title>submitted · step 9: 31/32</title></rect>
+<rect x="178.1" y="14.0" width="11.7" height="4.2" class="ex-format"><title>format_errors · step 9: 1/32</title></rect>
+<rect x="195.3" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 10: 32/32</title></rect>
+<rect x="212.6" y="19.2" width="11.7" height="159.8" class="ex-submitted"><title>submitted · step 11: 31/32</title></rect>
+<rect x="212.6" y="14.0" width="11.7" height="4.2" class="ex-context"><title>context · step 11: 1/32</title></rect>
+<rect x="229.8" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 12: 32/32</title></rect>
+<rect x="247.1" y="19.2" width="11.7" height="159.8" class="ex-submitted"><title>submitted · step 13: 31/32</title></rect>
+<rect x="247.1" y="14.0" width="11.7" height="4.2" class="ex-format"><title>format_errors · step 13: 1/32</title></rect>
+<rect x="264.3" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 14: 32/32</title></rect>
+<rect x="281.5" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 15: 32/32</title></rect>
+<rect x="298.8" y="19.2" width="11.7" height="159.8" class="ex-submitted"><title>submitted · step 16: 31/32</title></rect>
+<rect x="298.8" y="14.0" width="11.7" height="4.2" class="ex-format"><title>format_errors · step 16: 1/32</title></rect>
+<rect x="316.0" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 17: 32/32</title></rect>
+<rect x="333.3" y="14.0" width="11.7" height="165.0" class="ex-submitted"><title>submitted · step 18: 32/32</title></rect>
+<rect x="350.5" y="19.2" width="11.7" height="159.8" class="ex-submitted"><title>submitted · step 19: 31/32</title></rect>
+<rect x="350.5" y="14.0" width="11.7" height="4.2" class="ex-format"><title>format_errors · step 19: 1/32</title></rect>
+<text x="46.0" y="200" class="tm" text-anchor="middle">1</text>
+<text x="115.0" y="200" class="tm" text-anchor="middle">5</text>
+<text x="201.2" y="200" class="tm" text-anchor="middle">10</text>
+<text x="287.4" y="200" class="tm" text-anchor="middle">15</text>
+<text x="373.6" y="200" class="tm" text-anchor="middle">20</text>
+<text x="459.8" y="200" class="tm" text-anchor="middle">25</text>
+<text x="546.0" y="200" class="tm" text-anchor="middle">30</text>
+<rect x="50" y="16" width="10" height="10" class="ex-submitted"/>
+<text x="64" y="25" class="tm">submitted</text>
+<rect x="135.8" y="16" width="10" height="10" class="ex-context"/>
+<text x="149.8" y="25" class="tm">context</text>
+<rect x="209.20000000000002" y="16" width="10" height="10" class="ex-format"/>
+<text x="223.20000000000002" y="25" class="tm">format_errors</text>
+</svg><figcaption>Why each episode stopped. Nearly all submit; a few hit the format-error limit or the context cap.</figcaption></figure>
+</div>
+<h3>Per task: first half against second half</h3>
+<div class="tablewrap"><table class="data">
+<tr><th>Task</th><th>Steps 1–9</th><th>Steps 10–19</th><th>Change</th><th>All steps</th></tr>
+<tr><td>pydicom-965</td><td>5/32 (16 %)</td><td>14/40 (35 %)</td><td class="num">+19 pp</td><td>19/72 (26 %)</td></tr>
+<tr><td>pydicom-1192</td><td>6/24 (25 %)</td><td>3/8 (38 %)</td><td class="num">+12 pp</td><td>9/32 (28 %)</td></tr>
+<tr><td>astroid-1903</td><td>1/32 (3 %)</td><td>5/48 (10 %)</td><td class="num">+7 pp</td><td>6/80 (8 %)</td></tr>
+<tr><td>marshmallow-1343</td><td>2/24 (8 %)</td><td>7/48 (15 %)</td><td class="num">+6 pp</td><td>9/72 (12 %)</td></tr>
+<tr><td>sqlfluff-884</td><td>5/16 (31 %)</td><td>9/24 (38 %)</td><td class="num">+6 pp</td><td>14/40 (35 %)</td></tr>
+<tr><td>astroid-1719</td><td>2/40 (5 %)</td><td>3/32 (9 %)</td><td class="num">+4 pp</td><td>5/72 (7 %)</td></tr>
+<tr><td>sqlfluff-905</td><td>0/24 (0 %)</td><td>1/48 (2 %)</td><td class="num">+2 pp</td><td>1/72 (1 %)</td></tr>
+<tr><td>marshmallow-1164</td><td>1/16 (6 %)</td><td>1/16 (6 %)</td><td class="num">+0 pp</td><td>2/32 (6 %)</td></tr>
+<tr><td>pydicom-1694</td><td>1/40 (2 %)</td><td>0/16 (0 %)</td><td class="num">-2 pp</td><td>1/56 (2 %)</td></tr>
+<tr><td>astroid-1614</td><td>10/24 (42 %)</td><td>6/16 (38 %)</td><td class="num">-4 pp</td><td>16/40 (40 %)</td></tr>
+<tr><td>pydicom-1562</td><td>2/16 (12 %)</td><td>1/24 (4 %)</td><td class="num">-8 pp</td><td>3/40 (8 %)</td></tr>
+<tr><td><b>Task-stratified, 11 tasks</b></td><td></td><td></td><td class="num"><b>+4.8 ± 2.7 pp</b></td><td>85/608 (14.0 %)</td></tr>
+</table></div>
+<!-- tracker:auto:end -->
+
+<h3>How to read the two learning charts (as of step 19 of 30, 2026-09-25 22:40 PDT)</h3>
+<ol class="steps">
+  <li><b>Single points are noisy by construction.</b> 32 episodes at a 13 % success rate behave like 32 flips of a bent coin: the SE of one step's rate is about 6 pp. So a 0 % step followed later by a 25 % step (steps 4 and 8 here) is ordinary noise, not a signal.</li>
+  <li><b>The running late-minus-early is the honest reading.</b> At step k the chart splits steps 1 to k in half and compares each task with itself. At step 18 it reads <b>+4.8 ± 2.7 pp</b> (steps 10–19 against 1–9, 11 tasks). It has been above zero since step 8 and between +4 and +7 pp since step 11. Seven tasks went up, one was flat, three went down.</li>
+  <li><b>Why that is a hint and not a result.</b> +4.8 pp is 1.8 SE from zero, under the 2 SE bar. And the grey line is a warning from the previous run: mini-coder v2 read +8.8 ± 5.0 pp at step 10 and finished at −1.2 ± 2.6 pp. Early positive readings can fade.</li>
+  <li><b>What would settle it.</b> Two things, both already scheduled. The last 11 steps: a real effect should hold or grow while the SE shrinks. Then the Verified evaluation of the final adapter against the base, on 50 tasks the model never trained on. That number decides.</li>
+</ol>
+<p>A small worked example of the estimator, with two tasks. Task A: early 5 of 32, late 14 of 40, change +19 pp. Task B: early 6 of 24, late 3 of 8, change +12 pp. Each task's change is weighted by how many rollouts it had in both halves, n<sub>early</sub>·n<sub>late</sub> / (n<sub>early</sub> + n<sub>late</sub>): A gets 18, B gets 6. The weighted mean is (18 × 19 + 6 × 12) / 24 ≈ +17 pp. The table above does this for all 11 tasks, and the SE comes from the same weights.</p>
+
+<h3>The curves that prove the machinery works</h3>
+<ol class="steps">
+  <li><b>Objective gain above zero on 18 of 18 updates.</b> After every update the trainer re-scores the trained trajectories and checks that probability moved toward high-advantage tokens: the average of advantage × change in the trajectory's mean log-probability. It is +0.0002 to +0.0014 on every step with an update. Step 4 has no point: all 4 groups were degenerate (0 of 32 solved), so nothing was trained.</li>
+  <li><b>The loss is not a progress meter.</b> The loss is the token mean of −A · w · log p over the trained tokens. Advantages sum to zero inside a group, so the sign of the loss depends on who wrote more tokens, winners or losers. Tiny example: 2 winners (A = +1.73) write 3,000 tokens each, 6 losers (A = −0.58) write 4,000 each, every token at log p ≈ −0.5. The winners contribute −(1.73 × 6,000 × −0.5) = +5,190; the losers −(−0.58 × 24,000 × −0.5) = −6,960. The sum is negative only because the losers wrote more. That is why the loss here wanders between −0.21 and 0.00 with no trend, and why the objective gain is the number to read.</li>
+  <li><b>Gradient norm 0.05–0.08, clip at 1.0.</b> No update was ever clipped. A norm that suddenly jumps would mean a broken batch.</li>
+  <li><b>Trainer-versus-server gap 0.024–0.031 nats per token, flat.</b> This is the lecture's mismatch diagnostic: the same sampled token, scored by the server that sampled it and by the trainer. Gemma's gap is about three times mini-coder's (0.009–0.012, grey line) because the trainer's base weights are the FP8 checkpoint dequantised on the fly while the server runs bf16, and the logit soft-cap runs in bf16. It is flat, so it is a fixed cost of the setup, not a drift. The 99th percentile is about 0.3 nats.</li>
+  <li><b>Importance weight mean 1.000.</b> w = p<sub>trainer</sub> / p<sub>server</sub> per token, capped at 2. The mean is 0.9992–1.0010 on every step; the cap touches 0.015 % of tokens; the smallest weight in a step is 0.01–0.36 (a rare token the trainer finds much less likely). This means the trainer corrects for the gap token by token, and the correction is tiny in aggregate.</li>
+  <li><b>Drift from the base 0.07–0.14 nats, flat.</b> After each sync the trainer scores one fixed probe sequence on the server, once under the new adapter and once under the base. Gemma's adapter moved about 0.09 nats after step 1 and has stayed in that band. mini-coder v2 (grey) rose steadily from 0.044 to 0.095. Neither is large; a KL penalty was not needed in either run.</li>
+</ol>
+
+<h3>The curves that describe behaviour</h3>
+<ol class="steps">
+  <li><b>Half the patches break something.</b> Of 608 rollouts: 85 fixed the bug (14.0 %); 85 changed nothing the tests notice (all pass-to-pass tests green, the bug still there); 253 broke a pass-to-pass test or did not apply (42 %); 185 were empty (30 %). The model submits without a diff almost a third of the time. Bringing the empty and broken shares down is where the next reward-shaping idea would go.</li>
+  <li><b>Every pool task has exactly one FAIL_TO_PASS test.</b> Checked over all 608 grades: no rollout ever passed some but not all of its fail-to-pass tests, because there is only one. Partial credit from the fail-to-pass fraction, a common suggestion, would add nothing on this pool. Partial credit from pass-to-pass counts could: "did no harm" is visible in the grades (4 of 6 against 6 of 6 on sqlfluff-905).</li>
+  <li><b>Mixed groups 41 of 76 (54 %).</b> Two of the four groups per step carry a gradient on a typical step; steps 8, 13 and 19 had all four, step 4 had none. mini-coder v2 had 72 % mixed groups because it solved more.</li>
+  <li><b>Valid actions 90–97 %, mean 93.5 %.</b> Steady across the run: training has not changed how often the model follows the one-bash-block rule. 6 to 9 commands per episode; about 3,600 tokens written per episode (episodes are about 10,000 tokens with the observations); 10 trajectories in 19 steps were longer than the 16,384-token training cap and were truncated.</li>
+  <li><b>Exits: 601 of 608 submitted.</b> 6 stopped on three format errors, 1 ran out of context. No crashes, no grading errors.</li>
+</ol>
+
+<h3>Cost</h3>
+<ol class="steps">
+  <li><b>17 minutes per step, median.</b> Rollouts (32 episodes on 20 slots across node08 and node04) take 6–13 minutes. The rest, 56 % of the wall time, is the update: 16 trajectories at about 66 s each on the trainer GPU, with activations saved to CPU RAM to fit 16k tokens next to the FP8 base.</li>
+  <li><b>Good steps cost more.</b> Steps 8, 13 and 19 had four mixed groups, so 32 trajectories and 92k–123k tokens to train: 33, 28 and 24 minutes. More learning signal means a longer update. mini-coder v2's median step was 13 minutes because its update was cheaper.</li>
+</ol>
+
+<h3>Validation: what is measured and what is pending</h3>
+<p><b>Validation</b> means measuring on tasks the model never trained on. Training success can rise because the model memorises the 11 pool tasks; only held-out tasks show whether it learned something general.</p>
+<ol class="steps">
+  <li><b>The design.</b> 50 Verified tasks, chosen by hashing before any training and gated so gold scores 1 and empty scores 0. 4 seeds per task, run twice: once with the base model and once with the final adapter, same seeds. 400 episodes, paired. Statistics: the per-task difference in success, a bootstrap 95 % CI over tasks, and a sign-flip p-value (section 11 defines each).</li>
+  <li><b>Measured: mini-coder v2.</b> 38/200 (19.0 %) base against 41/200 (20.5 %) after 60 steps; +1.5 pp, CI [−3.5, +6.5], p = 0.71. A clean null.</li>
+  <li><b>Pending: Gemma.</b> The evaluation is queued to start on its own when step 30 lands (about 01:30 PDT on 26 September) and runs the same 50 tasks with the step-30 adapter. It will report, per arm: episodes resolved, valid-action rate, turns, and the paired statistics above. For reference, Gemma solved 7.2 % of the training pool before RL (19 of 264 probe episodes) and 14.0 % during training; those two are not comparable, because training draws tasks in a different mix.</li>
+  <li><b>What would count as a result.</b> A paired difference whose CI excludes zero. With 50 tasks × 4 seeds the CI is about ±5 pp wide, so a gain smaller than that cannot be seen by this evaluation, whatever the training curves say.</li>
+</ol>
+<div class="callout say"><span class="tag">Interview version</span><p>"I track three kinds of curves. Learning: success per step, and a running task-by-task comparison of the second half of training against the first, with an error bar. Mechanism: objective gain after every update, the trainer-versus-server log-prob gap, importance weights, drift from the base. Behaviour and cost: what the patches did, valid actions, tokens, step time. At step 19 Gemma reads +4.8 ± 2.7 points on the training tasks. That is under two standard errors, and the previous model showed how an early reading like that can fade. The Verified evaluation on held-out tasks decides."</p></div>
+
+<h2 id="challenges"><span class="num">13</span>Challenges, and what each one taught</h2>
 <p>Each row below is one thing that broke while we built the pipeline. The middle column says what was really going on, and the last column says what we changed.</p>
 <div class="tablewrap"><table class="data">
 <tr><th>What happened</th><th>What it was</th><th>What we did</th></tr>
@@ -1153,7 +2136,7 @@ turn t+1  prompt: [system+issue][reply 1][obs 1][reply 2][obs 2]    → only [re
 </ul>
 <div class="callout say"><span class="tag">Interview version</span><p>"The failures fell into a few kinds: small models that did not speak the tool protocol, resource limits on a shared machine, broken upstream images, and holes in the reward path. Each fix was small, such as a ulimit, a second server, a read-only bind, or a parser change. The habit that found them was reading the actual failed replies and logs, and treating the reward path as something the policy would eventually attack."</p></div>
 
-<h2 id="tradeoffs"><span class="num">13</span>Trade-offs, in one table</h2>
+<h2 id="tradeoffs"><span class="num">14</span>Trade-offs, in one table</h2>
 <p>Every row is a decision where we picked one option and gave up another. The "Because" column is the reason, and the "Cost" column is what the choice still costs us today.</p>
 <div class="tablewrap"><table class="data tradeoff">
 <tr><th>Decision</th><th>We chose</th><th>Instead of</th><th>Because</th><th>Cost</th></tr>
@@ -1259,20 +2242,34 @@ turn t+1  prompt: [system+issue][reply 1][obs 1][reply 2][obs 2]    → only [re
 <details><summary>Why is bash the only tool? Why not give the model a file editor or a search tool?</summary><p class="tiny"><b>What they are testing:</b> Trade-off question: alternatives considered, what the models can actually follow, and what the choice costs.</p><p>Every action is one bash command. There is no edit tool and no search tool. Three reasons. One: it is what the models speak. mini-coder&#x27;s 400k SFT trajectories are mini-swe-agent, one fenced bash block per turn. Gemma follows the same format at 94.9 percent valid actions once we parsed after its thinking channel and raised the reply cap, and at 94.5 percent in the G5 training step. The diagram&#x27;s JSON tool call on Qwen2.5-Coder produced zero valid calls at every size: 0 of 48 turns at 0.5B over 16 real episodes with an example in the prompt, 16 of 16 episodes ending on three format errors at 1.5B, and none at 7B-AWQ. Each size wrote the JSON inside a markdown fence. Qwen3-1.7B gave 97 percent valid calls and solved nothing. Two: bash exists in every SWE-bench image. So the environment interface is a single exec, about 0.7 seconds inside the apptainer instance, our rootless container runtime. Three: the parser is one regex, and a format error is unambiguous. The lecture says the same: bash as the only tool, the codebase not loaded into context. The alternative is structured tools like SWE-agent&#x27;s string-replace editor. Those give cleaner edits, and they need a model trained on them. Costs accepted: edits go through sed -i and heredocs, and there is no command allowlist, so we rely on no network and a fresh grading container instead.</p><p><b>Likely follow-up.</b> Isn&#x27;t arbitrary bash as root dangerous? The model is uid 0 only inside a user namespace, an unprivileged mapping where root in the container is an ordinary user on the host. The sandbox has no network. Its writable layer is a RAM overlay that is thrown away. ulimit -v, ulimit -f and oom_score_adj bound memory, file size and kill priority, in apptainer.py ApptainerEnv.start and ApptainerEnv.run. Grading replays only the diff in a fresh container. So nothing the agent did to its sandbox reaches the score.</p><p class="tiny">Sources: protocol.py parse_reply (mswea: exactly one ```bash block; tool_call JSON parser) and module docstring (0/48 valid calls at S6); prompts_mswea.py module docstring (verbatim mini-swe-agent v1 prompts from the SFT corpus); docs/00-design.md section 2 &#x27;Action protocols&#x27; (&#x27;Why backticks for the 0.5B model&#x27;) and section 9 (backticks row; --network none row); docs/01-lecture-map.md section 1 (1:05-1:12 bash only, allowlist) and section 3 differences 11 and 17; EXPERIMENTS.md &#x27;s9-qwen3-1.7b-v1&#x27; -&gt; &#x27;Model probe first&#x27; table (0.5B 0/48 turns; 1.5B 16/16 format-error exits; 7B-AWQ 0 valid calls; Qwen3-1.7B 97 %), &#x27;S6 - serve + token-exact harness&#x27; (0 of 48 valid JSON tool calls over 16 real episodes), &#x27;Gemma 4 E4B&#x27; -&gt; Probe 3 (94.9 % valid), &#x27;Trainer port to Gemma 4 E4B&#x27; -&gt; G5 (valid actions 94.5 %); apptainer.py module docstring (0.7 s per exec); blog &#x27;09 The model journey&#x27; (Qwen2.5-Coder row) and &#x27;13 Trade-offs, in one table&#x27;</p></details>
 
 <hr class="sep">
-<h2 id="talk">Talk track · 15 minutes</h2>
-<p>Eight beats, with the minutes to spend on each. Every number here appears earlier on the page.</p>
+<h2 id="talk">Talk track · 60 minutes</h2>
+<p>The interview is an hour. Most of it will be the interviewer's questions, not a lecture. So this plan has two parts: a 20-minute spine you can deliver almost without interruption, and depth blocks you enter only where the interviewer digs. Every number here appears earlier on the page.</p>
+<h3>The spine · minutes 0–20, in this order</h3>
 <ol class="steps">
-  <li><b>Situation (1 min).</b> Local, trainable coding models matter: a model you run on your own hardware has to be one you can train. SWE-bench is the benchmark that cannot be argued with, because the repository's own tests decide. Name the three properties that make it RL-friendly: a deterministic environment, a deterministic verifier, and multi-turn work.</li>
-  <li><b>Task (1 min).</b> Build the lecture's loop end to end on three consumer GPUs. No Docker, no root. Train on the dev split and evaluate on Verified, with no repository shared between them.</li>
-  <li><b>Draw the diagram (3 min).</b> Agent = harness + policy. Then the action arrow, the environment box, and the observation arrow back. Reward comes only after submit. The outer loop turns rewards into a weight update, and the new weights are loaded back into the server. Say "inner loop is inference, outer loop is training". Appendix B gives the drawing order.</li>
-  <li><b>One episode (2 min).</b> Tell the sqlfluff story. 16 turns. The 42k-character <code>cat</code> that the harness cut down to head and tail. The turn that hit the length cap. The one-line <code>sed</code>. The submit. Then the twist: the fix is wrong in spirit, and the tests cannot tell.</li>
-  <li><b>GRPO (3 min).</b> Groups of 8 rollouts per task. Advantage = (r − mean)/std, with the 3-of-8 numbers: mean 0.375, std 0.484, winners +1.29, losers −0.77. The loss: log-probability × advantage × importance weight, over sampled tokens only, averaged per token. Then why there is no clip and no KL here: one step per batch of fresh rollouts, so the ratio is 1, and drift is watched directly.</li>
-  <li><b>Hardware (2 min).</b> The two-server layout and the rule of about 8 long episodes per 16 GB card. Sleep mode, so the trainer borrows a serving GPU for the update. The 8 GB laptop GPU that serves Gemma with the embedding table in CPU RAM. ×1.78 rollout throughput, measured like for like.</li>
-  <li><b>Results and honesty (2 min).</b> The mini-coder null result with a clean instrument: 19.0 % to 20.5 %, p = 0.71. Gemma at 7–10 % (10 % on probe 2, 7 % pooled over three probes) on the pool, with headroom. Say plainly what is pending: GRPO on Gemma, then its Verified evaluation.</li>
-  <li><b>What I would do next (1 min).</b> Partial credit from test counts: reward the fraction of tests passed, so fewer groups are degenerate. Asynchronous rollouts, so the slowest rollout stops holding the step. A bigger dev pool from SWE-smith, a public dataset of generated bugs in real repositories with published images (scoped in the experiment log, not yet trained on). A KL penalty only if drift becomes a problem.</li>
+  <li><b>0–2 · One breath.</b> "A small open model reads a real GitHub issue, works inside the repository's own container one shell command at a time, and is rewarded only when the repository's tests pass. We built that loop on three consumer GPUs, proved it end to end on a Qwen-based model, and are training Gemma 4 E4B with it now."</li>
+  <li><b>2–5 · Situation and task.</b> Why train your own coding model at all (section 01). SWE-bench as the benchmark that cannot be argued with: a deterministic environment, a deterministic verifier, multi-turn work. The task: the lecture's loop with real containers, no Docker, no root; the dev split to train and Verified to evaluate, with no repository shared between them.</li>
+  <li><b>5–10 · Draw the diagram.</b> Agent = harness + policy. The action arrow, the environment box, the observation arrow back. Reward only after submit. The outer loop: rewards → update → new weights loaded into the server. Say "inner loop is inference, outer loop is training." Appendix B gives the drawing order; practise it to under four minutes.</li>
+  <li><b>10–13 · One episode.</b> The sqlfluff-884 story: 16 turns, the 42k-character <code>cat</code> the harness cut to head and tail, the reply that hit the length cap, the one-line <code>sed</code>, the submit. Then the twist: the fix is wrong in spirit and the tests cannot tell.</li>
+  <li><b>13–17 · GRPO in four sentences.</b> Groups of 8 rollouts per task. Advantage = (r − mean)/std; with 3 of 8 winners: mean 0.375, std 0.484, winners +1.29, losers −0.77. Loss = −advantage × importance weight × log-probability over the tokens the model wrote, averaged per token. No clip and no KL, because one update per batch of fresh rollouts keeps the ratio at 1 and drift is watched directly.</li>
+  <li><b>17–20 · Results, honestly.</b> mini-coder: a clean null with a verified instrument, 19.0 % → 20.5 %, p = 0.71. Gemma: solves 7–10 % of the pool before RL; at step 19 of 30 the training tasks read +4.8 ± 2.7 points late versus early, under two standard errors. The Verified evaluation is the number that decides (state it once it has landed).</li>
 </ol>
+<div class="callout"><span class="tag">Check-in line at minute 20</span><p>"That is the whole story at one level. Where would you like to go deeper: the training math, the systems side, the results, or what broke?" Then follow their pick below.</p></div>
+<h3>Depth blocks · minutes 20–55, about 8 minutes each, in the order they ask</h3>
+<ol class="steps">
+  <li><b>Training math.</b> The mask, and why only sampled tokens get a gradient (section 05). Why a group baseline instead of a critic (section 08). Degenerate groups and why they are skipped. Token mean against sequence mean. The truncated importance weight and the 0.024–0.031-nat trainer-versus-server gap. Why the loss is not a progress meter and the objective gain is (section 12). The GRPO probes in the Q&amp;A section are the likely follow-ups.</li>
+  <li><b>Systems and serving.</b> Two vLLM servers plus the 8 GB laptop GPU; about 8 long episodes per 16 GB card; the paged KV cache and the 88 % prefix-cache hit rate; the 17 % thrash case; sleep mode, so the trainer borrows a serving GPU; the 5.25 GiB embedding table in CPU RAM; ×1.78 throughput, measured like for like (section 10).</li>
+  <li><b>Results and statistics.</b> The paired design, the bootstrap CI, the sign-flip p (section 11). The training curves: the task-stratified late-minus-early with its SE, and mini-coder's early +8.8 that faded to −1.2 (section 12). What the Verified CI can and cannot see: about ±5 pp with 50 tasks × 4 seeds.</li>
+  <li><b>What broke.</b> Pick three from section 13: the 32 GB tmpfs write that killed the trainer; Gemma's leaked thinking channel and the reply cap; the CUDA-graph pool outside vLLM's memory budget. For each: the symptom, what it really was, what changed.</li>
+  <li><b>Trade-offs.</b> Section 14's table. The ones to volunteer: LoRA instead of full fine-tuning; synchronous steps instead of asynchronous rollouts; a 0/1 reward instead of partial credit, and why fail-to-pass partial credit would not help on this pool (one test per task); the dev split instead of a bigger generated pool.</li>
+</ol>
+<h3>Closing · minutes 55–60</h3>
+<ol class="steps">
+  <li><b>What I would do next.</b> Reward shaping on pass-to-pass counts, since every pool task has a single fail-to-pass test and half the patches break a passing test. Asynchronous rollouts, so the slowest episode stops holding the step. A bigger pool from SWE-smith, a public dataset of generated bugs in real repositories: 4,662 candidate tasks in the four dev repositories, and 197 of the 200 screened pass the gold gate. A KL penalty only if drift becomes a problem.</li>
+  <li><b>Questions for them.</b> The callout below. Ask one, not four, unless they invite more.</li>
+</ol>
+<div class="callout"><span class="tag">If time runs short</span><p>Drop depth blocks, never the spine. If 15 minutes remain and you are still in the spine, skip the episode story and go from the diagram to GRPO to results. If the interviewer interrupts at minute 6 and stays in one block for 30 minutes, that is a good interview; do not steer back to the plan.</p></div>
 <div class="callout say"><span class="tag">Questions to ask the interviewer</span><p>How do you evaluate agentic models on internal codebases where there is no public benchmark? Do you train with verifiable rewards or with judges? If judges, how do you keep the judge honest? Where does the harness live in your stack: with the model team or with the product team?</p></div>
-<div class="callout say"><span class="tag">Interview version</span><p>"In one breath: a small open model reads a real GitHub issue, works inside the repository's own container one shell command at a time, and is rewarded only when the repository's tests pass. We built that loop on three consumer GPUs, proved it end to end on a Qwen-based model, and Gemma 4 E4B is the model it is about to train."</p></div>
+<div class="callout say"><span class="tag">Interview version</span><p>"In one breath: a small open model reads a real GitHub issue, works inside the repository's own container one shell command at a time, and is rewarded only when the repository's tests pass. We built that loop on three consumer GPUs, proved it end to end on a Qwen-based model, and Gemma 4 E4B is the model it is training now."</p></div>
 
 <h2 id="a-math">Appendix A · The math, compactly</h2>
 <p>Four formulas, each followed by the same thing in plain words. The symbols: i indexes a rollout, t indexes a token position, θ is the set of trainable weights, and π is the policy, meaning the probability the model gives to a token given everything before it.</p>
@@ -1341,6 +2338,7 @@ turn t+1  prompt: [system+issue][reply 1][obs 1][reply 2][obs 2]    → only [re
 <tr><td>Prefix-cache thrash 92 % → 17 %; sleep 1–3 s; graph pool 1.2 GiB</td><td>EXPERIMENTS.md, GRPO v1 probe and v2 setup</td></tr>
 <tr><td>Trainer memory 10.7 GiB / 17.8 s at 24k tokens</td><td><code>scripts/trainer_memcheck.py</code>, EXPERIMENTS.md</td></tr>
 <tr><td>Gemma weights 10.76 GiB → 5.46 GiB with the table in CPU RAM; KV 109k / 86k / 72.6k tokens</td><td>vLLM startup logs, EXPERIMENTS.md "node04 as a third Gemma server"</td></tr>
+<tr><td>Training curves and the step-19 numbers (85/608, +4.8 ± 2.7 pp, 18/18 updates, gap 0.024–0.031, 1,020 s median step, patch outcomes 85/85/253/185)</td><td><code>experiments/tracker-gemma-v1.json</code>, produced by <code>scripts/run_tracker.py</code> from <code>runs/grpo-gemma-v1/{metrics,rollouts}.jsonl</code>; the mini-coder comparison lines from <code>runs/grpo-minicoder-v2</code></td></tr>
 <tr><td>Loss, advantage, TIS code</td><td><code>sarl/grpo.py</code>; config <code>configs/grpo_minicoder_v2.yaml</code></td></tr>
 <tr><td>Prompts, observation and error text</td><td><code>sarl/prompts_mswea.py</code> (mini-swe-agent v1, verbatim from the SFT corpus)</td></tr>
 </table></div>

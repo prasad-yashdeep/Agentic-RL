@@ -562,6 +562,25 @@ bug diff is not recoverable from git. Tests: `tests/test_swe_smith.py` (5) pass 
 16 trajectories trained per informative step; loss −0.05 to −0.20, grad norm 0.065–0.072, objective gain +0.0005 to
 +0.0010 on every trained step; served drift vs base 0.07–0.12 nats per token; mismatch mean ≈ 0.03 on 46k–62k tokens.
 
+**Tracker** (`scripts/run_tracker.py`, added 2026-09-25 22:45; output `experiments/tracker-gemma-v1.json`, charts spliced
+into the explainer's section 12 between `<!-- tracker:auto:start/end -->`; runs on node04). Steps 1–19: 85/608 solved
+(14.0 %); per-step reward 0.09 0.19 0.16 0.00 0.16 0.06 0.16 0.25 0.03 0.19 0.19 0.03 0.25 0.09 0.16 0.06 0.12 0.12 0.34;
+mixed groups 41/76 (steps 8, 13, 19 all four; step 4 none); objective gain > 0 on 18/18 updates (+0.0002 to +0.0014);
+loss −0.20 to +0.00 (no trend, as expected for a zero-mean-advantage token mean); grad norm 0.046–0.081 (clip 1.0 never
+hit); mismatch mean 0.024–0.031 / p99 0.26–0.33 nats (v2: 0.009–0.012; the FP8-dequantised trainer base vs the bf16
+server); TIS mean 0.9992–1.0010, cap on 0.015 % of tokens; drift 0.070–0.142 flat (v2 rose 0.044→0.095). Behaviour:
+valid actions 90–97 % (mean 93.5 %), 5.9–8.8 turns, 3.6k sampled tokens per episode (10k with observations), 10
+trajectories truncated at 16,384; exits 601 submitted / 6 format / 1 context. Patch outcomes: 85 fixed, 85 harmless
+(P2P green, bug still there), 253 broke a P2P test or did not apply, 185 empty. Every pool task has exactly one F2P
+test (0 partial-F2P grades in 608), so F2P-fraction partial credit would add nothing on this pool. Cost: median step
+1,020 s; rollouts 347–766 s; the update is 56 % of wall time (32-trajectory steps 8/13/19: 33/28/24 min).
+**Task-stratified late−early** (same estimator as v2): steps 10–19 vs 1–9, 11 tasks, **+4.8 ± 2.7 pp** (1 SE); the
+running series was negative at steps 5–7 (−2.5 to −6.7), positive since step 8, +4 to +7 since step 11. Caution: v2's
+running series read +8.8 ± 5.0 at step 10 and ended at −1.2 ± 2.6. Per task (early → late): pydicom-965 5/32 → 14/40,
+pydicom-1192 6/24 → 3/8, astroid-1903 1/32 → 5/48, marshmallow-1343 2/24 → 7/48, sqlfluff-884 5/16 → 9/24, astroid-1719
+2/40 → 3/32, sqlfluff-905 0/24 → 1/48, marshmallow-1164 1/16 → 1/16, pydicom-1694 1/40 → 0/16, astroid-1614 10/24 →
+6/16, pydicom-1562 2/16 → 1/24. The Verified eval (queued in the post-run chain) decides.
+
 ---
 
 ## 2026-09-24 s9-qwen3-1.7b-v1 — S9: the diagram's tool-call protocol with a model that follows it

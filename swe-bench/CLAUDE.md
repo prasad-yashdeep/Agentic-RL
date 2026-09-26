@@ -83,4 +83,11 @@ make -C swe-bench help
 make -C swe-bench test NODE=node08            # 27 tests (sandbox/grader/qwen markers skip cleanly elsewhere)
 make -C swe-bench fetch | assets | sifs | grader | serve [MODEL=qwen3-1.7b] | train [CONFIG=…] | notebook | status
 .venv/bin/sarl task <id> | pool | grade <id> --gold | episode <id> --policy vllm --grade | summarize runs/<run>
+# training curves (run on node04, not the headnode): series JSON + SVG charts spliced into the explainer's section 12
+python scripts/run_tracker.py runs/grpo-gemma-v1 --compare runs/grpo-minicoder-v2 \
+    --out experiments/tracker-gemma-v1.json --splice docs/blog/swe-rl-explainer.html --stamp "refreshed <date>"
 ```
+
+The explainer (`docs/blog/swe-rl-explainer.html`, Artifact "Teaching Gemma to Fix Real Bugs") keeps its charts between
+`<!-- tracker:auto:start -->` and `<!-- tracker:auto:end -->`; everything else in section 12 is hand-written and names
+the step it describes, so update the prose when the run moves on.
