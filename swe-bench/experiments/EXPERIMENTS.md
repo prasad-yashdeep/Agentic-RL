@@ -567,8 +567,9 @@ into the explainer's section 12 between `<!-- tracker:auto:start/end -->`; runs 
 (14.0 %); per-step reward 0.09 0.19 0.16 0.00 0.16 0.06 0.16 0.25 0.03 0.19 0.19 0.03 0.25 0.09 0.16 0.06 0.12 0.12 0.34;
 mixed groups 41/76 (steps 8, 13, 19 all four; step 4 none); objective gain > 0 on 18/18 updates (+0.0002 to +0.0014);
 loss −0.20 to +0.00 (no trend, as expected for a zero-mean-advantage token mean); grad norm 0.046–0.081 (clip 1.0 never
-hit); mismatch mean 0.024–0.031 / p99 0.26–0.33 nats (v2: 0.009–0.012; the FP8-dequantised trainer base vs the bf16
-server); TIS mean 0.9992–1.0010, cap on 0.015 % of tokens; drift 0.070–0.142 flat (v2 rose 0.044→0.095). Behaviour:
+hit); mismatch mean 0.024–0.031 / p99 0.26–0.33 nats (v2: 0.009–0.012; trainer and server share the FP8
+weights, so the gap is kernels and numerics: vLLM's W8A16 GEMM vs dequantise-then-bf16 matmul in the trainer, the bf16
+soft-cap, attention accumulation — corrected 2026-09-26; an earlier version of this line blamed a bf16 server); TIS mean 0.9992–1.0010, cap on 0.015 % of tokens; drift 0.070–0.142 flat (v2 rose 0.044→0.095). Behaviour:
 valid actions 90–97 % (mean 93.5 %), 5.9–8.8 turns, 3.6k sampled tokens per episode (10k with observations), 10
 trajectories truncated at 16,384; exits 601 submitted / 6 format / 1 context. Patch outcomes: 85 fixed, 85 harmless
 (P2P green, bug still there), 253 broke a P2P test or did not apply, 185 empty. Every pool task has exactly one F2P
@@ -606,7 +607,7 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   environment, most likely the 4 GB `ulimit -v` on a scikit-learn rebuild; both arms 0/0, excluded from the pairing).
   **base 14/196 (7.1 %) vs step-30 19/196 (9.7 %)**; per-task mean difference **+2.6 pp, 95 % bootstrap CI [−1.5, +7.1],
   sign-flip p = 0.39** (11 tasks with a difference); same-seed pairs: adapter-only 14, base-only 9, both 5, neither 168
-  (McNemar p = 0.41). Per arm: valid actions **94.7 % → 91.1 %**, turns 8.4 → 8.6, tokens 10.5k → 11.0k, patches
+  (McNemar exact p = 0.40). Per arm: valid actions **94.7 % → 91.1 %**, turns 8.4 → 8.6, tokens 10.5k → 11.0k, patches
   124 → 119 of 196, exits 194 submitted each (base 2 format, grpo 1 format + 1 context), wall 208 → 204 s. Per repo
   (tasks, base, grpo): django 23: 7 → 11; sympy 6: 3 → 3; scikit-learn 5: 1 → 2; sphinx 6: 1 → 1; matplotlib 3: 2 → 2;
   pytest/pallets/psf/astropy/pylint 0 → 0. **Verdict: a second clean null.** Gemma's base rate on this subset (7.1 %) is

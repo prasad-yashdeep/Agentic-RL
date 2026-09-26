@@ -6,7 +6,8 @@ per step:
      oracle per group (off-policy, the reference's trick) so a 0.5B policy's groups are not all zero
   3. reward: replay each candidate patch in a fresh container and run the tests (binary)
   4. advantages per group; skip degenerate groups
-  5. one LoRA update (seq-mean REINFORCE, reference loss) on the non-degenerate groups' trajectories
+  5. one LoRA update (token-mean REINFORCE with truncated importance weights; seq-mean = the reference's loss) on the
+     non-degenerate groups' trajectories
   6. weight sync: save the adapter, POST /v1/load_lora_adapter, sample the next step from it (πθ′)
   7. diagnostics: |logp_vLLM − logp_trainer| on sampled tokens (lecture 2:31), Δlogp on the oracle trajectories
 """

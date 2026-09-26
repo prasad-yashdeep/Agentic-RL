@@ -4,10 +4,12 @@ Advantages (reference, lecture 1:46):   A_i = (r_i − mean(r)) / (std(r) + ε),
 Degenerate groups (all rewards equal) carry no signal; the lecture throws them out (2:00); the reference code keeps
 them (every A_i = 0, a no-op). We skip them by default and count them.
 
-Loss (reference, "REINFORCE with a group baseline"): per trajectory the MEAN log-prob of its policy tokens (mask 1),
-    L = −(1/N) Σ_i A_i · mean_t log π(a_t | s_t),
-one AdamW step per GRPO step, grad-norm clip 1.0, LoRA r=8/α=16 on q,k,v,o with the adapter in fp32 (lecture 1:47:
-fp16 Adam second moments underflow). The per-token log-probs come from a chunked log-softmax over only the
+Loss: `loss_agg="seq_mean"` is the reference's "REINFORCE with a group baseline", per trajectory the MEAN log-prob of
+its policy tokens (mask 1), L = −(1/N) Σ_i A_i · mean_t log π(a_t | s_t); `loss_agg="token_mean"` (every GRPO config
+since v2) averages −A_i · w_t · log π over all sampled tokens of the batch, with w the detached truncated importance
+weight (cap `tis_cap`). One AdamW step per GRPO step, grad-norm clip 1.0, adapter in fp32 (lecture 1:47: fp16 Adam
+second moments underflow). The TrainConfig defaults (LoRA r=8/α=16 on q,k,v,o) are the reference's; the configs set
+r=16/α=32 on every attention and MLP projection. The per-token log-probs come from a chunked log-softmax over only the
 supervised positions (a 16k-token trajectory's full logits would be 16k × 152k floats).
 """
 
