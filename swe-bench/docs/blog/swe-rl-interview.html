@@ -949,6 +949,23 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 <p>The cap is a safety rail. On a rare token the trainer could be far more confident than the server, and an uncapped weight would let that one token dominate the batch. At 2 it can't. The cap was hit on 0.014 % of tokens.</p>
 <p><b>In short:</b> the weight is a guard against a numerical mismatch, not something that drives learning.</p>
 
+<h3>What does the code look like?</h3>
+<p>The code that implements it is short enough to read in an interview:</p>
+<pre><code>lp   = trainer.token_logprobs(ids, mask)              # log π_θ at every mask-1 position (chunked log-softmax)
+diff = lp.detach() - sampler_logprobs                 # trainer minus vLLM, per token
+w    = exp(diff).clamp(max=2.0)                       # truncated importance weight, detached
+loss = -(A * (lp * w).sum()) / n_tokens_in_step        # token-mean; summed over rollouts, one backward each
+clip_grad_norm_(lora_params, 1.0); AdamW.step()       # lr 5e-5</code></pre>
+<p>Line by line:</p>
+<ol class="steps">
+  <li><b>Line 1.</b> Run the trainer's copy of the model over the attempt. Keep <code>log π_θ</code> at every mask-1 position, that is, every token the model wrote. "Chunked" means the log-softmax runs in slices of 512 tokens, so the scores over Gemma's 262k-word vocabulary never sit in memory for the whole sequence at once.</li>
+  <li><b>Line 2.</b> Subtract vLLM's log-probability from the trainer's, token by token. <code>detach()</code> is what makes the weight carry no gradient.</li>
+  <li><b>Line 3.</b> The exponential of a difference of logs is the ratio <code>π_θ / π_vLLM</code>. <code>clamp(max=2.0)</code> is the cap.</li>
+  <li><b>Line 4.</b> Multiply each token's log-probability by its weight, add them up, multiply by the attempt's advantage, divide by the step's token count, and flip the sign. One backward pass per attempt (rollout); the gradients accumulate.</li>
+  <li><b>Line 5.</b> Clip the gradient norm at 1.0. Then AdamW, the optimizer, applies the update. An optimizer is the routine that turns a gradient into a change of the weights. The learning rate, 5e-5, is its step size.</li>
+</ol>
+<p><b>In short:</b> five lines. Everything in this section is a description of one of them.</p>
+
 <h3>Why no PPO clip and no KL penalty?</h3>
 <p>PPO reuses one batch for several gradient steps. It tracks a ratio, and the clip stops the update when that ratio strays too far from 1.</p>
 <div class="formula"><span class="lbl">PPO ratio</span>ratio = the updated model's probability ÷ the probability when the batch was sampled</div>
