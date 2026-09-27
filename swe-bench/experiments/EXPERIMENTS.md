@@ -728,6 +728,20 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   teacher → third student server, copy the KD final and GRPO v2 step-30 adapters to node04, then one **three-arm
   Verified eval** (base / GRPO v2 `policy-051b4b-s30` / KD final) on `configs/eval_verified_v1_gated.txt`, 50 × 4 paired
   by seed, the v1 eval's limits, → `experiments/eval-verified-kd-v1.json`.
+- **kd-minicoder-v1 finished (22:47 → 09:28, 30 steps, 0 errors, 0 teacher drops).** Same seed as grpo-minicoder-v2 and
+  **identical task draws on 30/30 steps**, so the two runs pair by (step, task). Success on the training tasks:
+  KD steps 1–15 157/480 (32.7 %), 16–30 219/480 (45.6 %); GRPO v2 167/480 (34.8 %) → 190/480 (39.6 %).
+  **Task-stratified late−early: KD +7.4 ± 2.7 pp vs GRPO v2 −1.2 ± 2.6 pp.** Head-to-head on the identical (step, task)
+  groups: steps 16–30 KD 45.6 % vs GRPO 39.6 %, +6.0 pp, 95 % bootstrap CI [+1.5, +10.6] over 60 groups (groups of one
+  task are correlated, so this CI is optimistic); steps 1–15 KD −2.1 pp (same start, KD pulls ahead later). Per task over
+  all steps (KD / GRPO): pydicom-1192 33/25, pydicom-1256 19/11, pydicom-1694 49/42, astroid-1614 24/19, sqlfluff-884
+  25/18, astroid-1719 84/84, marshmallow-1343 51/51, astroid-1262 2/1, astroid-984 2/3, **astroid-1903 72/78 and
+  marshmallow-1164 15/25** (astroid-1903 is the one task where the probe had the student ahead of the teacher, 7/8 vs
+  3/8). KD mechanics: `rkl_sampler` (student − teacher log-prob on the student's own tokens) 0.191 (mean of steps 1–5) →
+  0.146 (steps 26–30); `rkl_gain` > 0 and objective gain > 0 on 30/30 updates; served drift 0.052 → 0.458 nats/token
+  (GRPO v2: 0.044 → 0.095: the dense signal moves the policy ~5× further); valid actions 99.6–100 %; teacher scoring
+  84–146 s per step; median step ≈ 1,190 s. These are training-task numbers; the Verified eval decides transfer.
+- **Three-arm Verified eval running** (started 09:29, node04 tmux `swe-eval-kd`, 5 batches, ~45 min each).
 - **Implementation:** objective `kd` in `sarl/train.py` + per-token advantages in `LoRATrainer.step`, config
   `configs/kd_minicoder_v1.yaml` (in progress, reviewed three ways before use).
 
