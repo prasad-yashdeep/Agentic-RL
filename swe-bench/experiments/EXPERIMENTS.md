@@ -715,7 +715,19 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   8 seqs, 25600, KV 3.04 GiB ≥ the 2.8 GiB bar). Review follow-ups applied before launch: the sleep window wakes every
   server even if the offload or a sleep fails; teacher circuit breaker (`kd.max_consecutive_failures: 3`,
   `timeout_s: 180`); `kd.workers: 2` (the teacher's ~34k-token KV holds two average views). 82 tests pass.
-- **Smoke:** `--run-name kd-smoke --steps 1` launched 22:28.
+- **Smoke (`runs/kd-smoke`, 1 step, 22:28 → 22:46): PASS.** Start-up: tokenizer identity OK, teacher snapshot OK, one
+  24,576-token teacher request in 8.0 s with 1,683 MiB of GPU1 still free. Step 1: 14/32 solved, groups
+  marshmallow-1164 5/8, astroid-984 0/8, astroid-1614 3/8, astroid-1903 6/8; **all 32 trajectories trained** (175,972
+  tokens, including the all-fail group GRPO would skip); teacher scored every token (frac_missing 0, dropped 0) in 105 s;
+  `rkl_sampler` 0.185 nats/token (mean teacher lp −0.479 vs sampler −0.295 on the student's tokens); `rkl_gain` +0.0016 and
+  objective gain +0.0020 (the update moved toward the teacher); trainer-vs-server gap 0.0086 (v2: 0.009–0.012); TIS mean
+  1.0000; grad norm 0.140; sleep 4.8 s / wake 2.2 s; drift 0.047; adapter loaded on both student servers, not on the
+  teacher; valid actions 99.9 %; step 1,047 s (rollouts 596 s on 12 slots, teacher 105 s, update ≈ 340 s).
+- **Run `kd-minicoder-v1` launched 22:47** (30 steps, same seed and task draws as grpo-minicoder-v2; log
+  `/var/tmp/swe/train-kd-minicoder-v1.log`); ≈ 17–18 min per step → ≈ 9 h. Post-run chain (headnode, ssh only): swap GPU1
+  teacher → third student server, copy the KD final and GRPO v2 step-30 adapters to node04, then one **three-arm
+  Verified eval** (base / GRPO v2 `policy-051b4b-s30` / KD final) on `configs/eval_verified_v1_gated.txt`, 50 × 4 paired
+  by seed, the v1 eval's limits, → `experiments/eval-verified-kd-v1.json`.
 - **Implementation:** objective `kd` in `sarl/train.py` + per-token advantages in `LoRATrainer.step`, config
   `configs/kd_minicoder_v1.yaml` (in progress, reviewed three ways before use).
 
