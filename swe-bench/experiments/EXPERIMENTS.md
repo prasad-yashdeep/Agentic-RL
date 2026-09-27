@@ -741,7 +741,18 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   0.146 (steps 26–30); `rkl_gain` > 0 and objective gain > 0 on 30/30 updates; served drift 0.052 → 0.458 nats/token
   (GRPO v2: 0.044 → 0.095: the dense signal moves the policy ~5× further); valid actions 99.6–100 %; teacher scoring
   84–146 s per step; median step ≈ 1,190 s. These are training-task numbers; the Verified eval decides transfer.
-- **Three-arm Verified eval running** (started 09:29, node04 tmux `swe-eval-kd`, 5 batches, ~45 min each).
+- **Three-arm Verified eval (09:29 → ~13:30, `experiments/eval-verified-kd-v1.json`): no transfer.** 49 tasks scored
+  (scikit-learn-25931 failed its gold gate on node04 again), 0 errors. **base 36/196 (18.4 %), GRPO v2 40/196 (20.4 %),
+  KD 40/196 (20.4 %).** Paired per task (bootstrap 95 % CI, sign-flip p; same-seed pairs, McNemar exact p):
+  KD − base +2.0 pp [−2.6, +7.1], p = 0.55 (pairs 13 vs 9, p = 0.52); GRPO − base +2.0 pp [−3.1, +7.1], p = 0.57
+  (15 vs 11, p = 0.56); **KD − GRPO 0.0 pp [−5.1, +4.6], p = 1.00 (13 vs 13)**. Valid actions 99.1 / 99.2 / 99.2 %;
+  turns 35.9 / 34.6 / 34.3; exits submitted 135 / 148 / 138. Instrument replication on the same 49 tasks and seeds:
+  base 36 now vs 38 in the v1 eval, GRPO 40 vs 41 (stable). **Verdict:** KD learned the training tasks faster than GRPO
+  (+7.4 ± 2.7 pp within the run; +6.0 pp over GRPO on identical steps 16–30) and moved the policy 5× further, but on
+  held-out Verified it is indistinguishable from GRPO and from the base: a third clean null for transfer. Likely reasons
+  to test next: an 11-task, 4-repo training pool (the student's states come only from those tasks; KD does not need mixed
+  tasks, so the pool can include every gated task, including never-solved ones); the teacher's own Verified rate is
+  unmeasured (the ceiling); 30 steps.
 - **Implementation:** objective `kd` in `sarl/train.py` + per-token advantages in `LoRATrainer.step`, config
   `configs/kd_minicoder_v1.yaml` (in progress, reviewed three ways before use).
 
