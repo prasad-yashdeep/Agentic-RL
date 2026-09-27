@@ -206,11 +206,11 @@ details p{margin:.35rem 0}
 <main>
 <p class="eyebrow">swe-bench · interview companion · conversational version</p>
 <h1>Teaching Gemma to fix real bugs, explained</h1>
-<p class="lede">We give a small open model a real bug report inside the real repository, let it work one shell command at a time, and it only earns a point if the repository's own tests pass. The whole training loop runs on three consumer GPUs, two careful evaluations say it hasn't improved the model yet, and a new run with more practice bugs is training now.</p>
+<p class="lede">We give a small open model a real bug report inside the real repository, let it work one shell command at a time, and it only earns a point if the repository's own tests pass. The whole training loop runs on three consumer GPUs, and two careful evaluations say it hasn't improved the model yet. Next, we're preparing on-policy distillation: a bigger teacher, mini-coder-4b, will score every token that mini-coder-1.7b writes.</p>
 <p class="tiny">The math-heavy reference version is a separate page.</p>
 <div class="meta">
   <span><b>Follows</b> the Vizuara SWE-RL lecture and reference repo</span>
-  <span><b>Practice bugs</b> SWE-bench dev, SWE-smith</span>
+  <span><b>Practice bugs</b> SWE-bench dev</span>
   <span><b>Test bugs</b> SWE-bench Verified</span>
   <span><b>Model</b> Gemma 4 E4B + a LoRA adapter</span>
   <span><b>Hardware</b> 2× A4000 16 GB + RTX 4060 Laptop 8 GB</span>
@@ -219,18 +219,17 @@ details p{margin:.35rem 0}
 
 <div class="banner">
   <div class="measured"><p class="h">Measured</p><ul>
-    <li>First Gemma run (11 real practice bugs): 30 steps, 9.5 hours, 145 of 960 attempts solved (15.1 %).</li>
+    <li>Gemma run (11 SWE-bench dev bugs): 30 steps, 9.5 hours, 145 of 960 attempts solved (15.1 %).</li>
     <li>Same run, each bug's late half versus its early half: +2.0 ± 2.2 points, which is noise.</li>
+    <li>Same run: in 50 of its 120 groups (42 %) all 8 attempts agreed, so they taught nothing.</li>
     <li>Gemma on Verified, 49 bugs × 4 tries, before versus after: 14/196 → 19/196, +2.6 points, 95 % interval −1.5 to +7.1, p = 0.39 (no real change).</li>
     <li>mini-coder-1.7b on Verified: 38/200 → 41/200, +1.5 points, interval −3.5 to +6.5, p = 0.71 (no real change).</li>
-    <li>SWE-smith screen: 282 of 1,576 attempts solved (17.9 %); 73 bugs solved sometimes, split into 53 for training and 20 held out in advance.</li>
   </ul></div>
-  <div class="pending"><p class="h">Running / pending</p><ul>
-    <li><span class="interim">running</span> grpo-gemma-smith-v1 on node08 since 11:42 on 09-26.</li>
-    <li>It changes one thing from the first Gemma run: the practice pool (11 real bugs → 53 generated ones).</li>
-    <li>First three steps: 12, 8 and 15 of 32 attempts solved; 9 of 12 bugs gave a usable signal.</li>
-    <li><span class="pending">pending</span> Before-versus-after test on the 20 held-out bugs (20 × 8 tries × 2 models).</li>
-    <li><span class="pending">pending</span> Verified test after that (50 × 4 tries × 2 models).</li>
+  <div class="pending"><p class="h">Next / pending</p><ul>
+    <li><span class="pending">in preparation</span> On-policy distillation: mini-coder-1.7b writes each attempt, and mini-coder-4b scores every token it wrote.</li>
+    <li>The signal per token is the teacher's log-prob minus the student's, in place of one pass/fail per attempt. Failed attempts get feedback too.</li>
+    <li><span class="pending">pending</span> First, a full probe to confirm the teacher is clearly stronger on the pool. An interrupted probe had it solving 9 of 18 attempts.</li>
+    <li><span class="pending">pending</span> Then the same 11-task dev pool and 30 steps as the second mini-coder run, and the same 50 Verified tasks.</li>
   </ul></div>
 </div>
 
@@ -242,13 +241,14 @@ details p{margin:.35rem 0}
 <tr><td>One training step</td><td>4 bugs, 8 attempts per bug, so 32 attempts; 30 steps per run</td></tr>
 <tr><td>Limits on one attempt</td><td>50 turns, 24,576 tokens of conversation, 20 minutes</td></tr>
 <tr><td>The reward</td><td>1 if every one of the repository's checking tests passes on the model's patch, otherwise 0</td></tr>
-<tr><td>Where practice bugs come from</td><td>SWE-bench dev: 225 real bugs in 6 repositories · SWE-smith: 4,662 generated bugs in 4 of those repositories</td></tr>
+<tr><td>Where practice bugs come from</td><td>SWE-bench dev: 225 real bugs in 6 repositories</td></tr>
 <tr><td>Where test bugs come from</td><td>SWE-bench Verified, different repositories; 50 bugs fixed in advance (49 scored for Gemma)</td></tr>
-<tr><td>Practice pools</td><td>first run: 11 real bugs · current run: 53 generated bugs, plus 20 held out for testing</td></tr>
-<tr><td>How often Gemma already succeeds</td><td>7.2 % on the first pool · 17.9 % on the generated bugs · 7.1 % on Verified</td></tr>
+<tr><td>Practice pools</td><td>11 dev bugs for Gemma, and 11 for the second mini-coder run; the two pools share 8</td></tr>
+<tr><td>How often Gemma already succeeds</td><td>7.2 % on its dev pool · 7.1 % on Verified</td></tr>
 <tr><td>Cost of one step</td><td>median 1,058 seconds (about 18 minutes); the training update is 58 % of that</td></tr>
 <tr><td>Serving</td><td>adding the laptop card and more attempts per card made rollouts 1.78 times faster</td></tr>
 <tr><td>Headline result</td><td>two careful no-change results on Verified: Gemma +2.6 points (p = 0.39), mini-coder +1.5 points (p = 0.71)</td></tr>
+<tr><td>Next experiment</td><td>on-policy distillation, mini-coder-4b teaching mini-coder-1.7b, compared like for like with the second mini-coder run (in preparation)</td></tr>
 </table></div>
 
 
@@ -270,7 +270,7 @@ details p{margin:.35rem 0}
   <li><b>Sandbox per rollout.</b> An apptainer instance of the task's official SWE-bench image, unprivileged, network off (section 06).</li>
   <li><b>Reward.</b> Replays only the model's patch in a fresh container and runs the held-out tests (section 06).</li>
   <li><b>Trainer.</b> Groups of 8 rollouts per task, GRPO advantages, a LoRA update, then the adapter is hot-loaded back into the inference server (section 07).</li>
-  <li><b>Clean evaluation.</b> Train on SWE-bench dev and SWE-smith; evaluate on a pre-registered Verified subset (section 03).</li>
+  <li><b>Clean evaluation.</b> Train on SWE-bench dev; evaluate on a pre-registered Verified subset (section 03).</li>
 </ol>
 
 <h3>Constraints</h3>
@@ -286,7 +286,7 @@ details p{margin:.35rem 0}
 
 <h3>Train/eval split rule</h3>
 <ul>
-  <li><b>Train.</b> SWE-bench dev (225 tasks, 6 repositories) and SWE-smith tasks generated in 4 of those repositories.</li>
+  <li><b>Train.</b> SWE-bench dev (225 tasks, 6 repositories).</li>
   <li><b>Evaluate.</b> SWE-bench Verified only, on a subset fixed by hashing instance ids before any result existed.</li>
   <li><b>Disjoint by construction.</b> No shared repository, instance id, base commit or issue text; <code>contamination_report</code> in <code>src/sarl/tasks.py</code> checks all four for every pool.</li>
   <li><b>Deviation from the lecture.</b> The lecture trains on a Verified task "for illustrative purposes"; our phase-1 replica did the same, and those results are tagged <code>contaminates_eval</code> and never reused.</li>
@@ -396,7 +396,7 @@ observation:  &lt;returncode&gt;0&lt;/returncode&gt;
               &lt;/output&gt;</code></pre>
 
 <h3>Components</h3>
-<p>Layout of the current runs (<code>configs/grpo_gemma_smith_v1.yaml</code>).</p>
+<p>Layout of the Gemma dev-pool run (<code>configs/grpo_gemma_v1.yaml</code>).</p>
 <div class="tablewrap"><table class="data">
 <tr><th>Component</th><th>Runs where</th><th>Key parameters</th><th>Code</th></tr>
 <tr><td>Policy server (vLLM 0.25.1)</td><td>node08 GPU0 :8001, 12 slots · node04 :8003, 8 slots</td><td>Gemma 4 E4B; T = 1.0, top-p 1.0; token-id prompts return token ids + log-probs; runtime LoRA via <code>POST /v1/load_lora_adapter</code>; node04 keeps the 5.25 GiB PLE table in pinned CPU memory</td><td><code>scripts/22_serve_gemma4.sh</code>, <code>vllm_ple_offload.py</code>, <code>src/sarl/policy.py</code></td></tr>
@@ -404,8 +404,8 @@ observation:  &lt;returncode&gt;0&lt;/returncode&gt;
 <tr><td>Sandbox</td><td>node08 CPU, one apptainer instance per rollout</td><td><code>--fakeroot --containall --writable-tmpfs</code>; <code>--network none</code>; <code>ulimit -v</code> 12 GB; ~0.7 s per exec</td><td><code>src/sarl/env/apptainer.py</code></td></tr>
 <tr><td>Reward (grader)</td><td>node08 CPU, fresh container per patch</td><td>patch bound read-only; test-harness edits dropped; apply chain <code>git apply</code> → <code>--reject</code> → <code>patch --fuzz=5</code>; swebench 5.0.2 in its own venv; 8 concurrent, 1,800 s timeout</td><td><code>src/sarl/reward/grade.py</code>, <code>grader_main.py</code></td></tr>
 <tr><td>Trainer</td><td>node08 GPU1</td><td>FP8 base, PLE table on CPU; LoRA r 16 / α 32 on q, k, v, o, gate, up, down; lr 5e-5; clip 1.0; token-mean loss; TIS cap 2; 16,384 trained tokens per trajectory</td><td><code>src/sarl/train.py</code>, <code>grpo.py</code>, <code>gemma.py</code></td></tr>
-<tr><td>Weight sync</td><td>node08 → both servers</td><td>save adapter, load under a run-tagged name, unload the old one; <code>keep_adapters: 2</code> on disk</td><td><code>src/sarl/train.py</code></td></tr>
-<tr><td>Tasks and guard</td><td>any node (pinned parquet read from the HF cache)</td><td><code>load_split("dev" | "verified" | "smith")</code>; <code>contamination_report</code></td><td><code>src/sarl/tasks.py</code>, <code>smith.py</code></td></tr>
+<tr><td>Weight sync</td><td>node08 → both servers</td><td>save adapter, load under a run-tagged name, unload the old one; an optional <code>keep_adapters</code> cap prunes older adapters on disk (not set in this run)</td><td><code>src/sarl/train.py</code></td></tr>
+<tr><td>Tasks and guard</td><td>any node (pinned parquet read from the HF cache)</td><td><code>load_split("dev" | "verified")</code>; <code>contamination_report</code></td><td><code>src/sarl/tasks.py</code></td></tr>
 </table></div>
 <div class="callout say"><span class="tag">Say it</span><p>"The agent is a stateless policy plus a deterministic harness; only the policy learns. Rollouts are scored once, at submit, by replaying the patch in a fresh container, and the GRPO update is hot-loaded back into the same vLLM servers every step."</p></div>
 
@@ -415,15 +415,15 @@ observation:  &lt;returncode&gt;0&lt;/returncode&gt;
 <h3>Task anatomy</h3>
 <p>The agent sees only the issue text. Everything else belongs to the sandbox or the grader.</p>
 <div class="tablewrap"><table class="data">
-<tr><th>Field</th><th>Used by</th><th>SWE-bench (<code>sqlfluff__sqlfluff-884</code>)</th><th>SWE-smith</th></tr>
-<tr><td><code>instance_id</code></td><td>bookkeeping, hashed subsets</td><td><code>sqlfluff__sqlfluff-884</code></td><td>mirror + bug strategy, e.g. <code>marshmallow-code__marshmallow.9716fc62.func_basic__r1b5oad2</code></td></tr>
-<tr><td><code>problem_statement</code></td><td><b>agent</b> (the only field it sees)</td><td>the real issue: "Whitespace token is_whitespace is False …"</td><td>LM-written issue; 30 % of rows empty (filtered out)</td></tr>
-<tr><td>base image / <code>base_commit</code></td><td>sandbox, grader</td><td><code>swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-884</code>, ~1 GB, one per task, repo at <code>c0bad78f3f…</code></td><td>one image per repository (1.3–1.6 GB); the buggy state is built at setup</td></tr>
-<tr><td><code>patch</code> (gold)</td><td>gate only</td><td>maintainer's fix: 3 hunks in <code>dialect_ansi.py</code></td><td>the row's <code>patch</code> <em>introduces</em> the bug; gold = its reverse (<code>reverse_unidiff</code>)</td></tr>
-<tr><td><code>test_patch</code></td><td>grader</td><td>adds the maintainers' new tests</td><td>none; the F2P test files are deleted in the sandbox and restored by the grader</td></tr>
-<tr><td><code>FAIL_TO_PASS</code></td><td>grader</td><td>1 test: <code>test__dialect__ansi_is_whitespace</code></td><td>1–5 tests (our filter)</td></tr>
-<tr><td><code>PASS_TO_PASS</code></td><td>grader</td><td>37 tests (regression guard)</td><td>restricted to tests in the F2P files, minus offline-failing exclusions</td></tr>
-<tr><td>eval script</td><td>grader</td><td>swebench <code>TestSpec.eval_script</code>: install, apply <code>test_patch</code>, run tests</td><td>synthesized <code>pytest -rA</code> over the F2P files, parsed by <code>parse_log_pytest</code></td></tr>
+<tr><th>Field</th><th>Used by</th><th>Example (<code>sqlfluff__sqlfluff-884</code>)</th></tr>
+<tr><td><code>instance_id</code></td><td>bookkeeping, hashed subsets</td><td><code>sqlfluff__sqlfluff-884</code></td></tr>
+<tr><td><code>problem_statement</code></td><td><b>agent</b> (the only field it sees)</td><td>the real issue: "Whitespace token is_whitespace is False …"</td></tr>
+<tr><td>base image / <code>base_commit</code></td><td>sandbox, grader</td><td><code>swebench/sweb.eval.x86_64.sqlfluff_1776_sqlfluff-884</code>, ~1 GB, one per task, repo at <code>c0bad78f3f…</code></td></tr>
+<tr><td><code>patch</code> (gold)</td><td>gate only</td><td>maintainer's fix: 3 hunks in <code>dialect_ansi.py</code></td></tr>
+<tr><td><code>test_patch</code></td><td>grader</td><td>adds the maintainers' new tests</td></tr>
+<tr><td><code>FAIL_TO_PASS</code></td><td>grader</td><td>1 test: <code>test__dialect__ansi_is_whitespace</code></td></tr>
+<tr><td><code>PASS_TO_PASS</code></td><td>grader</td><td>37 tests (regression guard)</td></tr>
+<tr><td>eval script</td><td>grader</td><td>swebench <code>TestSpec.eval_script</code>: install, apply <code>test_patch</code>, run tests</td></tr>
 </table></div>
 <div class="M"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>r</mi><mo>=</mo><mn mathvariant="bold">1</mn><mo fence="false" stretchy="true" minsize="1.2em" maxsize="1.2em">[</mo><mtext> </mtext><mtext>all </mtext><mrow><mi mathvariant="normal">F</mi><mn>2</mn><mi mathvariant="normal">P</mi></mrow><mtext> pass</mtext><mtext>  </mtext><mo>∧</mo><mtext>  </mtext><mtext>all </mtext><mrow><mi mathvariant="normal">P</mi><mn>2</mn><mi mathvariant="normal">P</mi></mrow><mtext> pass</mtext><mtext> </mtext><mo fence="false" stretchy="true" minsize="1.2em" maxsize="1.2em">]</mo><mo>∈</mo><mo stretchy="false">{</mo><mn>0</mn><mo separator="true">,</mo><mn>1</mn><mo stretchy="false">}</mo></mrow><annotation encoding="application/x-tex">r = \mathbf{1}\big[\,\text{all } \mathrm{F2P} \text{ pass} \;\wedge\; \text{all } \mathrm{P2P} \text{ pass}\,\big] \in \{0, 1\}</annotation></semantics></math></span></div>
 <ul class="where">
@@ -431,34 +431,24 @@ observation:  &lt;returncode&gt;0&lt;/returncode&gt;
   <li><span class="m"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">P</mi><mn>2</mn><mi mathvariant="normal">P</mi></mrow><annotation encoding="application/x-tex">\mathrm{P2P}</annotation></semantics></math></span></span> PASS_TO_PASS: tests that pass at the base state and must still pass</li>
 </ul>
 
-<h3>Three sources</h3>
+<h3>Two sources</h3>
 <div class="tablewrap"><table class="data">
 <tr><th>Source</th><th class="num">Tasks</th><th>Repositories</th><th>Role</th></tr>
 <tr><td>SWE-bench <b>dev</b></td><td class="num">225</td><td>marshmallow 9 · pvlib 63 · pydicom 56 · astroid 31 · pyvista 16 · sqlfluff 50</td><td>train</td></tr>
 <tr><td>SWE-bench <b>Verified</b></td><td class="num">500</td><td>django 231 · sympy 75 · sphinx 44 · matplotlib 34 · scikit-learn 32 · astropy 22 · xarray 22 · pytest 19 · pylint 10 · requests 8 · seaborn 2 · flask 1</td><td>eval only: pre-registered 50-task subset</td></tr>
-<tr><td><b>SWE-smith</b> (pinned <code>ea6d7173</code>)</td><td class="num">4,662</td><td>astroid 1,770 · pydicom 1,328 · sqlfluff 1,293 · marshmallow 389 (4,780 rows; <code>pr_</code> mirrors dropped)</td><td>train: generated bugs in the dev repositories</td></tr>
 </table></div>
 <ul>
   <li><b>Verified subset.</b> First 50 tasks in <code>sha256("sarl-eval-v1:" + id)</code> order; 10 repositories, 23 django; SWE-bench labels 24 "under 15 min", 22 "15 min to 1 h", 4 "1–4 h".</li>
   <li><b>Subset replacements.</b> Two tasks failed the gold control (<code>psf__requests-1921</code> gold 0 / empty 0; <code>django__django-7530</code> gold 1 / empty 1) and were replaced in hash order.</li>
   <li><b>Gemma eval.</b> 49 of the 50 scored: <code>scikit-learn__scikit-learn-25931</code> failed its gold gate on node04.</li>
-  <li><b>SWE-smith coverage.</b> None of the 12 Verified repositories has rows; pvlib and pyvista are absent.</li>
 </ul>
-
-<h3>SWE-smith setup: no leak through git or tests</h3>
-<ol class="steps">
-  <li><b>Sandbox.</b> Apply the bug patch to the clean mirror, delete the F2P test files, then <code>rm -rf .git; git init; git add -A; git commit</code>.</li>
-  <li><b>Result.</b> One commit, no remote, no reflog: <code>git show</code> or <code>git diff main</code> cannot reveal the reversed fix. The official SWE-agent setup leaves <code>origin/main</code> and the bug commit present.</li>
-  <li><b>Grader.</b> Rebuilds the same buggy state with the tests kept (<code>/sarl_in/setup.sh</code>), applies the policy patch, runs the synthesized pytest command.</li>
-</ol>
 
 <h3>The gate: gold = 1, empty = 0</h3>
 <ul>
   <li><b>Rule.</b> Offline, in our sandbox, the gold patch must score 1 and the empty patch 0.</li>
   <li><b>gold = 1</b> proves the tests can pass in our environment.</li>
   <li><b>empty = 0</b> proves the tests detect the bug.</li>
-  <li><b>pydicom.</b> Some P2P tests download data and fail offline: 9 dev tasks in the mini-coder screen, 17 in the Gemma screen, 21 of 50 SWE-smith tasks.</li>
-  <li><b>P2P calibration.</b> 18 of those 21 SWE-smith tasks pass every F2P test under gold; their 51 offline-failing P2P tests are excluded (<code>experiments/smith-p2p-exclusions.json</code>), giving 197 of 200.</li>
+  <li><b>pydicom.</b> Some P2P tests download data and fail offline: 9 dev tasks in the mini-coder screen, 17 in the Gemma screen.</li>
   <li><b>Missing images.</b> 34 of the 39 remaining sqlfluff dev images are not on Docker Hub.</li>
   <li><b>Broken upstream.</b> pvlib images ship NumPy 2 and pvlib 0.8 uses <code>np.Inf</code>; pyvista raises <code>AttributeError</code>. Gold scored 0 on all 7 pvlib/pyvista tasks tried (the 79 dev tasks of those two repositories were the only dev repos absent from mini-coder's SFT data).</li>
 </ul>
@@ -474,21 +464,18 @@ observation:  &lt;returncode&gt;0&lt;/returncode&gt;
 <ul>
   <li><span class="m"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">p = 0.1</annotation></semantics></math></span></span>: <span class="m"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mn>0.</mn><msup><mn>1</mn><mn>8</mn></msup><mo>−</mo><mn>0.</mn><msup><mn>9</mn><mn>8</mn></msup><mo>=</mo><mn>1</mn><mo>−</mo><mn>1</mn><msup><mn>0</mn><mrow><mo>−</mo><mn>8</mn></mrow></msup><mo>−</mo><mn>0.4305</mn><mo>≈</mo><mn>0.57</mn></mrow><annotation encoding="application/x-tex">1 - 0.1^8 - 0.9^8 = 1 - 10^{-8} - 0.4305 \approx 0.57</annotation></semantics></math></span></span>.</li>
   <li><span class="m"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>0.4</mn></mrow><annotation encoding="application/x-tex">p = 0.4</annotation></semantics></math></span></span>: <span class="m"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mn>0.</mn><msup><mn>4</mn><mn>8</mn></msup><mo>−</mo><mn>0.</mn><msup><mn>6</mn><mn>8</mn></msup><mo>=</mo><mn>1</mn><mo>−</mo><mn>0.00066</mn><mo>−</mo><mn>0.01680</mn><mo>≈</mo><mn>0.98</mn></mrow><annotation encoding="application/x-tex">1 - 0.4^8 - 0.6^8 = 1 - 0.00066 - 0.01680 \approx 0.98</annotation></semantics></math></span></span>.</li>
-  <li>A task near 10 % wastes about 43 % of its groups; SWE-smith's mixed tasks start near 40 %.</li>
+  <li>A task near 10 % wastes about 43 % of its groups; a task near 40 % wastes about 2 %.</li>
 </ul></div>
 
 <h3>Contamination guard</h3>
 <ul>
-  <li><b>Structural.</b> <code>contamination_report</code> flags a training task that shares a repository (SWE-smith mirrors mapped back to <code>owner/repo</code>), instance id, base commit or identical issue text with the eval set.</li>
-  <li><b><code>pr_</code> mirrors excluded.</b> 7 SWE-smith <code>pr_</code> instances copy SWE-bench dev issues byte for byte.</li>
-  <li><b>SWE-smith results.</b> Screen list and train pool clean against Verified; train and val share repositories and base commits by design, no instance id or issue text.</li>
-  <li><b>mini-coder caveat.</b> Its SFT corpus saw every SWE-smith task in these repositories; no mini-coder comparison on them.</li>
+  <li><b>Structural.</b> <code>contamination_report</code> flags a training task that shares a repository, instance id, base commit or identical issue text with the eval set.</li>
   <li><b>Not built.</b> A semantic near-duplicate check.</li>
 </ul>
 
 <h3>How each pool was built</h3>
 <figure class="fig" id="fig-funnel">
-<svg viewBox="0 0 1000 414" role="img" aria-label="Task funnels. SWE-bench dev 225 tasks, 60 gate-checked, 42 usable, 8 mixed plus 3, 11-task mini-coder pool. Gemma: 86 dev tasks screened, 69 gated, 72 with Gemma outcomes, 11-task Gemma pool. SWE-smith 59,136 rows, 4,662 in the four dev repos, 1,303 after the filter, 200 hashed, 197 gated, 73 mixed, split into 53 train and 20 held-out validation tasks.">
+<svg viewBox="0 0 1000 284" role="img" aria-label="Task funnels. SWE-bench dev 225 tasks, 60 gate-checked, 42 usable, 8 mixed plus 3, 11-task mini-coder pool. Gemma: 86 dev tasks screened, 69 gated, 72 with Gemma outcomes, 11-task Gemma pool.">
   <defs>
     <marker id="fig-funnel-ah" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--ink)"/></marker>
   </defs>
@@ -560,74 +547,19 @@ observation:  &lt;returncode&gt;0&lt;/returncode&gt;
   <path d="M424 204 H 436" class="arrow" marker-end="url(#fig-funnel-ah)"/>
   <path d="M564 204 H 576" class="arrow" marker-end="url(#fig-funnel-ah)"/>
   <path d="M704 204 H 716" class="arrow" marker-end="url(#fig-funnel-ah)"/>
-  <!-- lane C: SWE-smith -->
-  <text x="16" y="280" class="tt">SWE-smith · Gemma screen (09-25 → 09-26)</text>
-  <rect x="16" y="290" width="128" height="84" rx="6" class="box-env"/>
-  <text x="24" y="308" class="tb">SWE-smith</text>
-  <text x="24" y="330" class="th">59,136</text>
-  <text x="24" y="348" class="tm">rows, 222 repos</text>
-  <text x="24" y="363" class="tm">@ ea6d7173</text>
-  <rect x="156" y="290" width="128" height="84" rx="6" class="box"/>
-  <text x="164" y="308" class="tb">4 dev repos</text>
-  <text x="164" y="330" class="th">4,662</text>
-  <text x="164" y="348" class="tm">pr_ mirrors out</text>
-  <text x="164" y="363" class="tm">of 4,780 rows</text>
-  <rect x="296" y="290" width="128" height="84" rx="6" class="box"/>
-  <text x="304" y="308" class="tb">filter</text>
-  <text x="304" y="330" class="th">1,303</text>
-  <text x="304" y="348" class="tm">1 file ≤ 2,000 ch</text>
-  <text x="304" y="363" class="tm">1–5 F2P, issue</text>
-  <rect x="436" y="290" width="128" height="84" rx="6" class="box"/>
-  <text x="444" y="308" class="tb">hashed list</text>
-  <text x="444" y="330" class="th">200</text>
-  <text x="444" y="348" class="tm">50 per repo</text>
-  <text x="444" y="363" class="tm">salt smith-v1</text>
-  <rect x="576" y="290" width="128" height="84" rx="6" class="box"/>
-  <text x="584" y="308" class="tb">gated</text>
-  <text x="584" y="330" class="th">197</text>
-  <text x="584" y="348" class="tm">179 + 18 after</text>
-  <text x="584" y="363" class="tm">P2P calibration</text>
-  <rect x="716" y="290" width="128" height="84" rx="6" class="box"/>
-  <text x="724" y="308" class="tb">screened × 8</text>
-  <text x="724" y="330" class="th">73</text>
-  <text x="724" y="348" class="tm">mixed · 119 never</text>
-  <text x="724" y="363" class="tm">5 always</text>
-  <path d="M144 332 H 156" class="arrow" marker-end="url(#fig-funnel-ah)"/>
-  <path d="M284 332 H 296" class="arrow" marker-end="url(#fig-funnel-ah)"/>
-  <path d="M424 332 H 436" class="arrow" marker-end="url(#fig-funnel-ah)"/>
-  <path d="M564 332 H 576" class="arrow" marker-end="url(#fig-funnel-ah)"/>
-  <path d="M704 332 H 716" class="arrow" marker-end="url(#fig-funnel-ah)"/>
-  <rect x="856" y="290" width="128" height="40" rx="6" class="box-agent"/>
-  <text x="864" y="311" class="th">53</text><text x="892" y="311" class="tb">train</text>
-  <text x="864" y="324" class="tm">pool_smith_v1</text>
-  <rect x="856" y="334" width="128" height="40" rx="6" class="box-reward"/>
-  <text x="864" y="355" class="th">20</text><text x="892" y="355" class="tb">held-out val</text>
-  <text x="864" y="368" class="tm">val_smith_v1</text>
-  <path d="M844 332 H 846 V 310 H 856" class="arrow" marker-end="url(#fig-funnel-ah)"/>
-  <path d="M846 332 V 354 H 856" class="arrow" marker-end="url(#fig-funnel-ah)"/>
-  <text x="16" y="402" class="tm">53 → grpo-gemma-smith-v1 (running) · 20 → paired base-vs-trained eval, never trained on (pending) · counts: EXPERIMENTS.md, configs/*.txt</text>
+  <text x="16" y="272" class="tm">mini-coder pool (11) → next: on-policy KD, same pool and 30-step budget (in preparation) · counts: EXPERIMENTS.md, configs/*.txt</text>
 </svg>
 
-<figcaption>Three task funnels; <b>k</b> = solved episodes out of 8. Blue: source tables. Plain: filters. Teal: pool files. Amber: the held-out set. Dashed: the run trained on that pool. "72" is derived from the <code>pool_gemma_v1.txt</code> header (11 pool + 60 never solved + 1 always solved); the Gemma screen list re-screened the pool-v2 tasks by mistake, so screen and probes overlap. The two 11-task dev pools share 8 tasks.</figcaption>
+<figcaption>Two task funnels; <b>k</b> = solved episodes out of 8. Blue: source tables. Plain: filters. Teal: pool files. Dashed: the run trained on that pool. "72" is derived from the <code>pool_gemma_v1.txt</code> header (11 pool + 60 never solved + 1 always solved); the Gemma screen list re-screened the pool-v2 tasks by mistake, so screen and probes overlap. The two 11-task dev pools share 8 tasks.</figcaption>
 </figure>
 <div class="tablewrap"><table class="data">
 <tr><th>Pool file</th><th class="num">Tasks</th><th>Built from</th><th>Used by</th></tr>
 <tr><td><code>pool_minicoder_mixed.txt</code></td><td class="num">3</td><td>mixed tasks of the 8-task mini-coder probe (16 episodes each)</td><td>grpo-minicoder-v1</td></tr>
-<tr><td><code>pool_minicoder_v2.txt</code></td><td class="num">11</td><td>8 mixed of 42 usable (screens of 60 dev tasks) + the 3 above</td><td>grpo-minicoder-v2</td></tr>
+<tr><td><code>pool_minicoder_v2.txt</code></td><td class="num">11</td><td>8 mixed of 42 usable (screens of 60 dev tasks) + the 3 above</td><td>grpo-minicoder-v2 · on-policy KD <span class="pending">in preparation</span></td></tr>
 <tr><td><code>pool_gemma_v1.txt</code></td><td class="num">11</td><td>Gemma's 3 probes + dev screen; rule: solved sometimes, never always; 30/264 solved</td><td>grpo-gemma-v1</td></tr>
-<tr><td><code>pool_smith_v1.txt</code></td><td class="num">53</td><td>73 mixed of 197 screened, minus the 20 held out; committed before training</td><td>grpo-gemma-smith-v1 <span class="interim">running</span></td></tr>
-<tr><td><code>val_smith_v1.txt</code></td><td class="num">20</td><td>hashed 5 per repository, salt <code>smith-v1-val</code></td><td>paired val eval <span class="pending">pending</span></td></tr>
 <tr><td><code>eval_verified_v1_gated.txt</code></td><td class="num">50</td><td>hashed Verified subset after the gold control</td><td>every Verified eval</td></tr>
 </table></div>
-<ul>
-  <li><b>SWE-smith filter.</b> Non-empty issue, non-empty P2P, not <code>pr_</code>, single-file patch ≤ 2,000 chars, 1–5 F2P tests: 1,303 candidates (marshmallow 103, astroid 380, sqlfluff 484, pydicom 336).</li>
-  <li><b>Screen list.</b> Hashed 50 per repository (salt <code>smith-v1</code>): func_basic 105, func_pm_* 65, combine_file 15, lm_rewrite 15.</li>
-  <li><b>SWE-smith screen.</b> 282/1,576 solved (17.9 %); 119 never, 73 mixed, 5 always.</li>
-  <li><b>Mixed per repository.</b> marshmallow 23, sqlfluff 18, astroid 18, pydicom 14.</li>
-  <li><b>Mixed per strategy.</b> func_basic supplies 54 of the 73; func_pm_* and lm_rewrite solve at 0–7 %.</li>
-  <li><b>Why a val set.</b> Gemma's Verified base rate is 7.1 %, so a ±4 pp CI hides small gains; never-trained mixed tasks give a far more sensitive paired comparison. Both arms are re-run with fresh seeds, because the screen's numbers selected the tasks.</li>
-</ul>
-<div class="callout say"><span class="tag">Say it</span><p>"Every task passes a gold-equals-one, empty-equals-zero gate offline, then a screen keeps only tasks the base model sometimes solves, since those are the only groups with a gradient. SWE-smith took the pool from 11 dev tasks to 53, plus 20 pre-registered held-out tasks for a sensitive paired eval."</p></div>
+<div class="callout say"><span class="tag">Say it</span><p>"Every task passes a gold-equals-one, empty-equals-zero gate offline, then a screen keeps only tasks the base model sometimes solves, since those are the only groups with a gradient. On SWE-bench dev that leaves an 11-task pool per model, and the planned distillation run reuses the mini-coder pool so it compares like for like with GRPO."</p></div>
 
 
 <h2 id="episode"><span class="num">04</span>What does one attempt look like?</h2>
@@ -870,12 +802,6 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
   </tbody>
 </table></div>
 <p>One more rule. If a sandbox crashes, that attempt leaves its group. It doesn't count as a 0. Scoring it 0 would punish tokens that did nothing wrong (section 07).</p>
-
-<h3>How is SWE-smith graded differently?</h3>
-<ul>
-  <li><b>The bug is planted.</b> SWE-smith starts from a clean repo and applies a synthetic bug patch, so the real fix is just that patch reversed. We delete the failing test files and wipe the git history in the model's sandbox, so it can't look the answer up.</li>
-  <li><b>We build the test run ourselves.</b> There's no official script, so we run pytest on the FAIL_TO_PASS files. "Nothing else broke" only covers the other tests in those files, minus any that fail offline even with the real fix.</li>
-</ul>
 
 <div class="callout say"><span class="tag">Say it</span><p>"The reward is 1 only if the failing tests now pass and every test that passed before still passes. We grade by replaying just the diff in a fresh container, with test-file edits stripped and the hidden tests added. The safety limits, like network off, memory and file caps and a watchdog, each came from a real incident, like one attempt writing 32 gigabytes and taking down the trainer."</p></div>
 
@@ -1335,26 +1261,26 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 <p>That sums to +1.25. Divide by 49 tasks and you get +2.6 points.</p>
 <p>Then we ask: is +2.6 bigger than chance? We flip the sign of each task's difference at random, over and over. If the shuffled averages are often as big as ours, it's noise. For Gemma that happened 39 % of the time, so p = 0.39.</p>
 <figure class="fig" id="fig-ci">
-<svg viewBox="0 0 1000 250" role="img" aria-label="Paired Verified differences with 95 percent bootstrap intervals: mini-coder plus 1.5 points from minus 3.5 to plus 6.5; Gemma plus 2.6 points from minus 1.5 to plus 7.1; both intervals contain zero. Ticks mark the 80 percent power minimum detectable effect: 7.3 and 6.2 points.">
-<line class="grid" x1="200" y1="30" x2="200" y2="190"/>
-<line class="grid" x1="295" y1="30" x2="295" y2="190"/>
-<line class="grid" x1="390" y1="30" x2="390" y2="190"/>
-<line class="zero" x1="485" y1="24" x2="485" y2="196"/>
-<line class="grid" x1="580" y1="30" x2="580" y2="190"/>
-<line class="grid" x1="675" y1="30" x2="675" y2="190"/>
-<line class="grid" x1="770" y1="30" x2="770" y2="190"/>
-<line class="grid" x1="865" y1="30" x2="865" y2="190"/>
-<line class="grid" x1="960" y1="30" x2="960" y2="190"/>
-<text class="tm" x="200" y="212" text-anchor="middle">−6</text>
-<text class="tm" x="295" y="212" text-anchor="middle">−4</text>
-<text class="tm" x="390" y="212" text-anchor="middle">−2</text>
-<text class="tm" x="485" y="212" text-anchor="middle">0</text>
-<text class="tm" x="580" y="212" text-anchor="middle">+2</text>
-<text class="tm" x="675" y="212" text-anchor="middle">+4</text>
-<text class="tm" x="770" y="212" text-anchor="middle">+6</text>
-<text class="tm" x="865" y="212" text-anchor="middle">+8</text>
-<text class="tm" x="960" y="212" text-anchor="middle">+10</text>
-<text class="tm" x="580" y="236" text-anchor="middle">trained − base, percentage points (per-task mean)</text>
+<svg viewBox="0 0 1000 220" role="img" aria-label="Paired Verified differences with 95 percent bootstrap intervals: mini-coder plus 1.5 points from minus 3.5 to plus 6.5; Gemma plus 2.6 points from minus 1.5 to plus 7.1; both intervals contain zero. Ticks mark the 80 percent power minimum detectable effect: 7.3 and 6.2 points.">
+<line class="grid" x1="200" y1="30" x2="200" y2="160"/>
+<line class="grid" x1="295" y1="30" x2="295" y2="160"/>
+<line class="grid" x1="390" y1="30" x2="390" y2="160"/>
+<line class="zero" x1="485" y1="24" x2="485" y2="166"/>
+<line class="grid" x1="580" y1="30" x2="580" y2="160"/>
+<line class="grid" x1="675" y1="30" x2="675" y2="160"/>
+<line class="grid" x1="770" y1="30" x2="770" y2="160"/>
+<line class="grid" x1="865" y1="30" x2="865" y2="160"/>
+<line class="grid" x1="960" y1="30" x2="960" y2="160"/>
+<text class="tm" x="200" y="182" text-anchor="middle">−6</text>
+<text class="tm" x="295" y="182" text-anchor="middle">−4</text>
+<text class="tm" x="390" y="182" text-anchor="middle">−2</text>
+<text class="tm" x="485" y="182" text-anchor="middle">0</text>
+<text class="tm" x="580" y="182" text-anchor="middle">+2</text>
+<text class="tm" x="675" y="182" text-anchor="middle">+4</text>
+<text class="tm" x="770" y="182" text-anchor="middle">+6</text>
+<text class="tm" x="865" y="182" text-anchor="middle">+8</text>
+<text class="tm" x="960" y="182" text-anchor="middle">+10</text>
+<text class="tm" x="580" y="206" text-anchor="middle">trained − base, percentage points (per-task mean)</text>
 <text class="tb" x="16" y="64">mini-coder, Verified</text>
 <text class="tm" x="16" y="80">50 × 4, p = 0.71</text>
 <line class="arrow-blue" x1="318.75" y1="68" x2="793.75" y2="68"/>
@@ -1373,11 +1299,8 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 <text class="tt" x="608" y="112" text-anchor="middle">+2.6 [−1.5, +7.1]</text>
 <line class="arrow-amber" x1="779.5" y1="118" x2="779.5" y2="138"/>
 <text class="ta" x="840" y="132">MDE 6.2</text>
-<text class="tb" x="16" y="178">SWE-smith val</text>
-<text class="tm" x="16" y="194">20 × 8, pending</text>
-<line class="refline" x1="200" y1="176" x2="960" y2="176"/>
 </svg>
-<figcaption>Each dot is how much the trained model beat its base model on Verified, in percentage points, averaged over tasks. The bar is the 95 % confidence interval, and both bars cross zero. The amber tick marks the smallest gain this test would catch 4 times out of 5. The SWE-smith row is still pending.</figcaption>
+<figcaption>Each dot is how much the trained model beat its base model on Verified, in percentage points, averaged over tasks. The bar is the 95 % confidence interval, and both bars cross zero. The amber tick marks the smallest gain this test would catch 4 times out of 5.</figcaption>
 </figure>
 <p>There's also a limit on what this test can see. At a 7 % base rate, it only reliably catches a gain of about 6 points. Our +2.6 is well below that.</p>
 
@@ -1616,11 +1539,11 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 <ul>
   <li><b>The instrument is trusted.</b> Base mini-coder scored 19.0 % on our harness, against 18.6 % on its model card. Our setup reproduces the model.</li>
   <li><b>The mechanism is clean.</b> The objective went up on every update, and the drift stayed flat.</li>
-  <li><b>So the pipeline isn't the problem.</b> What we change next is the training signal: more tasks the model sometimes solves, and a reward that sees more than pass or fail.</li>
+  <li><b>So the pipeline isn't the problem.</b> What we change next is the training signal: a teacher model that scores every token, instead of one pass or fail per attempt (<a href="#next">section 12</a>).</li>
   <li><b>Pass/fail doesn't pay for format.</b> Gemma's one measurable change was valid actions dropping from 94.7 % to 91.1 %.</li>
 </ul>
 
-<div class="callout say"><span class="tag">Say it</span><p>The pipeline works end to end, and both models came back as clean nulls on Verified: +1.5 points for mini-coder and +2.6 for Gemma, neither bigger than chance. Because the base model reproduces its published score and every update moved the right way, we trust the instrument, so we're changing the training signal next.</p></div>
+<div class="callout say"><span class="tag">Say it</span><p>The pipeline works end to end, and both models came back as clean nulls on Verified: +1.5 points for mini-coder and +2.6 for Gemma, neither bigger than chance. Because the base model reproduces its published score and every update moved the right way, we trust the instrument. So next we're changing the training signal: mini-coder-4b, a bigger teacher, will score every token mini-coder-1.7b writes.</p></div>
 
 
 <h2 id="broke"><span class="num">11</span>What broke, and what it taught us</h2>
@@ -1664,46 +1587,72 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 
 <h3>The crash we designed on purpose</h3>
 <ul>
-  <li><b>What happened.</b> On 09-26 at 04:56, node04's server exited with no traceback, in the middle of a 197-task screen.</li>
-  <li><b>What it really was.</b> Working as designed. We told the kernel to kill the server first when node04's RAM fills, not a sandbox or a grade. The screen kept going on node08 alone.</li>
+  <li><b>What happened.</b> On 09-26 at 04:56, node04's server exited with no traceback, in the middle of a long probe run.</li>
+  <li><b>What it really was.</b> Working as designed. Sandbox memory pressure filled node04's 14 GB of RAM, and we had marked the server as the kernel's first choice to kill when that happens, ahead of any sandbox or grade. The run kept going on node08 alone.</li>
   <li><b>What we changed.</b> Nothing in the design. But the first restart used an old command line and hit the compile failure above. Restarting with the recorded flags had it serving again at 11:08. Lesson: keep the exact launch command with the run.</li>
 </ul>
 
-<h3>The bug hiding in git history</h3>
-<ul>
-  <li><b>What happened.</b> While scoping SWE-smith, before any episode ran, we checked what the model could see inside the sandbox.</li>
-  <li><b>What it really was.</b> SWE-smith commits each bug on top of the clean code. So <code>git show HEAD</code> would print the exact fix, in reverse.</li>
-  <li><b>What we changed.</b> The sandbox setup ends with <code>rm -rf .git; git init; git add -A; git commit</code>: one commit, no history. The grader rebuilds the same state.</li>
-</ul>
-
-<div class="callout say"><span class="tag">Say it</span><p>Most of what broke was resource limits on shared machines or holes in the environment, not the learning algorithm. Each fix was small, like a ulimit, a parser change or a fresh git history, and every one came from reading the real logs and replies instead of trusting the averages.</p></div>
+<div class="callout say"><span class="tag">Say it</span><p>Most of what broke was resource limits on shared machines or holes in the environment, not the learning algorithm. Each fix was small, like a ulimit, a parser change or a recorded launch command, and every one came from reading the real logs and replies instead of trusting the averages.</p></div>
 
 
 <h2 id="next"><span class="num">12</span>What we're doing next</h2>
 
-<h3>What's running right now?</h3>
-<p>A new Gemma run, <code>grpo-gemma-smith-v1</code>, started at 11:42 on 09-26. <span class="interim">running</span></p>
-<p>It uses exactly the same recipe as the first Gemma run. Only one thing changed: the task pool, from 11 dev tasks to 53 SWE-smith tasks.</p>
-<p>Why that change? GRPO only learns from mixed groups, where some attempts pass and some fail. Our dev pool had only 11 tasks. The SWE-smith screen found 73 mixed ones.</p>
-<p>The first three steps solved 12, 8 and 15 of 32 attempts. 9 of the 12 groups were mixed, so most attempts carried a gradient.</p>
-<p>Three steps is far too early to read a trend. The run needs about 9–10 hours.</p>
+<h3>Why change the signal, not the code?</h3>
+<p>Both GRPO runs were clean nulls, and section 10 showed the pipeline itself is sound. So the thing to change is what the model learns from.</p>
+<p>GRPO gives one pass/fail bit per attempt. An attempt is about 3,600 tokens the model wrote, and all of them share that one bit.</p>
+<p>Often there isn't even a bit to share. In the Gemma run, 50 of 120 groups (42 %) had all 8 attempts agree, so they taught nothing.</p>
 
-<h3>Why build our own held-out test?</h3>
-<p>Verified is a blunt instrument for Gemma. Most tasks come back 0 of 4 for both models. In the last eval, 36 of 49 tasks did, so only 11 of 49 tasks carried any signal.</p>
-<p>So before training started, we set aside 20 mixed SWE-smith tasks, 5 per repo, picked by hash and committed to git. The run never sees them. <span class="pending">pending</span></p>
-<p>Every one of those tasks was mixed in the screen, so almost every task can show a difference. In the screen they solved 57 of 160 attempts, about 36 %.</p>
-<p>After training, both models re-run those 20 tasks, 8 attempts each, with fresh seeds. Fresh seeds matter, because the screen's own numbers are what picked these tasks.</p>
-<p>One caveat. These tasks share repos and bug generators with the training pool, so this measures in-distribution learning. Verified stays the transfer test, and that eval is queued too. <span class="pending">pending</span></p>
+<h3>So what's on-policy distillation? <span class="pending">in preparation</span></h3>
+<p>The student keeps playing exactly as before. mini-coder-1.7b works the bug one bash command at a time, in the same harness.</p>
+<p>Then a bigger teacher, mini-coder-4b, reads the student's attempt. It doesn't write anything. For every token the student wrote, it says how likely it would have been to write that token itself.</p>
+<p>Where the teacher likes a token more than the student did, that token gets nudged up. Where the teacher would rarely have written it, it gets nudged down.</p>
+<div class="formula"><span class="lbl">Signal per token</span>signal per token = teacher log-prob − student log-prob</div>
+<p>This number takes the place of GRPO's group advantage. In the jargon, it's a one-token estimate of the reverse KL between student and teacher, flipped so that bigger is better.</p>
+<p>A tiny example. Say the student runs <code>grep -n</code> to find the right function. The teacher would do the same, so the two log-probs are close and the signal is near zero.</p>
+<p>A few turns later, say the student submits without running any test. The teacher would rarely do that, so its log-prob for those tokens sits far below the student's, and the signal is strongly negative.</p>
 
-<h3>Then: give credit for not breaking things</h3>
-<p>Right now, "broke three other tests" and "broke nothing" both score 0. In the first Gemma run, 384 of 960 attempts broke a test that used to pass or didn't apply, and 134 broke nothing but didn't fix the bug.</p>
+<h3>Why is that a better signal?</h3>
+<ul>
+  <li><b>Every token gets feedback.</b> One number per token, instead of one bit per 3,600 tokens.</li>
+  <li><b>Failed attempts still teach.</b> Every attempt gets scored, including the ones that fail the tests. A group where all 8 fail isn't wasted any more.</li>
+  <li><b>It trains on the student's own mistakes.</b> Plain fine-tuning only shows expert transcripts. Here the teacher grades the spots the student actually gets itself into.</li>
+</ul>
+
+<h3>Why these two models?</h3>
+<ul>
+  <li><b>Same family.</b> Both are built on Qwen3 and share one tokenizer, so the teacher can score the student's exact token ids.</li>
+  <li><b>Same scaffold.</b> Both were fine-tuned on mini-swe-agent transcripts, the same reply format our harness uses.</li>
+</ul>
+
+<h3>What has to be true first? <span class="pending">pending</span></h3>
+<p>The teacher has to be clearly better than the student on this pool. Otherwise it has nothing to teach.</p>
+<p>An earlier probe was cut short, but by then mini-coder-4b had solved 9 of 18 attempts, 50 %. During its second GRPO run, on the same pool, the 1.7b averaged about 37 % per step.</p>
+<p>18 attempts is too few to trust, so a full probe has to confirm the gap before we train.</p>
+
+<h3>How will we know if it worked? <span class="pending">pending</span></h3>
+<p>We copy the second mini-coder GRPO run: the same 11-task dev pool and the same 30-step budget.</p>
+<p>Then we test on the same 50 Verified tasks. That makes it like for like with GRPO, which moved mini-coder from 19.0 % to 20.5 % (p = 0.71).</p>
+
+<h3>Where will it run? <span class="pending">planned</span></h3>
+<ul>
+  <li><b>node08, GPU 0.</b> The student's server, which will generate the attempts.</li>
+  <li><b>node08, GPU 1.</b> The trainer, which will share the card with the teacher's server. The teacher will run in vLLM's sleep mode, so it can give its memory back when it isn't scoring.</li>
+  <li><b>node04, optional.</b> A second student server could run on the laptop card.</li>
+</ul>
+
+<h3>And what about Gemma?</h3>
+<p>Later, Gemma needs a teacher from its own family. One candidate to probe is Gemma 4 12B-it.</p>
+<p>A Qwen teacher can't score Gemma's tokens directly, because the two tokenizers split text differently.</p>
+
+<h3>Also on the list: give credit for not breaking things</h3>
+<p>Right now, "broke three other tests" and "broke nothing" both score 0. In the Gemma run, 384 of 960 attempts broke a test that used to pass or didn't apply, and 134 broke nothing but didn't fix the bug.</p>
 <p>Pass-to-pass tests are the ones that should stay green. Giving partial credit for keeping them green would separate those two cases, and give a gradient even in groups where nobody fixed the bug.</p>
 
-<h3>Then: stop the GPUs waiting on each other</h3>
+<h3>Also on the list: stop the GPUs waiting on each other</h3>
 <p>Today the servers idle while the trainer updates, and the trainer idles while the servers generate. The update alone is about 58 % of a step.</p>
 <p>Asynchronous rollouts would overlap the two: generate step k+1 with the old adapter while step k trains. The price is that rollouts are one version stale, so the importance weights we already compute start doing real work.</p>
 
-<div class="callout say"><span class="tag">Say it</span><p>The run going now changes only one thing: the pool, from 11 tasks to 53 SWE-smith tasks, and 9 of its first 12 groups were mixed. We judge it on 20 held-out tasks we locked in before training, because on Verified only 11 of 49 tasks carried any signal. After that, we'll reward keeping pass-to-pass tests green, and overlap generation with training.</p></div>
+<div class="callout say"><span class="tag">Say it</span><p>Both GRPO runs were clean nulls, and our best guess is the signal: one pass/fail bit per 3,600-token attempt, and 42 % of groups taught nothing. So next is on-policy distillation: mini-coder-1.7b writes the attempt, mini-coder-4b scores every token, and the signal is teacher log-prob minus student log-prob. Once a full probe confirms the teacher is clearly stronger, we run it on the same pool, 30 steps and 50 Verified tasks, so it's like for like with GRPO.</p></div>
 
 
 <h2 id="questions"><span class="num">13</span>Questions you're likely to get</h2>
@@ -1721,14 +1670,14 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 <p>The environment is deterministic: a container with the repository at the right commit. The checker is deterministic: the repository's own tests, so there's no judge model to talk into a good score. And the task is genuinely multi-turn: find the code, read it, edit, run, read the error, try again. One prompt can't teach that loop, but a reward at the end can.</p>
 </details>
 
-<details><summary>You train on dev and SWE-smith and test on Verified. Where could contamination still get in?</summary>
+<details><summary>You train on dev and test on Verified. Where could contamination still get in?</summary>
 <p>Train and test share no repository, task id, commit or issue text, and a check runs on every pool. If we trained on Verified the number would go up and mean nothing, because the model would learn those exact tests.</p>
-<p>The real leak is in the models. mini-coder's fine-tuning data covered every SWE-smith task in our four repositories, so we never compare mini-coder on them. Gemma had no agent fine-tuning, so its numbers are cleaner, and the claim still rests on Verified.</p>
+<p>The real leak is in the models. mini-coder was fine-tuned on agent transcripts from the same four repositories our dev pools use, so its pool numbers measure familiarity as much as skill. Gemma had no agent fine-tuning, so its numbers are cleaner, and the claim still rests on Verified.</p>
 </details>
 
-<details><summary>Why were your training pools so small, and what replaced them?</summary>
+<details><summary>Why were your training pools so small?</summary>
 <p>A task has to pass two filters. First it has to be usable: offline, the maintainers' fix must score 1 and an empty patch must score 0. Then it has to be useful: the model must solve it sometimes but not always in 8 tries.</p>
-<p>If all 8 attempts pass or all fail, there's nothing to compare, so no gradient. On the dev split only 11 tasks survived for Gemma, and 50 of its 120 groups gave no signal. SWE-smith fixed that: we screened 197 generated bugs 8 times each, found 73 mixed ones, and kept 53 for training and 20 for a held-out test.</p>
+<p>If all 8 attempts pass or all fail, there's nothing to compare, so no gradient. On the dev split only 11 tasks survived for Gemma, and 50 of its 120 groups gave no signal. That's one reason the next experiment scores every token instead (section 12).</p>
 </details>
 
 <h3>The harness and the reward</h3>
@@ -1750,12 +1699,12 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 
 <details><summary>Why a 0/1 reward and not partial credit?</summary>
 <p>Tests can't be argued with, and a 0/1 score is hard to game. Partial credit on the fail-to-pass tests would add nothing here, because every task in the dev pool has exactly one such test.</p>
-<p>Where partial credit could help is the pass-to-pass tests, the ones that must keep passing. In the first Gemma run, 384 of 960 patches broke one of those or didn't apply. That's the shaping idea on our list, and evaluation would stay 0/1.</p>
+<p>Where partial credit could help is the pass-to-pass tests, the ones that must keep passing. In the Gemma run, 384 of 960 patches broke one of those or didn't apply. That's the shaping idea on our list, and evaluation would stay 0/1.</p>
 </details>
 
 <details><summary>Can the model cheat the reward?</summary>
 <p>We assume code under test will do anything it can, since it runs as root inside its container. So we grade only the diff, replayed in a fresh container, with the grading inputs mounted read-only.</p>
-<p>The first version was writable, and a patch could have rewritten the list of tests to check. The network is off; before that, a sandbox could reach the server's adapter admin API and GitHub, where the real fix lives. Patches that touch test files or test config are dropped. For SWE-smith we also wipe the git history, because otherwise <code>git show</code> would print the exact fix.</p>
+<p>The first version was writable, and a patch could have rewritten the list of tests to check. The network is off; before that, a sandbox could reach the server's adapter admin API and GitHub, where the real fix lives. Patches that touch test files or test config are dropped.</p>
 </details>
 
 <details><summary>Your showcase episode got full reward for a fix that's wrong in spirit. Does that break the story?</summary>
@@ -1787,7 +1736,7 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 
 <details><summary>Why LoRA, and how did you pick the learning rate?</summary>
 <p>Memory first. Even with LoRA, one 16k-token Gemma update peaks at 12.75 GiB on a 16 GB card. LoRA also makes syncing cheap: the adapter is one file of about 140 MB that the servers load without a restart.</p>
-<p>We use rank 16, about 35 million trainable weights. On mini-coder we raised the learning rate from 2e-5 to 5e-5 between runs: drift went up and results didn't move. Gradient norms stayed under 0.09, which says the signal is small, so more mixed tasks come before a bigger step.</p>
+<p>We use rank 16, about 35 million trainable weights. On mini-coder we raised the learning rate from 2e-5 to 5e-5 between runs: drift went up and results didn't move. Gradient norms stayed under 0.09, which says the signal is small, so a richer signal comes before a bigger step.</p>
 </details>
 
 <h3>Systems</h3>
@@ -1811,7 +1760,7 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 
 <details><summary>Two nulls. How do you know it isn't a bug in the trainer?</summary>
 <p>We check the mechanism separately from the outcome. The server really serves the new weights: drift from the base is above zero after every sync.</p>
-<p>Each update moves the right way on its own batch, 29 of 29 times for Gemma. The harness reproduces mini-coder's published score, 19.0 % against the card's 18.6 %. And the gradients are small but present, well under the clip. Everything points to "too weak", not "broken".</p>
+<p>Each update moves the right way on its own batch, 29 of 29 times for Gemma. The harness reproduces mini-coder's published score, 19.0 % against the card's 18.6 %. And the gradients are small but present, well under the clip. Everything points to "too weak", not "broken", so the next change goes to the signal, not the code.</p>
 </details>
 
 <details><summary>Why switch to Gemma instead of fixing the Qwen run?</summary>
@@ -1819,13 +1768,14 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 <p>The per-task change stayed at −1.2 ± 2.6 points, even though the policy clearly moved. We judged 1.7B too small, and Gemma 4 E4B landed in our target band at 7.2 % on the pool. Honestly, the bet hasn't paid off yet: Gemma's Verified base rate is 7.1 %, below mini-coder's 19.0 %.</p>
 </details>
 
-<details><summary>Why a 20-task held-out set when you already test on Verified?</summary>
-<p>Gemma solves only 7.1 % of Verified, so most tasks are 0 out of 4 for both models and carry no information. The interval ends up about ±4 points wide, so a small gain is invisible.</p>
-<p>The held-out tasks were mixed in the screen, so they start near 40 %, where a before-versus-after comparison is much more sensitive. They were picked by hash and committed before training started. They share repositories with the training pool, so they measure in-distribution learning, and Verified stays the transfer test.</p>
+<details><summary>What would you try next, and why?</summary>
+<p>On-policy distillation. mini-coder-1.7b writes the attempt as usual, and mini-coder-4b scores every token it wrote. The signal per token is the teacher's log-prob minus the student's, in place of the group advantage.</p>
+<p>Why: GRPO gives one pass/fail bit per attempt of about 3,600 tokens, and 42 % of the Gemma run's groups taught nothing. Distillation gives every token feedback, even in failed attempts, and it trains on the student's own mistakes, not only on expert transcripts.</p>
+<p>Why mini-coder and not Gemma: the two mini-coders are Qwen3-based, share one tokenizer and were fine-tuned in our harness's reply format. Gemma needs a teacher from its own family, and that comes later. We'll match the second mini-coder run's 11-task pool, 30 steps and 50 Verified tasks, once a full probe confirms the teacher is clearly stronger.</p>
 </details>
 
 <details><summary>What would you do with 10× compute?</summary>
-<p>First, a much bigger pool, hundreds of tasks instead of 53. The share of mixed groups is the share of compute that gives any gradient at all.</p>
+<p>First, a much bigger pool, hundreds of tasks instead of 11. The share of mixed groups is the share of compute that gives any gradient at all.</p>
 <p>Second, asynchronous rollouts, because the update is 58 % of each step's wall time, and that's where a PPO-style clip comes back. Third, 300 steps instead of 30, since the policy never left the base model's neighbourhood. Fourth, a stronger eval: 100 tasks with 8 tries each, plus three seeds of the training run.</p>
 </details>
 
@@ -1845,7 +1795,7 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
   <li><b>2–5 · Why this benchmark, and where the bugs come from (sections 01, 03).</b>
     <ul>
       <li>SWE-bench gives a fixed environment, a fixed checker and a genuinely multi-turn task.</li>
-      <li>We practise on dev and SWE-smith bugs and test on Verified, which shares no repository with them.</li>
+      <li>We practise on SWE-bench dev bugs and test on Verified, which shares no repository with them.</li>
       <li>We only train on bugs the model solves sometimes, because those are the only ones with a signal.</li>
     </ul>
   </li>
@@ -1874,7 +1824,7 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
     <ul>
       <li>mini-coder on Verified: +1.5 points, p = 0.71. Gemma: 7.1 % → 9.7 %, +2.6 points, p = 0.39.</li>
       <li>"Two clean nulls. The instrument is trusted, so the next change goes to the training signal."</li>
-      <li>The run training now changes only the pool: 53 SWE-smith bugs, with 20 held out in advance.</li>
+      <li>Next, in preparation: on-policy distillation, where mini-coder-4b scores every token mini-coder-1.7b writes.</li>
     </ul>
   </li>
 </ol>
@@ -1894,7 +1844,7 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
   <li><b>The training math (section 07).</b>
     <ul>
       <li>The group is its own yardstick, so there's no critic network.</li>
-      <li>Groups where all 8 agree are skipped: 50 of 120 in the first Gemma run.</li>
+      <li>Groups where all 8 agree are skipped: 50 of 120 in the Gemma run.</li>
       <li>The trainer-versus-server weight, capped at 2, touched 0.014 % of tokens.</li>
     </ul>
   </li>
@@ -1909,7 +1859,7 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
     <ul>
       <li>Compare each task with itself; pooled rates rise just from which tasks got drawn.</li>
       <li>Early readings fade: Gemma peaked at +6.9 mid-run and ended at +2.0.</li>
-      <li>Why the held-out set: tasks near 40 % show a gain far more clearly than a 7 % base.</li>
+      <li>What the test can see: at a 7 % base rate it only reliably catches a gain of about 6 points.</li>
     </ul>
   </li>
   <li><b>What broke (section 11).</b> Pick three; for each say the symptom, the cause and the fix.
@@ -1923,7 +1873,7 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
 
 <h3>Closing · minutes 55–60</h3>
 <ul>
-  <li><b>What's next (section 12).</b> The held-out test of the SWE-smith run, then Verified. After that, reward shaping on the tests that must keep passing, since 384 of 960 patches broke one or didn't apply.</li>
+  <li><b>What's next (section 12).</b> On-policy distillation: teacher log-prob minus student log-prob on every token, instead of one pass/fail per attempt. First a full probe to confirm mini-coder-4b is clearly stronger, then the same pool, 30 steps and 50 Verified tasks as the second mini-coder run. Also on the list: reward shaping on the tests that must keep passing, since 384 of 960 patches broke one or didn't apply.</li>
   <li><b>One question to ask them.</b> "How do you evaluate agents on your own codebases: tests, a judge model, or people?"</li>
 </ul>
 
@@ -1934,7 +1884,7 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
   <li>If they stay in one block for 30 minutes, that's a good sign. Follow them.</li>
 </ul>
 
-<div class="callout say"><span class="tag">Say it</span><p>"Thirty GRPO steps moved Gemma on Verified from 7.1 % to 9.7 %, which is within noise, our second clean null. The loop is trusted, so the run training now changes only the practice pool, with a held-out set fixed in advance to judge it."</p></div>
+<div class="callout say"><span class="tag">Say it</span><p>"Thirty GRPO steps moved Gemma on Verified from 7.1 % to 9.7 %, which is within noise, our second clean null. The loop is trusted, so next we change the signal: a bigger teacher, mini-coder-4b, will score every token mini-coder-1.7b writes."</p></div>
 
 
 <h2 id="glossary"><span class="num">A</span>Glossary</h2>
@@ -1950,19 +1900,18 @@ log-prob   none   none   −0.02 −1.31 −0.00             −0.00    none</co
   <dt>P2P (pass-to-pass)</dt><dd>Tests that pass before the fix and must keep passing, so the patch didn't break anything.</dd>
   <dt>reward</dt><dd>1 if every F2P and P2P test passes when the patch is replayed in a fresh container, otherwise 0.</dd>
   <dt>gold gate</dt><dd>A check run once per task: the maintainers' fix must score 1 and an empty patch 0, or the task is dropped.</dd>
-  <dt>SWE-smith</dt><dd>A dataset of generated bugs planted in real repositories; we use the 4 repositories we already train on.</dd>
-  <dt>pool</dt><dd>The bugs a training run draws from, 4 per step: 11 real bugs in the first Gemma run, 53 generated ones now.</dd>
+  <dt>pool</dt><dd>The bugs a training run draws from, 4 per step: 11 SWE-bench dev bugs in both the Gemma run and the second mini-coder run (the two pools share 8).</dd>
   <dt>mixed task</dt><dd>A bug the model solved sometimes but not always in 8 tries; the only kind that gives a gradient.</dd>
-  <dt>held-out val set</dt><dd>20 mixed SWE-smith bugs picked by hash and committed before training, never trained on.</dd>
   <dt>group</dt><dd>The 8 attempts at one bug in one step; they are judged against each other.</dd>
   <dt>degenerate group</dt><dd>A group where all 8 attempts got the same reward, so there's nothing to compare and it's skipped.</dd>
   <dt>step</dt><dd>4 bugs, 32 attempts, grading, one update of the adapter, then the new adapter goes to the servers.</dd>
   <dt>advantage</dt><dd>How much better or worse an attempt did than its group's average, scaled by the group's spread.</dd>
+  <dt>on-policy distillation</dt><dd>The planned next step: the student writes the attempt, a bigger teacher scores every token it wrote, and teacher log-prob minus student log-prob is the signal.</dd>
   <dt>importance weight</dt><dd>A per-token correction for the small gap between the trainer's and the server's probabilities, capped at 2.</dd>
   <dt>served drift</dt><dd>How far the served model's probabilities have moved from the base model on one fixed test sentence, checked after every sync.</dd>
   <dt>objective gain</dt><dd>A check after each update that the step moved the right way on the batch it just trained on.</dd>
   <dt>LoRA adapter</dt><dd>The small add-on we train instead of the whole model; one file of about 140 MB that the servers load without a restart.</dd>
-  <dt>slot</dt><dd>Room for one live attempt on one server; the Gemma runs use 20 (12 on node08, 8 on node04).</dd>
+  <dt>slot</dt><dd>Room for one live attempt on one server; the Gemma run uses 20 (12 on node08, 8 on node04).</dd>
   <dt>prefix cache</dt><dd>vLLM reusing the work it already did on the start of a conversation, so each turn only pays for the new part.</dd>
   <dt>PLE table</dt><dd>Gemma's 5.25 GiB per-layer embedding table; each token reads one small row, so it can live in CPU memory.</dd>
 </dl>

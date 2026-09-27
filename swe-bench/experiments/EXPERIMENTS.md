@@ -670,8 +670,41 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   +15 pp gain; at 16 episodes SE ≈ 3.4 pp, CI ± 6.6 pp, power 34 / 81 / 99 %. Cost ≈ +1 h. In-run signal at step 16:
   task-stratified late−early −0.9 ± 5.1 pp over 12 tasks (pooled 31.6 % → 40.2 % is task mix); 184/512 solved; 50/64
   groups mixed; objective gain > 0 on 16/16.
+- **HALTED at step 20 (2026-09-26 20:14, user decision: "checkpoint and halt the smith work, focus on the KD
+  experiments"; SWE-smith is also removed from every explainer page until it is restarted).** The trainer got SIGTERM
+  right after step 20 was recorded, finished its in-flight episodes without grading them, and exited cleanly (no
+  sandboxes left). Steps 1–20: 242/640 solved (step 20: 17/32); none of the evals ran. Checkpoint: step-19 and step-20
+  adapters (step-20 hash `2a9cb390ff09`, served as `policy-3fa9cd-s20`) on node08 `/var/tmp/swe/adapters/grpo-gemma-smith-v1`
+  and archived on node04 `/var/tmp/swe/adapters-archive/grpo-gemma-smith-v1` (sha256 equal). node08's copy of the
+  SWE-smith images was removed (node04 `/var/tmp/swe/sif-smith` holds identical copies, re-verified). **To resume:**
+  `rsync -a node04:/var/tmp/swe/sif-smith/ /var/tmp/swe/sif-smith/` on node08, relaunch the Gemma servers (node08 GPU0
+  `22_serve_gemma4.sh`, node04 per swe-bench/CLAUDE.md), then `SARL_SIF_DIR=/var/tmp/swe/sif-smith bash
+  scripts/21_train.sh configs/grpo_gemma_smith_v1.yaml --run-name grpo-gemma-smith-v1 --resume` (continues at step 21;
+  AdamW moments restart from zero), and relaunch the eval chain (held-out 16 episodes, then Verified).
 
 ---
+
+## 2026-09-26 On-policy knowledge distillation (mini-coder-4b → mini-coder-1.7b)
+
+- **Why:** two clean GRPO nulls with a working mechanism point at the signal: one pass/fail bit per ~3,600-token episode,
+  42 % of dev-pool groups (50/120) unanimous. On-policy KD: the student samples, the teacher scores every sampled token,
+  per-token signal = teacher log-prob − student log-prob (sampled-token reverse-KL), so failing episodes also teach and
+  the student learns on its own states. Same family (Qwen3, one tokenizer) and same mini-swe-agent scaffold, so no
+  cross-tokenizer alignment; compared like for like against grpo-minicoder-v2 (same 11-task pool, 30 steps × 4 × 8,
+  lr 5e-5, LoRA r16; Verified 19.0 % → 20.5 %, p = 0.71).
+- **Runway (checked 20:35):** node08 `/var` 15 GB free after copying the 8 missing pool images from node04 into
+  `/var/tmp/swe/sif-dev` (sha256 equal; the other 3 are symlinks into `/tmp/swe-sif`) and removing the duplicate
+  SWE-smith images; `/tmp` 12 GB free; RAM 57 GB available; NFS 144 GB free (80 %). node04 `/var` 59 GB free. The bf16
+  Gemma copy in node08 `hf-cache` (15 GB) is kept (user decision). A KD run adds only ~130 MB of adapters
+  (`keep_adapters: 2`) and ~70 MB of trajectories.
+- **Teacher probe (launched 20:38):** servers node08 GPU0 mini-coder-4b :8001 (KV 5.29 GiB ≈ 1.18 × 32k tokens, so 5
+  slots) and GPU1 mini-coder-1.7b :8002 (KV 9.87 GiB, 8 slots), both `SARL_NO_LORA=1`, `SARL_MAX_NUM_SEQS=16`, 0.88;
+  probes on node04 (tmux `swe-probe-t` / `swe-probe-s`, sandboxes on node04, 4 GB `ulimit -v`) over
+  `configs/pool_minicoder_v2.txt` × 8 episodes with the GRPO v2 limits (50 turns, 24,576 context, 1,024 new tokens,
+  1,200 s); same seeds in both, so episodes pair by (task, index). Records `experiments/probe-kd-teacher-mc4b.json`,
+  `experiments/probe-kd-student-mc17.json`. Go criterion: the teacher clearly above the student on the same episodes.
+- **Implementation:** objective `kd` in `sarl/train.py` + per-token advantages in `LoRATrainer.step`, config
+  `configs/kd_minicoder_v1.yaml` (in progress, reviewed three ways before use).
 
 ## 2026-09-24 s9-qwen3-1.7b-v1 — S9: the diagram's tool-call protocol with a model that follows it
 
