@@ -703,6 +703,19 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   `configs/pool_minicoder_v2.txt` × 8 episodes with the GRPO v2 limits (50 turns, 24,576 context, 1,024 new tokens,
   1,200 s); same seeds in both, so episodes pair by (task, index). Records `experiments/probe-kd-teacher-mc4b.json`,
   `experiments/probe-kd-student-mc17.json`. Go criterion: the teacher clearly above the student on the same episodes.
+- **Teacher probe result (student done 21:40, teacher 22:26): GO.** mini-coder-4b **42/88 (47.7 %)** vs mini-coder-1.7b
+  **29/88 (33.0 %)**; per-task mean difference +14.8 pp, 95 % bootstrap CI [−2.3, +29.5] over 11 tasks (teacher ahead
+  on 8, level 2, behind 1); same-seed pairs: teacher-only 19, student-only 6 (of 88). Per task (teacher / student):
+  marshmallow-1164 3/2, marshmallow-1343 7/3, pydicom-1192 2/1, pydicom-1256 3/1, pydicom-1694 8/4, astroid-1262 1/0,
+  astroid-1614 6/3, astroid-1719 8/8, astroid-1903 **3/7** (the one task where the student is better: distillation may
+  hurt there), astroid-984 0/0, sqlfluff-884 1/0. Gate negatives none; both probes complete. The 1.7b's 33 % matches
+  its ~37 % per-step average in GRPO v2 (different task mix). Headroom exists on 9 of 11 tasks.
+- **KD layout up (22:27):** node08 GPU0 mini-coder-1.7b :8001 (0.88, LoRA, max_model_len 25600, KV 9.77 GiB); GPU1
+  mini-coder-4b teacher :8002 (0.84, sleep mode, no LoRA, 25600, KV 4.79 GiB); node04 mini-coder-1.7b :8003 (0.92,
+  8 seqs, 25600, KV 3.04 GiB ≥ the 2.8 GiB bar). Review follow-ups applied before launch: the sleep window wakes every
+  server even if the offload or a sleep fails; teacher circuit breaker (`kd.max_consecutive_failures: 3`,
+  `timeout_s: 180`); `kd.workers: 2` (the teacher's ~34k-token KV holds two average views). 82 tests pass.
+- **Smoke:** `--run-name kd-smoke --steps 1` launched 22:28.
 - **Implementation:** objective `kd` in `sarl/train.py` + per-token advantages in `LoRATrainer.step`, config
   `configs/kd_minicoder_v1.yaml` (in progress, reviewed three ways before use).
 
