@@ -7,16 +7,19 @@ them (every A_i = 0, a no-op). We skip them by default and count them.
 Loss: `loss_agg="seq_mean"` is the reference's "REINFORCE with a group baseline", per trajectory the MEAN log-prob of
 its policy tokens (mask 1), L = −(1/N) Σ_i A_i · mean_t log π(a_t | s_t); `loss_agg="token_mean"` (every GRPO config
 since v2) averages −A_i · w_t · log π over all sampled tokens of the batch, with w the detached truncated importance
-weight (cap `tis_cap`). One AdamW step per GRPO step, grad-norm clip 1.0, adapter in fp32 (lecture 1:47: fp16 Adam
-second moments underflow). The TrainConfig defaults (LoRA r=8/α=16 on q,k,v,o) are the reference's; the configs set
-r=16/α=32 on every attention and MLP projection. The per-token log-probs come from a chunked log-softmax over only the
-supervised positions (a 16k-token trajectory's full logits would be 16k × 152k floats).
+weight (cap `tis_cap`). The advantage may also be per token (objective kd, sarl.kd: A_i becomes a_t, the teacher's
+log-prob minus the sampler's on each sampled token); a constant per-token sequence is the scalar case. One AdamW step
+per GRPO step, grad-norm clip 1.0, adapter in fp32 (lecture 1:47: fp16 Adam second moments underflow). The TrainConfig
+defaults (LoRA r=8/α=16 on q,k,v,o) are the reference's; the configs set r=16/α=32 on every attention and MLP
+projection. The per-token log-probs come from a chunked log-softmax over only the supervised positions (a 16k-token
+trajectory's full logits would be 16k × 152k floats).
 """
 
 from __future__ import annotations
 
 import hashlib
 import math
+import numbers
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
@@ -31,6 +34,17 @@ def group_advantages(rewards: Sequence[float], eps: float = 1e-4) -> np.ndarray:
 
 def is_degenerate(rewards: Sequence[float], tol: float = 1e-8) -> bool:
     return float(np.std(np.asarray(rewards, dtype=np.float64))) < tol
+
+
+def token_advantages(adv, ids: Sequence[int], mask: Sequence[int]) -> list[float] | None:
+    """None for a scalar advantage (one per trajectory: GRPO). For a per-position sequence aligned with ids (objective
+    kd; None where not trained) the values at the trained positions, in exactly token_logprobs' order (t in 1..len-1
+    with mask[t]); a None there counts as 0."""
+    if isinstance(adv, numbers.Real):
+        return None
+    if len(adv) != len(ids):
+        raise ValueError(f"per-token advantages ({len(adv)}) must be aligned with ids ({len(ids)})")
+    return [0.0 if adv[i] is None else float(adv[i]) for i in range(1, len(ids)) if mask[i]]
 
 
 @dataclass
@@ -193,10 +207,13 @@ class LoRATrainer:
             return self.token_logprobs(ids, mask).float().cpu().numpy()
 
     # the update -----------------------------------------------------------------------------------------------
-    def step(self, batch: Sequence[tuple]) -> dict:
+    def step(self, batch: Sequence[tuple], keep_token_logprobs: bool = False) -> dict:
         """batch = [(ids, mask, advantage)] or [(ids, mask, advantage, sampler_logprobs)], sampler_logprobs aligned
-        with ids (None where not sampled). Returns loss, grad-norm, token counts, mean log-p before the step and,
-        with tis_cap, the importance-weight statistics."""
+        with ids (None where not sampled). The advantage is a float (one per trajectory, GRPO) or a per-position
+        sequence aligned with ids (objective kd; see token_advantages). Returns loss, grad-norm, token counts, mean
+        log-p before the step and, with tis_cap, the importance-weight statistics; keep_token_logprobs adds
+        "token_logprobs", each trajectory's per-token log-probs of this forward pass (the caller pops it before
+        logging)."""
         import torch
 
         n = len(batch)
@@ -208,10 +225,13 @@ class LoRATrainer:
         n_tok_total = sum(sum(1 for i in range(1, len(b[1])) if b[1][i]) for b in batch)
         self.model.train()
         self.opt.zero_grad(set_to_none=True)
-        loss_total, toks, mean_lps, w_all, d_all = 0.0, 0, [], [], []
+        loss_total, toks, mean_lps, w_all, d_all, tok_lps = 0.0, 0, [], [], [], []
         for item in batch:
             ids, mask, adv = item[0], item[1], item[2]
+            a_tok = token_advantages(adv, ids, mask)
             lp = self.token_logprobs(ids, mask)
+            if keep_token_logprobs:
+                tok_lps.append(lp.detach().float().cpu().numpy())
             if lp.numel() == 0:
                 mean_lps.append(float("nan"))
                 continue
@@ -226,10 +246,12 @@ class LoRATrainer:
                     w = torch.where(torch.isnan(ratio), torch.ones_like(ratio), ratio.clamp(max=cap))
                     w_all.append(w.cpu())
             wlp = lp * w if w is not None else lp
+            if a_tok is not None:  # per-token advantages (kd): a_t scales each token's term and, like w_t, is constant
+                awlp = torch.tensor(a_tok, device=lp.device, dtype=lp.dtype) * wlp
             if agg == "seq_mean":
-                loss = -(float(adv) * wlp.mean()) / n
+                loss = -(float(adv) * wlp.mean()) / n if a_tok is None else -awlp.mean() / n
             else:
-                loss = -(float(adv) * wlp.sum()) / max(n_tok_total, 1)
+                loss = -(float(adv) * wlp.sum()) / max(n_tok_total, 1) if a_tok is None else -awlp.sum() / max(n_tok_total, 1)
             loss.backward()
             loss_total += float(loss.detach())
             toks += int(lp.numel())
@@ -240,6 +262,8 @@ class LoRATrainer:
             self.opt.step()
         self.opt.zero_grad(set_to_none=True)
         out = {"loss": loss_total, "grad_norm": float(gn), "tokens": toks, "n_traj": n, "mean_logp_before": mean_lps, "stepped": finite}
+        if keep_token_logprobs:
+            out["token_logprobs"] = tok_lps
         if d_all and sum(d.numel() for d in d_all):
             d = torch.cat(d_all).double()
             out["mismatch"] = {"n": int(d.numel()), "mean": float(d.mean()), "p50": float(d.median()),

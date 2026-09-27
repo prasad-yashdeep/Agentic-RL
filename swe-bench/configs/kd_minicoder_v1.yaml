@@ -1,0 +1,102 @@
+# On-policy KD v1: mini-coder-4b (teacher) -> mini-coder-1.7b (student), objective kd (sarl.kd). Both are Qwen3 SFT'd
+# on the mini-swe-agent scaffold our mswea protocol reproduces, with one tokenizer (checked at start-up). The student
+# samples episodes exactly as in GRPO (graded, so success rates stay comparable); the teacher scores every sampled
+# token and a_t = log p_teacher - log p_sampler replaces the group advantage (reverse KL on the student's own samples).
+#
+# Like-for-like with grpo-minicoder-v2 (configs/grpo_minicoder_v2.yaml): same student weights and revision, pool, seed
+# (so the same task draw per step), 4 tasks x 8 episodes, sampling (T=1, no top-p/top-k: the served distribution IS
+# pi_student, which the sampled-token KL estimator needs), limits, LoRA r16/a32 on every projection, lr 5e-5,
+# token_mean with TIS cap 2, 24k-token views with truncation. Only two things differ: the objective (per-token teacher
+# signal on every valid rollout instead of the group advantage on non-degenerate groups) and the rollout servers
+# (GPU1 now holds the teacher, so the second student server moves to node04). keep_adapters only prunes old files,
+# and max_model_len 25600 (below) changes no request.
+#
+# Serving (vLLM via `<env> bash scripts/20_serve_policy.sh 2>&1 | tee /var/tmp/swe/<log>`, each in its own tmux; the
+# script also appends to the shared NFS runs/serve.log, where lines from several hosts interleave, so read the
+# node-local copy):
+#   node08 GPU0 student  SARL_MODEL=mini-coder-1.7b SARL_SERVE_GPU=0 SARL_SERVE_PORT=8001 SARL_SERVE_MEM=0.88 SARL_MAX_NUM_SEQS=16
+#                        SARL_MAX_MODEL_LEN=25600                                    -> tee /var/tmp/swe/serve-kd-gpu0.log
+#   node08 GPU1 teacher  SARL_MODEL=mini-coder-4b SARL_SERVE_GPU=1 SARL_SERVE_PORT=8002 SARL_SERVE_MEM=0.84 SARL_MAX_NUM_SEQS=16
+#                        SARL_SLEEP_MODE=1 SARL_NO_LORA=1 SARL_MAX_MODEL_LEN=25600   -> tee /var/tmp/swe/serve-kd-teacher.log
+#   node04 GPU0 student  SARL_MODEL=mini-coder-1.7b SARL_SERVE_GPU=0 SARL_SERVE_PORT=8003 SARL_SERVE_MEM=0.92 SARL_MAX_NUM_SEQS=8
+#                        SARL_MAX_MODEL_LEN=25600                                    -> tee /var/tmp/swe/serve-kd-node04.log
+#                        (the card holds one server: stop swe-serve4's Gemma first)
+#   Before launching: the teacher probe left node08 serving mini-coder-4b on :8001 (GPU0) and mini-coder-1.7b on :8002
+#   (GPU1), both at max_model_len 32768 and without sleep mode; stop those tmux sessions (swe-serve, swe-serve1) and
+#   start the three servers above, which swap the roles of the two node08 GPUs.
+#   then the trainer on node08 (GPU1, on the CPU until the teacher sleeps; sandboxes and grading run on node08, and all
+#   11 pool images are in /var/tmp/swe/sif-dev):
+#   SARL_SIF_DIR=/var/tmp/swe/sif-dev bash scripts/21_train.sh configs/kd_minicoder_v1.yaml --run-name kd-minicoder-v1
+#
+# Memory runway (2026-09-26, from the vLLM start-up logs of the same models on node08: weights 3.31 GiB (1.7B + LoRA)
+# and 7.64 GiB (4B); about 1.0 GiB of profiled activations, CUDA context and graphs inside the budget; KV 112 KiB per
+# token (1.7B) and 144 KiB (4B)):
+# - SARL_MAX_MODEL_LEN=25600 on every server: max_model_len is the one thing preflight_servers compares besides the
+#   weights, so all student servers must agree, and at the default 32768 node04 cannot start. On its 8 GB card, 32768
+#   tokens of KV (3.5 GiB) plus weights and overhead would need a memory fraction of 0.94-0.98. The harness caps
+#   prompt + reply at limits.max_context_tokens = 24576, and the teacher scores at most max_train_tokens + 1 = 24577
+#   tokens, so no request changes. The KV cache is sized by the memory fraction, not by max_model_len, so node08 GPU0
+#   keeps v2's ~91k tokens.
+# - node04 0.92 (a starting point to verify: /var/tmp/swe/serve-kd-node04.log must show "Available KV cache memory"
+#   >= 2.8 GiB):
+#   0.92 x 8.0 GiB - 3.31 - 0.7..1.0 = 3.0-3.3 GiB = 29-31k tokens. That is about two v2-length episodes (mean 13.7k
+#   tokens), so with 4 slots some turns queue or are preempted; use slots: 3 if the node04 log shows many preemptions.
+# - teacher 0.84: KV 4.65 GiB = ~34k tokens. prompt_logprobs is computed in 1024-token chunks, each a [1024 x 151936]
+#   logits tensor (0.3-0.6 GB) that the start-up profile never sees. It comes out of the ~2.5 GiB left on GPU1 outside
+#   the budget, after the trainer's CUDA context. The trainer checks this at start-up, before any rollout: one
+#   24576-token teacher request (sarl.train.teacher_smoke) must return every log-prob, and servers.json records its
+#   time and the GPU memory still free after it (teacher.smoke.gpu_free_mib_after).
+# - teacher time: prompt_logprobs requests skip the prefix cache, so every scored token is prefilled. v2 steps averaged
+#   ~437k episode tokens (32 x 13.7k), which adds roughly 2-4 min per step.
+# - host and disk (checked 2026-09-26; re-check with `df -h /var /tmp` and `free -g` on node08): the sleeping teacher
+#   parks ~7.6 GiB of weights in node08 RAM (53 GB available). node08 /var had 15 GB free, /tmp 12 GB; this run writes
+#   ~70 MB of trajectories and keeps 2 adapters of ~67 MB. NFS was at 80 % (144 GB free). Nothing needs deleting.
+name: kd-minicoder-v1
+model: ricdomolm/mini-coder-1.7b
+revision: 5b7fbc90b6c4684c546de7f811865cff4414a96c
+chat_template_kwargs: {enable_thinking: true}   # renders like the teacher's template (neither adds a <think> block)
+objective: kd
+teacher:
+  url: http://localhost:8002
+  model: policy                           # the served name (20_serve_policy.sh serves every model as "policy")
+  model_key: mini-coder-4b                # sarl.paths.MODELS key: tokenizer check and served-snapshot check
+  sleep: true                             # shares GPU1 with the trainer: sleeps during the update
+kd:
+  coef: 1.0                               # a_t = coef * (log p_teacher - log p_sampler) + reward_coef * A_group
+  reward_coef: 0.0                        # pure distillation; > 0 mixes in the GRPO group advantage
+  workers: 2                              # concurrent teacher requests: the teacher's ~34k-token KV holds two
+                                          # average views (13.7k); 4 would force vLLM to preempt and recompute
+  timeout_s: 180                          # a 24k-token prefill takes seconds; a wedged engine must fail fast
+  max_consecutive_failures: 3             # 3 trajectories in a row failing twice -> stop the run (resumable)
+keep_adapters: 2
+serve_url: http://localhost:8001          # probes and served-logprob checks (never sleeps)
+servers:
+  - {url: http://localhost:8001, slots: 8}
+  - {url: http://node04:8003, slots: 4}
+served_model: policy
+pool: configs/pool_minicoder_v2.txt
+split: dev
+steps: 30
+tasks_per_step: 4
+group_size: 8
+oracle_per_group: 0                       # required by objective kd
+protocol: mswea
+seed: 0
+sampling: {temperature: 1.0, top_p: 1.0, top_k: -1, repetition_penalty: 1.0}
+limits: {max_turns: 50, max_context_tokens: 24576, max_new_tokens: 1024, wall_clock_s: 1200, command_timeout_s: 60, max_obs_chars: 10000, max_format_errors: 3}
+train:
+  lr: 5.0e-5
+  lora_r: 16
+  lora_alpha: 32
+  targets: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  clip: 1.0
+  max_train_tokens: 24576
+  truncate_overlong: true
+  chunk: 1024
+  loss_agg: token_mean
+  tis_cap: 2.0
+diagnostics: {mismatch: batch}
+advantage: {eps: 1.0e-4, skip_degenerate: true}   # groups are still computed and logged; kd trains every valid rollout
+concurrency: {rollouts: 16, grading: 8}
+grading: {timeout_s: 1800, network: false}
+env: {network: false}

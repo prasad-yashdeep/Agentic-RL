@@ -92,9 +92,8 @@ def gemma_tok():
     return AutoTokenizer.from_pretrained(mid, revision=rev)
 
 
-@pytest.fixture(scope="session")
-def tiny_qwen():
-    """A randomly initialised 2-layer Qwen2 (no download) for trainer math on CPU."""
+def make_tiny_qwen():
+    """A randomly initialised 2-layer Qwen2 (no download) for trainer math on CPU; the same weights on every call."""
     import torch
     from transformers import Qwen2Config, Qwen2ForCausalLM
 
@@ -102,3 +101,15 @@ def tiny_qwen():
     cfg = Qwen2Config(vocab_size=64, hidden_size=32, intermediate_size=64, num_hidden_layers=2, num_attention_heads=4,
                       num_key_value_heads=2, max_position_embeddings=256, tie_word_embeddings=True)
     return Qwen2ForCausalLM(cfg).float()
+
+
+@pytest.fixture(scope="session")
+def tiny_qwen():
+    return make_tiny_qwen()
+
+
+@pytest.fixture
+def fresh_tiny_qwen():
+    """tiny_qwen's weights, but a new object per test: LoRATrainer wraps its model in place, so the session fixture
+    carries every earlier test's LoRA layers and updates."""
+    return make_tiny_qwen()

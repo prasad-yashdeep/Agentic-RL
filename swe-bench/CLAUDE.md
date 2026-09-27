@@ -44,10 +44,10 @@ The target is the repo's diagram (`reference/_upstream/swe_agent_env_interface.p
   `OOM_SCORE_ADJ=1000` makes the server, not the sandboxes, the kernel's victim when node04's 14 GB run out; the engine
   then dies silently ("engine core exited unexpectedly", no traceback), as on 2026-09-26 04:56 during the SWE-smith
   screen. Probes fence the dead server and re-admit it once restarted.
-- **node08 disk (`/var`, 40 GB) after the 2026-09-26 cleanup:** `hf-cache` (bf16 Gemma, 15 GB, kept by user decision:
-  the trainer reads it at every start), `sif-smith` (5.1 GB), `adapters` (grpo-gemma-v1 keeps only step-30). The dev-pool
-  images live only on node04 `/var/tmp/swe/sif-dev` now (`rsync -a node04:/var/tmp/swe/sif-dev/ /var/tmp/swe/sif-dev/`
-  before any dev-pool work on node08); grpo-gemma-v1 steps 1–29 are archived on node04
+- **node08 disk (`/var`, 40 GB; 15 GB free on 2026-09-26, check `df -h /var`):** `hf-cache` (bf16 Gemma, 15 GB, kept
+  by user decision: the trainer reads it at every start), `sif-dev` (the 11 dev-pool images, 7.6 GB, so dev-pool runs
+  such as `kd_minicoder_v1` need no rsync: `SARL_SIF_DIR=/var/tmp/swe/sif-dev`), `adapters` (0.9 GB; grpo-gemma-v1
+  keeps only step-30). The SWE-smith images are on node04 only. grpo-gemma-v1 steps 1–29 are archived on node04
   `/var/tmp/swe/adapters-archive/grpo-gemma-v1`. New run configs set `keep_adapters: 2` so a run keeps only its newest
   two adapters (resume needs only the newest).
 
@@ -92,11 +92,67 @@ The target is the repo's diagram (`reference/_upstream/swe_agent_env_interface.p
 - Pre-registered screen list `configs/screen_smith_v1.txt` (200 tasks, hashed 50 per repo); gate record
   `experiments/gate-smith-v1.json` (179 pass; pydicom re-gated after calibration).
 
+## On-policy KD (`objective: kd`, 2026-09-26)
+
+- **What:** a second training objective next to GRPO (`sarl.kd`, wired into `sarl.train`). The student generates
+  and grades episodes exactly as in GRPO. A teacher server then scores every sampled token (vLLM `prompt_logprobs`).
+  The per-token advantage `a_t = kd.coef·(log p_teacher − log p_sampler) + kd.reward_coef·A_group` replaces the group
+  advantage in `LoRATrainer.step`, which accepts a float or a per-position sequence (a constant sequence gives the same
+  update as the scalar). This is the sampled-token reverse-KL estimator of on-policy distillation, with discount 0.
+  It is unbiased only at T = 1 with no top-p/top-k.
+- **Config:** `objective: kd`, `teacher: {url, model: policy, model_key, sleep}` and
+  `kd: {coef: 1.0, reward_coef: 0.0, workers: 4, timeout_s: 600}`. Validation requires a teacher and
+  `oracle_per_group: 0`. GRPO configs are untouched (`objective` defaults to `grpo`).
+- **Batch:** every valid policy rollout is trained, including degenerate groups (`A_group = 0` there). Groups are
+  still computed and logged.
+- **Teacher scoring:** the teacher scores each trajectory up to its last trained token, with `kd.workers` concurrent
+  requests. A trajectory that still fails after one retry is dropped (`kd.dropped`). If every request fails, the run
+  stops before its update and can be resumed.
+- **Metrics:** `metrics.jsonl` gets a `kd` record per step and `seconds.teacher`. Read the `kd` record like this:
+  - Every `rkl_*`, `mean_*_lp` and `msq_gap_*` value averages over the same `n_ok` tokens: trained tokens with both
+    a sampler and a teacher log-prob (the rest have a_t = 0 and make up `frac_missing`).
+  - `rkl_sampler` is the KD learning curve (fresh samples each step); it should fall across steps.
+    `rkl_trainer_before − rkl_sampler` is the trainer-vs-sampler mismatch on those tokens.
+  - `rkl_gain = rkl_trainer_before − rkl_trainer_after` > 0 means the update moved the student toward the teacher on
+    this batch. The after-update value is importance-weighted (w = e^(lp_after − lp_before), capped at 10;
+    `is_w_max` is the largest weight before the cap), because the tokens were sampled before the update. Without the
+    weight the teacher term cancels and the "gain" would be positive for any update that lowers the sampled tokens'
+    log-probs, even one that moves away from the teacher.
+  - `objective_gain` (token level: Σ a_t·Δlp_t / T) > 0 means the update ascended its own surrogate;
+    `msq_gap_before/after` is the squared per-token gap the update descends on these tokens.
+- **Start-up checks:**
+  1. Identical vocabulary and special-token ids between the student's tokenizer and `MODELS[teacher.model_key]`'s
+     (offline, from the snapshot).
+  2. The teacher serves `teacher.model` from that snapshot, and its `max_model_len` ≥
+     max(limits.max_context_tokens, train.max_train_tokens + 1). vLLM needs prompt + 1 ≤ max_model_len.
+  3. `preflight_servers` checks base-weight identity across the rollout servers only; its sleep check also covers the
+     teacher when `teacher.sleep`. A sleeping teacher shares the trainer's GPU and naps with the sleep servers during
+     the update (`sleepers_for`). A step with nothing to train leaves every server awake and the trainer on the CPU.
+  4. After the trainer's CUDA context exists, one `train.max_train_tokens`-token teacher request (`teacher_smoke`)
+     must return every log-prob. It is the first test of vLLM's chunked prompt-logprob path and of its logits memory,
+     which lies outside the profiled budget. `servers.json` records its time and, for a sleeping teacher, the GPU
+     memory still free after it.
+- **Layout** (`configs/kd_minicoder_v1.yaml`, mini-coder-4b → mini-coder-1.7b, like-for-like with grpo-minicoder-v2):
+
+  | where | serves | settings |
+  |---|---|---|
+  | node08 GPU0 | student :8001 | 0.88, 16 seqs |
+  | node08 GPU1 | teacher :8002 | 0.84, 16 seqs, sleep mode, no LoRA; the trainer shares this GPU |
+  | node04 | student :8003 | 0.92 (to verify), 8 seqs |
+
+  Every server runs with `SARL_MAX_MODEL_LEN=25600`. At the default 32768, node04's 8 GB card cannot hold one
+  full-length sequence next to the 1.7B weights, and `preflight_servers` requires every student server to use the
+  same value. No request comes near it: the harness caps prompt + reply at 24576 tokens. Sandboxes run on node08 with
+  `SARL_SIF_DIR=/var/tmp/swe/sif-dev`. vLLM builds the prompt-logprob logits in 1024-token chunks (0.3–0.6 GB) that
+  its start-up profile never sees; at 0.84 they fit in the ~2.5 GiB left on GPU1. The config header has the exact
+  commands (each tees a node-local log, `/var/tmp/swe/serve-kd-*.log`) and the memory arithmetic, taken from the vLLM
+  start-up logs.
+
 ## Commands
 
 ```bash
 make -C swe-bench help
-make -C swe-bench test NODE=node08            # 27 tests (sandbox/grader/qwen markers skip cleanly elsewhere)
+make -C swe-bench test NODE=node08            # 80 tests (sandbox/grader/qwen markers skip cleanly elsewhere)
 make -C swe-bench fetch | assets | sifs | grader | serve [MODEL=qwen3-1.7b] | train [CONFIG=…] | notebook | status
 .venv/bin/sarl task <id> | pool | grade <id> --gold | episode <id> --policy vllm --grade | summarize runs/<run>
 # training curves (run on node04, not the headnode): series JSON + SVG charts spliced into the explainer's section 12

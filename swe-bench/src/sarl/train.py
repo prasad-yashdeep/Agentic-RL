@@ -10,6 +10,9 @@ per step:
      non-degenerate groups' trajectories
   6. weight sync: save the adapter, POST /v1/load_lora_adapter, sample the next step from it (πθ′)
   7. diagnostics: |logp_vLLM − logp_trainer| on sampled tokens (lecture 2:31), Δlogp on the oracle trajectories
+
+objective: kd (sarl.kd) keeps 1-3 and 6-7; step 4 trains every valid policy rollout, and between 4 and 5 a teacher
+server scores every sampled token, which gives the per-token advantage that replaces the group advantage.
 """
 
 from __future__ import annotations
@@ -33,8 +36,9 @@ import numpy as np
 from sarl.env.apptainer import ApptainerEnv, sif_for, stop_all
 from sarl.grpo import LoRATrainer, TrainConfig, group_advantages, is_degenerate, mismatch_stats
 from sarl.harness import ChatFormat, Limits, oracle_replies, run_episode, stop_ids
+from sarl.kd import kd_step_stats, kd_token_advantages, teacher_span, tokenizer_mismatch, validate_objective
 from sarl.metrics import JsonlWriter
-from sarl.paths import REPO, RUNS, SCRATCH, refuse_on_home
+from sarl.paths import MODELS, REPO, RUNS, SCRATCH, model_snapshot, refuse_on_home
 from sarl.policy import Sampling, ScriptedPolicy, VLLMPolicy
 from sarl.protocol import tools_for
 from sarl.reward import grade
@@ -204,19 +208,113 @@ def probe(policy: VLLMPolicy, fmt: ChatFormat) -> str:
         policy.sampling = saved
 
 
-def served_logprobs(base_url: str, model: str, ids: list[int]) -> list[float]:
-    """vLLM's log-probs of a fixed token sequence under `model` (prompt_logprobs) — proves which weights are served."""
+def served_logprobs(base_url: str, model: str, ids: list[int], timeout: float = 120, strict: bool = False) -> list[float]:
+    """vLLM's log-probs of a fixed token sequence under `model` (prompt_logprobs) — proves which weights are served.
+    Element i-1 is log p(ids[i] | ids[:i]). strict=True (the KD teacher) takes only the entry of the token actually at
+    position i and gives NaN otherwise, instead of falling back to whatever entry vLLM listed first."""
     import httpx
 
     r = httpx.post(base_url.rstrip("/") + "/v1/completions", json={"model": model, "prompt": ids, "max_tokens": 1,
-                   "temperature": 0.0, "prompt_logprobs": 0}, timeout=120)
+                   "temperature": 0.0, "prompt_logprobs": 0}, timeout=timeout)
     r.raise_for_status()
     pl = r.json()["choices"][0].get("prompt_logprobs") or []
     out = []
     for i, entry in enumerate(pl[1:], start=1):  # entry: {token_id: {"logprob": …}} for the prompt token at i
-        d = (entry or {}).get(str(ids[i])) or next(iter((entry or {}).values()), {})
+        d = (entry or {}).get(str(ids[i])) or ({} if strict else next(iter((entry or {}).values()), {}))
         out.append(float(d.get("logprob", float("nan"))))
     return out
+
+
+def teacher_logprobs(teacher: dict, ids: list[int], mask: list[int], timeout_s: float) -> list[float]:
+    """The teacher's log-probs of the student's tokens (served_logprobs' layout), scored up to the last trained token
+    only; a short answer is an error, not silently missing tokens."""
+    end = teacher_span(mask)
+    if end < 2:
+        return []
+    lp = served_logprobs(teacher["url"], teacher["model"], list(ids[:end]), timeout=timeout_s, strict=True)
+    if len(lp) != end - 1:
+        raise RuntimeError(f"teacher returned {len(lp)} prompt log-probs for {end} tokens")
+    return lp
+
+
+def score_with_teacher(batch: list[tuple], cfg: dict) -> tuple[list[tuple], list[list[float]], list[str]]:
+    """Objective kd: the teacher scores every trajectory of the batch (kd.workers concurrent requests, each retried
+    once) and each item's group advantage becomes the per-token KD advantage.
+
+    Returns (new batch, the kept items' teacher log-probs, one error per dropped trajectory). A trajectory the teacher
+    fails twice is dropped from the update; when every request fails, raise: the run stops before its update and can
+    be resumed."""
+    teacher, kd = cfg["teacher"], cfg["kd"]
+    # circuit breaker: a teacher that accepts connections but never answers (a wedged engine) would otherwise cost
+    # every trajectory two full timeouts (hours for a 32-trajectory batch) before the step gives up
+    max_streak = int(kd.get("max_consecutive_failures", 3))
+    stop, lock, streak = threading.Event(), threading.Lock(), [0]
+
+    def one(b):
+        err = None
+        for _ in range(2):
+            if stop.is_set():
+                return None, "skipped: the teacher failed repeatedly"
+            try:
+                r = teacher_logprobs(teacher, b[0], b[1], float(kd["timeout_s"]))
+                with lock:
+                    streak[0] = 0
+                return r, None
+            except Exception as e:  # transport, 5xx, a sleeping or restarting server, a short answer
+                err = f"{type(e).__name__}: {e}"[:300]
+        with lock:
+            streak[0] += 1
+            if streak[0] >= max_streak:
+                stop.set()
+        return None, err
+
+    with ThreadPoolExecutor(int(kd["workers"])) as ex:
+        res = list(ex.map(one, batch))
+    if stop.is_set():
+        first = next((e for _, e in res if e and not e.startswith("skipped")), "?")
+        raise RuntimeError(f"teacher {teacher['url']} failed {max_streak} trajectories in a row (each twice), e.g. {first}")
+    out, lps, errors = [], [], []
+    for b, (t_lp, err) in zip(batch, res):
+        if t_lp is None:
+            errors.append(err)
+            continue
+        adv, _ = kd_token_advantages(b[0], b[1], b[3], t_lp, float(kd["coef"]), float(kd["reward_coef"]), float(b[2]))
+        out.append((b[0], b[1], adv, b[3]))
+        lps.append(t_lp)
+    if batch and not out:
+        raise RuntimeError(f"teacher {teacher['url']} failed on all {len(batch)} trajectories, e.g. {errors[0]}")
+    return out, lps, errors
+
+
+def kd_record(batch: list[tuple], teacher_lps: list, tok_lps: tuple | None, errors: list[str], t_teacher: float):
+    """Objective kd: the step's `kd` record (kd_step_stats plus the dropped count and the teacher's time) and the
+    token-level objective_gain, which is logged at the top level of the step summary like GRPO's."""
+    rec = kd_step_stats(batch, teacher_lps, *(tok_lps or (None, None)))
+    gain = rec.pop("objective_gain")
+    rec.update(dropped=len(errors), teacher_seconds=round(t_teacher, 1))
+    return rec, gain
+
+
+def teacher_smoke(cfg: dict, vocab_size: int) -> dict:
+    """Objective kd, at start-up and before any rollout is spent: one teacher request as long as the longest view it
+    will score (train.max_train_tokens tokens, fixed-seed random ordinary token ids below the added/special tokens).
+
+    The ~40-token probes never exercise what step 1's scoring needs: vLLM splits a long prompt_logprobs request into
+    1024-token chunks and merges them, and each chunk's [1024 x vocab] logits sit outside the teacher's profiled memory
+    budget, next to the trainer's CUDA context on a shared GPU. Fails fast unless all n-1 log-probs come back finite."""
+    n = int(cfg["train"]["max_train_tokens"])
+    ids = np.random.default_rng(0).integers(0, int(vocab_size), n).tolist()
+    t0 = time.time()
+    try:
+        lp = teacher_logprobs(cfg["teacher"], ids, [1] * n, float(cfg["kd"]["timeout_s"]))
+    except Exception as e:
+        raise RuntimeError(f"teacher {cfg['teacher']['url']} failed a {n}-token scoring request ({type(e).__name__}: "
+                           f"{str(e)[:300]}); check its log for a CUDA OOM (lower its SARL_SERVE_MEM) or a timeout "
+                           f"(kd.timeout_s)") from e
+    bad = int(np.sum(~np.isfinite(np.asarray(lp, dtype=np.float64))))
+    if bad:
+        raise RuntimeError(f"teacher {cfg['teacher']['url']} returned {bad} non-finite log-probs of {len(lp)} on a {n}-token request")
+    return {"n_tokens": n, "seconds": round(time.time() - t0, 1), "mean_lp": round(float(np.mean(lp)), 3)}
 
 
 @dataclass
@@ -279,9 +377,107 @@ def train_view(traj, max_tokens: int, truncate: bool):
     return traj.ids[:max_tokens], traj.mask[:max_tokens], traj.logprobs[:max_tokens]
 
 
+def build_batch(tasks, ros: list[Rollout], cfg: dict, kd_on: bool, max_train_tokens: int, truncate: bool):
+    """The step's training batch [(ids, mask, advantage, sampler_lp)] and its group records, from the graded rollouts.
+
+    Returns (batch, groups, n_degenerate, dropped, truncated, oracle_idx) and sets r.adv on every valid rollout.
+    GRPO: group advantages; a degenerate group (all rewards equal) is skipped under advantage.skip_degenerate, and a
+    group with fewer than 2 valid members is invalid and skipped. kd: every valid policy rollout is trained, a degenerate
+    group's and a lone valid rollout's with A_group = 0 (the teacher's per-token signal needs no reward variance); the
+    groups are computed and recorded exactly as under GRPO."""
+    batch, groups, n_degenerate, dropped, truncated, oracle_idx = [], [], 0, 0, 0, []
+    for t in tasks:
+        # a crashed rollout, a failed grade or an infra failure is not a "reward 0" sample: leave it out of the
+        # group (review finding) and skip the group if fewer than 2 valid members remain
+        grp = [r for r in ros if r.task is t and r.traj is not None and r.grade is not None and not r.error
+               and not r.grade.infra_failure]
+        if len(grp) < 2:
+            groups.append({"task": t.instance_id, "rewards": [], "adv": [], "degenerate": True, "invalid": True})
+            n_degenerate += 1
+            if not kd_on or not grp:
+                continue
+            adv, degen = [0.0], True  # kd: a lone valid rollout still gets the teacher's signal (A_group 0)
+        else:
+            rewards = [r.grade.reward for r in grp]
+            adv = group_advantages(rewards, cfg["advantage"]["eps"])
+            degen = is_degenerate(rewards)
+            n_degenerate += int(degen)
+            groups.append({"task": t.instance_id, "rewards": rewards, "adv": [round(float(a), 4) for a in adv], "degenerate": degen})
+        for r, a in zip(grp, adv):
+            r.adv = float(a)
+            if degen and not kd_on and cfg["advantage"].get("skip_degenerate", True):
+                continue  # kd trains every valid rollout: the per-token signal does not need reward variance
+            if r.traj is None:
+                continue
+            view = train_view(r.traj, max_train_tokens, truncate)
+            if view is None:
+                dropped += 1
+                continue
+            truncated += int(len(view[0]) < r.traj.n_tokens)
+            if r.kind == "oracle":
+                oracle_idx.append(len(batch))
+            batch.append((view[0], view[1], 0.0 if kd_on and degen else float(a), view[2]))
+    return batch, groups, n_degenerate, dropped, truncated, oracle_idx
+
+
+def sleepers_for(cfg: dict, servers: list[dict]) -> list[str]:
+    """The servers that sleep while the trainer steps on their GPU: every rollout server with sleep: true, plus a KD
+    teacher with teacher.sleep (it shares the trainer's GPU and never serves rollouts). cfg is validated."""
+    out = [s["url"].rstrip("/") for s in servers if s.get("sleep")]
+    if cfg.get("objective", "grpo") == "kd" and cfg["teacher"]["sleep"]:
+        out.append(cfg["teacher"]["url"])
+    return out
+
+
+def update_in_sleep_window(trainer, batch: list, sleepers: list[str], update, log=print):
+    """The sleep window: sleep the servers that share the trainer's GPU, move the trainer onto it, run update(), and
+    whatever happens move the trainer back to the CPU and wake the servers. With nothing to train nothing sleeps and
+    nothing moves: an onload next to an awake server would run the GPU out of memory, or leave the trainer there
+    through the next rollouts and teacher scoring. Returns (update()'s result or None, sleep + onload seconds,
+    offload + wake seconds)."""
+    naps = list(sleepers) if batch else []
+    t_sw, t_sleep, t_wake, res = time.time(), 0.0, 0.0, None
+    failed = None  # the exception in flight, if any: cleanup must not mask it, and must not be skipped because of it
+    try:
+        for u in naps:  # inside the try: a server that fails to sleep still gets the others woken again
+            vllm_sleep(u)
+        if batch:
+            trainer.onload()
+            t_sleep = time.time() - t_sw
+            res = update()
+    except BaseException as e:
+        failed = e
+        raise
+    finally:
+        t_sw = time.time()
+        cleanup = []
+        if naps:
+            try:  # a failing offload must not leave the servers asleep: the rollouts and the teacher need them
+                import torch
+
+                trainer.offload()
+                reserved = torch.cuda.memory_reserved() / 2**20 if torch.cuda.is_available() else 0.0
+                if reserved > 64:
+                    log(f"warning: {reserved:.0f} MiB still reserved by the trainer after offload()")
+            except Exception as e:
+                cleanup.append(f"trainer.offload(): {type(e).__name__}: {e}")
+            for u in naps:  # wake every server that may be asleep; waking an awake one is harmless
+                try:
+                    vllm_wake(u)
+                except Exception as e:
+                    cleanup.append(f"wake {u}: {type(e).__name__}: {e}")
+        t_wake = time.time() - t_sw
+        for c in cleanup:
+            log(f"warning: sleep-window cleanup failed: {c}")
+        if cleanup and failed is None:  # nothing else is propagating: stop the run rather than continue half-broken
+            raise RuntimeError("sleep-window cleanup failed: " + "; ".join(cleanup))
+    return res, t_sleep, t_wake
+
+
 def preflight_servers(urls: list[str], sleepers: list[str], cfg: dict) -> dict:
     """Every server serves the policy with the same base weights and enough context; every sleep server has the dev
-    sleep endpoints and is awake (a crashed run can leave one asleep: it still answers /v1/models but runs nothing)."""
+    sleep endpoints and is awake (a crashed run can leave one asleep: it still answers /v1/models but runs nothing).
+    `urls` are the rollout servers only; `sleepers` may also hold a KD teacher that sleeps (it serves another model)."""
     import httpx
 
     ident = {}
@@ -290,9 +486,7 @@ def preflight_servers(urls: list[str], sleepers: list[str], cfg: dict) -> dict:
         m = cards.get(cfg["served_model"])
         if m is None:
             raise RuntimeError(f"{u} does not serve {cfg['served_model']} (has {sorted(cards)})")
-        # an HF snapshot is identified by repo and revision, not by which cache holds it (node04 serves a local copy)
-        root = re.sub(r"^.*/hub/(models--[^/]+/snapshots/[0-9a-f]+)/?$", r"\1", str(m.get("root")))
-        ident[u] = {"root": root, "max_model_len": m.get("max_model_len")}
+        ident[u] = {"root": snapshot_id(m.get("root")), "max_model_len": m.get("max_model_len")}
     if len({json.dumps(v, sort_keys=True) for v in ident.values()}) > 1:
         raise RuntimeError(f"servers serve different base weights or limits: {ident}")
     mml = next(iter(ident.values()))["max_model_len"]
@@ -309,11 +503,53 @@ def preflight_servers(urls: list[str], sleepers: list[str], cfg: dict) -> dict:
     return ident
 
 
-def _update(trainer, batch, ros, cfg, tr, truncate, adapter_root, step):
+def snapshot_id(root) -> str:
+    """An HF snapshot is identified by repo and revision, not by which cache holds it (node04 serves a local copy)."""
+    return re.sub(r"^.*/hub/(models--[^/]+/snapshots/[0-9a-f]+)/?$", r"\1", str(root))
+
+
+def check_teacher_tokenizer(tok, cfg: dict) -> None:
+    """Objective kd: the teacher must read the student's token ids exactly as the student does (fail fast)."""
+    from transformers import AutoTokenizer
+
+    key = cfg["teacher"]["model_key"]
+    snap = model_snapshot(key)
+    if not (snap / "tokenizer_config.json").exists():
+        raise RuntimeError(f"teacher {key}: no tokenizer in {snap} (download the pinned revision first)")
+    why = tokenizer_mismatch(tok, AutoTokenizer.from_pretrained(str(snap)))
+    if why:
+        raise RuntimeError(f"teacher {key} does not share the student's tokenizer ({cfg['model']}@{cfg.get('revision')}): {why}")
+
+
+def preflight_teacher(cfg: dict) -> dict:
+    """Objective kd: the teacher server answers, serves teacher.model from MODELS[teacher.model_key]'s snapshot, and
+    fits the longest sequence it will score (a trajectory is trained, hence scored, up to train.max_train_tokens
+    tokens, and vLLM needs prompt + max_tokens = 1 <= max_model_len)."""
+    import httpx
+
+    t = cfg["teacher"]
+    cards = {m["id"]: m for m in httpx.get(t["url"] + "/v1/models", timeout=15).json().get("data", [])}
+    m = cards.get(t["model"])
+    if m is None:
+        raise RuntimeError(f"teacher {t['url']} does not serve {t['model']} (has {sorted(cards)})")
+    mid, rev = MODELS[t["model_key"]]
+    want, got = f"models--{mid.replace('/', '--')}/snapshots/{rev}", snapshot_id(m.get("root"))
+    if got != want:  # e.g. the student started on the teacher's port: every a_t would be ~0 and nothing is learned
+        raise RuntimeError(f"teacher {t['url']} serves {got}, not {t['model_key']} ({want})")
+    mml = m.get("max_model_len")
+    need = max(int(cfg["limits"]["max_context_tokens"]), int(cfg["train"]["max_train_tokens"]) + 1)
+    if mml is not None and mml < need:
+        raise RuntimeError(f"teacher max_model_len {mml} < {need} (limits.max_context_tokens and train.max_train_tokens + 1)")
+    return {"url": t["url"], "root": got, "max_model_len": mml}
+
+
+def _update(trainer, batch, ros, cfg, tr, truncate, adapter_root, step, per_token: bool = False):
     """Mismatch diagnostics, the LoRA update, log-probs after it and the saved adapter (the trainer is on its GPU).
 
     diagnostics.mismatch = "all" (default): an extra no-grad pass over every policy rollout (before the update: the
-    weights vLLM sampled with); "batch": taken from the update's own forward pass over the trained trajectories."""
+    weights vLLM sampled with); "batch": taken from the update's own forward pass over the trained trajectories.
+    per_token (objective kd) also returns the trainer's per-token log-probs of every trained trajectory before and
+    after the update, in token_logprobs order (the "before" ones from that same source)."""
     fast = cfg.get("diagnostics", {}).get("mismatch", "all") == "batch"
     t_all, s_all = [], []
     for r in ([] if fast else ros):
@@ -322,14 +558,23 @@ def _update(trainer, batch, ros, cfg, tr, truncate, adapter_root, step):
             t_all.append(trainer.logprobs_nograd(view[0], view[1]))
             s_all += [view[2][i] for i in range(1, len(view[0])) if view[1][i]]
     mm_pooled = mismatch_stats(np.concatenate(t_all), s_all) if t_all else {"n": 0}
-    before = None if fast else [trainer.logprobs_nograd(b[0], b[1]).mean() for b in batch]
-    upd = trainer.step(batch) if batch else {"skipped": "no_informative_groups"}
+    tok_before, before = None, None
+    if not fast:
+        tok_before = [trainer.logprobs_nograd(b[0], b[1]) for b in batch] if per_token else None
+        before = [x.mean() for x in tok_before] if per_token else [trainer.logprobs_nograd(b[0], b[1]).mean() for b in batch]
+    upd = trainer.step(batch, keep_token_logprobs=per_token) if batch else {"skipped": "no_informative_groups"}
+    kept = upd.pop("token_logprobs", None)  # never logged: one array per trajectory
     if fast:
         mm_pooled = upd.get("mismatch") or {"n": 0}
         before = upd.get("mean_logp_before") or []
-    after = [trainer.logprobs_nograd(b[0], b[1]).mean() for b in batch]
+        tok_before = kept
+    if per_token:
+        tok_after = [trainer.logprobs_nograd(b[0], b[1]) for b in batch]
+        after = [x.mean() for x in tok_after]
+    else:
+        after = [trainer.logprobs_nograd(b[0], b[1]).mean() for b in batch]
     h = trainer.save_adapter(adapter_root / f"step-{step}") if upd.get("stepped") else None
-    return upd, mm_pooled, before, after, h
+    return upd, mm_pooled, before, after, h, ((tok_before, tok_after) if per_token else None)
 
 
 def resume_point(recs: list[dict]) -> tuple[int, int | None, str | None]:
@@ -384,6 +629,7 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     cfg = load_config(config_path)
     if steps is not None:
         cfg["steps"] = steps
+    kd_on = validate_objective(cfg) == "kd"  # before the run dir exists: a bad KD config leaves nothing behind
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = RUNS / (run_name or f"{ts}-{cfg['name']}")
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -404,6 +650,8 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     tok = AutoTokenizer.from_pretrained(cfg["model"], revision=cfg.get("revision"))
     fmt = ChatFormat(tok, tools_for(cfg.get("protocol", "tool_call")), cfg.get("chat_template_kwargs"))
     cfg["_stop_ids"] = stop_ids(fmt, cfg["model"], cfg.get("revision"))
+    if kd_on:
+        check_teacher_tokenizer(tok, cfg)
     pool = read_pool(REPO / cfg["pool"], cfg.get("split", "dev"))
     missing = [t.instance_id for t in pool if not sif_for(t).exists()]
     if missing:
@@ -415,8 +663,11 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
     # serves rollouts, sleeps while the trainer steps, and wakes (then gets the new adapter) before the next rollouts.
     servers = cfg.get("servers") or [{"url": cfg["serve_url"], "slots": cfg["concurrency"]["rollouts"]}]
     router = Router(servers)
-    sleepers = [s_["url"].rstrip("/") for s_ in servers if s_.get("sleep")]
-    (run_dir / "servers.json").write_text(json.dumps({"servers": servers, "identity": preflight_servers(router.urls, sleepers, cfg)}, indent=1))
+    sleepers = sleepers_for(cfg, servers)  # kd: a teacher on the trainer's GPU naps with the sleep servers
+    servers_rec = {"servers": servers, "identity": preflight_servers(router.urls, sleepers, cfg)}
+    if kd_on:
+        servers_rec["teacher"] = preflight_teacher(cfg)
+    (run_dir / "servers.json").write_text(json.dumps(servers_rec, indent=1))
     sync = LoraSync(router.urls, cfg["served_model"])
     import hashlib
 
@@ -449,10 +700,20 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
         if free < 256:
             raise RuntimeError(f"only {free:.0f} MiB free on the trainer GPU with its vLLM awake; start that server with a "
                                "lower SARL_SERVE_MEM and SARL_MAX_NUM_SEQS=16")
+    if kd_on:
+        # one full-length scoring request now (trainer's CUDA context present, teacher awake), not after step 1's rollouts
+        smoke = teacher_smoke(cfg, tok.vocab_size)
+        if cfg["teacher"]["sleep"]:  # measured headroom left on the shared GPU after the teacher's prompt-logprob peak
+            smoke["gpu_free_mib_after"] = round(torch.cuda.mem_get_info()[0] / 2**20)
+        servers_rec["teacher"]["smoke"] = smoke
+        (run_dir / "servers.json").write_text(json.dumps(servers_rec, indent=1))
     truncate = bool(tr.get("truncate_overlong", False))
     log(f"run {run_dir.name}: pool {len(pool)} tasks, {cfg['steps']} steps × {cfg['tasks_per_step']} tasks × G={cfg['group_size']} "
         f"(oracle {cfg['oracle_per_group']}/group); trainable {trainer.n_trainable:,}; adapter {trainer.adapter_hash()}; "
         f"base {trainer.cfg.base}, ple_on_cpu {trainer.cfg.ple_on_cpu}, softcap {trainer.softcap}")
+    if kd_on:
+        log(f"objective kd: teacher {cfg['teacher']['model_key']} ({servers_rec['teacher']['root']}) at {cfg['teacher']['url']}, "
+            f"sleep {cfg['teacher']['sleep']}; kd {cfg['kd']}; start-up scoring {servers_rec['teacher']['smoke']}")
     prev_probe = probe(base_policy, fmt)
     probe_ids = fmt.prompt_ids([{"role": "user", "content": "Fix the failing test in /testbed."}]) + fmt.encode("```bash\nls\n```") + [fmt.turn_end_id]
     base_lp = np.array(served_logprobs(cfg["serve_url"], cfg["served_model"], probe_ids))
@@ -485,59 +746,28 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
         t_roll = time.time() - t0
         t_grade = 0.0  # graded inside the rollout phase
 
-        batch, groups, n_degenerate, dropped, truncated, oracle_idx = [], [], 0, 0, 0, []
-        for t in tasks:
-            # a crashed rollout, a failed grade or an infra failure is not a "reward 0" sample: leave it out of the
-            # group (review finding) and skip the group if fewer than 2 valid members remain
-            grp = [r for r in ros if r.task is t and r.traj is not None and r.grade is not None and not r.error
-                   and not r.grade.infra_failure]
-            if len(grp) < 2:
-                groups.append({"task": t.instance_id, "rewards": [], "adv": [], "degenerate": True, "invalid": True})
-                n_degenerate += 1
-                continue
-            rewards = [r.grade.reward for r in grp]
-            adv = group_advantages(rewards, cfg["advantage"]["eps"])
-            degen = is_degenerate(rewards)
-            n_degenerate += int(degen)
-            groups.append({"task": t.instance_id, "rewards": rewards, "adv": [round(float(a), 4) for a in adv], "degenerate": degen})
-            for r, a in zip(grp, adv):
-                r.adv = float(a)
-                if degen and cfg["advantage"].get("skip_degenerate", True):
-                    continue
-                if r.traj is None:
-                    continue
-                view = train_view(r.traj, tr["max_train_tokens"], truncate)
-                if view is None:
-                    dropped += 1
-                    continue
-                truncated += int(len(view[0]) < r.traj.n_tokens)
-                if r.kind == "oracle":
-                    oracle_idx.append(len(batch))
-                batch.append((view[0], view[1], float(a), view[2]))
+        batch, groups, n_degenerate, dropped, truncated, oracle_idx = build_batch(tasks, ros, cfg, kd_on, tr["max_train_tokens"],
+                                                                                  truncate)
 
-        t_sw, t_sleep, t_wake = time.time(), 0.0, 0.0
-        upd, mm_pooled, before, after, h = {"skipped": "no_informative_groups"}, {"n": 0}, [], [], None
-        naps = sleepers if batch else []  # nothing to train: skip the sleep/wake cycle
-        for u in naps:
-            vllm_sleep(u)
-        try:  # the sleep window: whatever happens, the trainer leaves the GPU and the servers wake up
-            trainer.onload()
-            t_sleep = time.time() - t_sw
-            if batch:
-                upd, mm_pooled, before, after, h = _update(trainer, batch, ros, cfg, tr, truncate, adapter_root, step)
-        finally:
-            t_sw = time.time()
-            if naps:
-                trainer.offload()
-                reserved = torch.cuda.memory_reserved() / 2**20
-                if reserved > 64:
-                    log(f"warning: {reserved:.0f} MiB still reserved by the trainer after offload()")
-                for u in naps:
-                    vllm_wake(u)
-            t_wake = time.time() - t_sw
+        # kd: the teacher (awake since the last wake-up) scores the batch before anything sleeps
+        t_teacher, kd_lps, kd_errors = 0.0, [], []
+        if kd_on and batch:
+            t_k = time.time()
+            batch, kd_lps, kd_errors = score_with_teacher(batch, cfg)
+            t_teacher = time.time() - t_k
+            if kd_errors:
+                log(f"teacher dropped {len(kd_errors)} trajectory(ies) after a retry, e.g. {kd_errors[0]}")
+
+        res, t_sleep, t_wake = update_in_sleep_window(
+            trainer, batch, sleepers, lambda: _update(trainer, batch, ros, cfg, tr, truncate, adapter_root, step, per_token=kd_on), log)
+        upd, mm_pooled, before, after, h, tok_lps = res or ({"skipped": "no_informative_groups"}, {"n": 0}, [], [], None, None)
 
         # the surrogate this update ascends: J = (1/N) Σ A_i · mean_t log π(a_t|s_t); gain = J_after − J_before > 0
-        objective_gain = float(np.mean([b[2] * (a - bf) for b, a, bf in zip(batch, after, before)])) if batch else None
+        kd_rec = None
+        if kd_on:  # per-token advantages: J = Σ_t a_t · log π(x_t) / T over the trained tokens
+            kd_rec, objective_gain = kd_record(batch, kd_lps, tok_lps, kd_errors, t_teacher)
+        else:
+            objective_gain = float(np.mean([b[2] * (a - bf) for b, a, bf in zip(batch, after, before)])) if batch else None
         sync_rec = None
         if upd.get("stepped"):
             name = f"{cfg['served_model']}-{run_tag}-s{step}"
@@ -567,6 +797,9 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
             "servers": {"used": dict(Counter(r.server for r in ros if r.server is not None and r.traj is not None)),
                         "fenced": [router.urls[j] for j, b in enumerate(router.bad) if b]},
         }
+        if kd_on:
+            summary["kd"] = kd_rec
+            summary["seconds"]["teacher"] = round(t_teacher, 1)
         sdir = traj_root / f"step-{step:03d}"
         sdir.mkdir(parents=True, exist_ok=True)
         for r in ros:
@@ -592,7 +825,8 @@ def run(config_path: str | Path, *, steps: int | None = None, run_name: str | No
         log(f"step {step}: policy reward {summary['policy_reward_mean']}, resolved {summary['policy_resolved']}/{len(pol)}, "
             f"oracle {summary['oracle_resolved']}, degenerate {n_degenerate}/{len(tasks)}, train {len(batch)}, "
             f"loss {upd.get('loss')}, gn {upd.get('grad_norm')}, J gain {summary['objective_gain']}, sync {sync_rec}, oracle Δlogp {summary['oracle_dlogp']}, "
-            f"mismatch {summary['mismatch']}, {summary['seconds']}")
+            f"mismatch {summary['mismatch']}, {summary['seconds']}"
+            + (f", kd {({k: round(v, 4) if isinstance(v, float) else v for k, v in kd_rec.items()})}" if kd_on else ""))
     (run_dir / "summary.json").write_text(json.dumps({"run": run_dir.name, "steps": cfg["steps"], "final_adapter": sync.current,
                                                       "trajectories": str(traj_root), "adapters": str(adapter_root)}, indent=1))
     stop_all(prefix)
