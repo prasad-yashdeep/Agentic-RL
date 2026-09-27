@@ -755,6 +755,16 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   unmeasured (the ceiling); 30 steps.
 - **Implementation:** objective `kd` in `sarl/train.py` + per-token advantages in `LoRATrainer.step`, config
   `configs/kd_minicoder_v1.yaml` (in progress, reviewed three ways before use).
+- **Next experiment, KD → GRPO: deferred (2026-09-27, user decision: too long for now).** Assessment before deferring:
+  the pipeline is standard and KD does give GRPO a better start (unanimous groups KD 28 % → 22 % from steps 1–15 to
+  16–30, GRPO v2 27 % → 30 %), but GRPO on the same 11-task pool would sharpen the same narrow skill, so expect
+  training-task success up and Verified near 20 % again. Plan when resumed: (1) the teacher (mini-coder-4b) on the same
+  Verified 50 × 4 (~2 h): go on only if it is clearly above the student (≥ ~26 %), since it is the ceiling for any KD
+  arm; (2) KD on a broad pool (every gold-gated dev task; node08 `/var` + `/tmp` hold ≈ 25 task images unless the bf16
+  Gemma copy goes), then GRPO on the tasks that come out mixed (~17 h), then a Verified eval (~4 h). Cheaper variant:
+  one joint run with `kd.reward_coef > 0` (teacher signal + test reward, already supported). Sequential KD → GRPO needs
+  a small trainer change first: start from an existing adapter (today `--resume` only continues a run's own adapter).
+  Cost of the plain version (GRPO from the KD final on the same pool): ≈ 7 h training + 4 h eval.
 
 ## 2026-09-24 s9-qwen3-1.7b-v1 — S9: the diagram's tool-call protocol with a model that follows it
 
