@@ -664,6 +664,12 @@ tasks: no measurable gain; the pre-registered Verified evaluation (base vs step-
   adapter hash `eb0de89dc16e` as v1. Expected ~9–10 h. Post-run chain (headnode, ssh only): final adapter from
   `runs/grpo-gemma-smith-v1/summary.json` → val eval (`experiments/eval-val-smith-v1.json`, 20 × 8 × 2 arms) → Verified
   eval (`experiments/eval-verified-gemma-smith-v1.json`, 50 × 4 × 2 arms).
+- **Amendment (2026-09-26 ~19:00, user-approved, before any eval result exists): val eval raised to 16 episodes per
+  task** (20 × 16 × 2 arms). Simulated power of the paired per-task test (normal CI over tasks, screen rates of the 20
+  val tasks as the base): at 8 episodes SE ≈ 4.8 pp, 95 % CI ± 9.4 pp, power 20 / 53 / 85 % for a uniform +5 / +10 /
+  +15 pp gain; at 16 episodes SE ≈ 3.4 pp, CI ± 6.6 pp, power 34 / 81 / 99 %. Cost ≈ +1 h. In-run signal at step 16:
+  task-stratified late−early −0.9 ± 5.1 pp over 12 tasks (pooled 31.6 % → 40.2 % is task mix); 184/512 solved; 50/64
+  groups mixed; objective gain > 0 on 16/16.
 
 ---
 
